@@ -1,10 +1,12 @@
 from typing import List, Dict
 from .youtube_client import YouTubeClient
+from .feedback_system import FeedbackSystem
 
 class VideoAnalyzer:
     def __init__(self, ai_client):
         self.ai_client = ai_client
         self.youtube_client = YouTubeClient()
+        self.feedback_system = FeedbackSystem()
     
     async def analyze_videos(self, videos: List[Dict], topic: str) -> List[Dict]:
         analyzed_videos = []
@@ -19,10 +21,13 @@ class VideoAnalyzer:
             
             sentiment_score = await self._analyze_comments(comments)
             
+            user_rating = self.feedback_system.get_average_rating(video['id'])
+            
             analyzed_video = {
                 **video,
                 'relevance_score': relevance_score,
                 'sentiment_score': sentiment_score,
+                'user_rating': user_rating,
                 'transcript_available': transcript is not None,
                 'comment_count': len(comments)
             }

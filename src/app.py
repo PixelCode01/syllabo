@@ -8,6 +8,9 @@ from .syllabus_parser import SyllabusParser
 from .youtube_client import YouTubeClient
 from .ai_client import AIClient
 from .video_analyzer import VideoAnalyzer
+import csv
+import os
+from datetime import datetime
 
 class MainScreen(Screen):
     def compose(self) -> ComposeResult:
@@ -45,6 +48,8 @@ class MainScreen(Screen):
             await self.parse_syllabus()
         elif event.button.id == "search_btn":
             await self.search_videos()
+        elif event.button.id == "export_btn":
+            await self.export_results()
 
     async def parse_syllabus(self):
         syllabus_text = self.query_one("#syllabus_input", TextArea).text
