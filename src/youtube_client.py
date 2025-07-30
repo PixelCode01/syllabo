@@ -50,10 +50,14 @@ class YouTubeClient:
     
     def get_transcript(self, video_id: str) -> Optional[str]:
         try:
-            transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
+            transcript_list = YouTubeTranscriptApi.get_transcript(video_id, languages=['en', 'en-US'])
             return ' '.join([entry['text'] for entry in transcript_list])
         except:
-            return None
+            try:
+                transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
+                return ' '.join([entry['text'] for entry in transcript_list])
+            except:
+                return None
     
     def get_comments(self, video_id: str, max_results: int = 50) -> List[str]:
         try:
@@ -77,7 +81,7 @@ class YouTubeClient:
         import re
         match = re.match(r'PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?', duration)
         if not match:
-            return "Unknown"
+            return "0:00"
         
         hours, minutes, seconds = match.groups()
         hours = int(hours) if hours else 0
@@ -86,5 +90,4 @@ class YouTubeClient:
         
         if hours > 0:
             return f"{hours}:{minutes:02d}:{seconds:02d}"
-        else:
-            return f"{minutes}:{seconds:02d}"
+        return f"{minutes}:{seconds:02d}"

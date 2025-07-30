@@ -22,13 +22,11 @@ class SyllabusParser:
         return text
     
     async def extract_topics(self, syllabus_text: str, ai_client) -> List[Dict]:
-        prompt = f"""
-        Extract the main topics and subtopics from this syllabus. Return as JSON array with format:
-        [{{"name": "Topic Name", "subtopics": ["subtopic1", "subtopic2"]}}]
-        
-        Syllabus:
-        {syllabus_text}
-        """
+        prompt = f"""Extract main topics from this syllabus as JSON array:
+[{{"name": "Topic Name", "subtopics": ["subtopic1", "subtopic2"]}}]
+
+Syllabus:
+{syllabus_text[:2000]}"""
         
         response = await ai_client.get_completion(prompt)
         

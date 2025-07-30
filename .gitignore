@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+feedback.json
+syllabo_results_*.csv
+*.log

@@ -41,14 +41,9 @@ class VideoAnalyzer:
         if transcript:
             content += f"\nTranscript: {transcript[:1000]}"
         
-        prompt = f"""
-        Rate how relevant this video is to the topic "{topic}" on a scale of 1-10.
-        Consider title, description, and transcript content.
-        Return only a number between 1-10.
-        
-        Video content:
-        {content}
-        """
+        prompt = f"""Rate relevance to "{topic}" (1-10 only):
+
+{content[:800]}"""
         
         try:
             response = await self.ai_client.get_completion(prompt)
