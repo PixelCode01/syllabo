@@ -8,17 +8,23 @@ from .syllabus_parser import SyllabusParser
 from .youtube_client import YouTubeClient
 from .ai_client import AIClient
 from .video_analyzer import VideoAnalyzer
+from .utils import truncate_text
 import csv
 import os
 from datetime import datetime
 
 class MainScreen(Screen):
+    def __init__(self):
+        super().__init__()
+        self.auto_load_input = None
+        self.is_file_input = False
+    
     def compose(self) -> ComposeResult:
         yield Header()
         yield Container(
             Vertical(
                 Static("Syllabo - YouTube Video Finder", classes="title"),
-                TextArea(placeholder="Paste your syllabus here...", id="syllabus_input"),
+                TextArea(id="syllabus_input"),
                 Horizontal(
                     Button("Parse Syllabus", id="parse_btn", variant="primary"),
                     Button("Load from File", id="load_btn"),
@@ -42,6 +48,16 @@ class MainScreen(Screen):
         
         results_table = self.query_one("#results_table", DataTable)
         results_table.add_columns("Topic", "Video Title", "Channel", "Relevance", "Duration")
+        
+        if self.auto_load_input:
+            if self.is_file_input:
+                parser = SyllabusParser()
+                text = parser.load_from_file(self.auto_load_input)
+            else:
+                text = self.auto_load_input
+            
+            syllabus_input = self.query_one("#syllabus_input", TextArea)
+            syllabus_input.text = text
 
     async def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "parse_btn":
@@ -87,14 +103,40 @@ class MainScreen(Screen):
             for video in analyzed_videos[:3]:
                 results_table.add_row(
                     topic_name,
-                    video["title"][:50] + "..." if len(video["title"]) > 50 else video["title"],
-                    video["channel"],
+                    truncate_text(video["title"]),
+                    truncate_text(video["channel"], 20),
                     f"{video['relevance_score']:.1f}/10",
                     video["duration"]
                 )
 
+    async def export_results(self):
+        results_table = self.query_one("#results_table", DataTable)
+        if not results_table.rows:
+            return
+        
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"syllabo_results_{timestamp}.csv"
+        
+        with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(["Topic", "Video Title", "Channel", "Relevance", "Duration"])
+            
+            for row_key in results_table.rows:
+                row = results_table.get_row(row_key)
+                writer.writerow([str(cell) for cell in row])
+
 class SyllaboApp(App):
     CSS_PATH = "styles.css"
     
+    def __init__(self):
+        super().__init__()
+        self.cli_mode = False
+        self.cli_input = None
+        self.is_file = False
+    
     def on_mount(self):
-        self.push_screen(MainScreen())
+        screen = MainScreen()
+        if self.cli_mode:
+            screen.auto_load_input = self.cli_input
+            screen.is_file_input = self.is_file
+        self.push_screen(screen)

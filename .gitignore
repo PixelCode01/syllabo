@@ -68,9 +68,35 @@ logs/
 *.log
 *.log.*
 
-# Test files
-test_*.py
-*_test.py
+# Generated study guides and results
+study_guide_*.json
+syllabo_study_guide_*.json
+
+# Temporary/working files
+*_working.py
+*_new.py
+*_temp.py
+*_old.py
+
+# Test batch files
+*.bat
+
+# Simple test files
+simple_test.py
+
+# Documentation files (keep only essential docs)
+CODING_STYLE_COMPLIANCE.md
+VIDEO_LINKS_FIX.md
+PROJECT_STRUCTURE.md
+
+# Sample/demo files that are not core functionality
+sample_syllabus.txt
+
+# Legacy/unused components
+src/mock_data.py
+src/app.py
+src/terminal_display.py
+src/styles.css
 
 # Temporary files
 *.tmp
@@ -98,3 +124,4 @@ coverage.xml
 # Kiro IDE (keep steering rules but ignore other temp files)
 .kiro/cache/
 .kiro/temp/
+.kiro/

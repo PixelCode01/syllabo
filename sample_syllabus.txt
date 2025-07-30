@@ -1,0 +1,34 @@
+Computer Science Data Structures Course Syllabus
+
+Week 1: Introduction to Data Structures
+- Arrays and their operations
+- Time and space complexity analysis
+- Big O notation
+
+Week 2: Linked Lists
+- Singly linked lists
+- Doubly linked lists
+- Circular linked lists
+- Implementation and operations
+
+Week 3: Stacks and Queues
+- Stack operations (push, pop, peek)
+- Queue operations (enqueue, dequeue)
+- Applications of stacks and queues
+
+Week 4: Trees
+- Binary trees
+- Binary search trees
+- Tree traversal algorithms
+- AVL trees and balancing
+
+Week 5: Hash Tables
+- Hash functions
+- Collision resolution techniques
+- Open addressing vs chaining
+
+Week 6: Graphs
+- Graph representation
+- Breadth-first search (BFS)
+- Depth-first search (DFS)
+- Shortest path algorithms
