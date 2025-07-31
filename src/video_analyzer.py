@@ -12,34 +12,49 @@ class VideoAnalyzer:
         self.feedback_system = FeedbackSystem()
         self.logger = SyllaboLogger("video_analyzer")
     
-    async def analyze_videos(self, videos: List[Dict], topic: str) -> Dict:
-        self.logger.info(f"Analyzing {len(videos)} videos for topic: {topic}")
+    async def analyze_videos_and_playlists(self, videos: List[Dict], playlists: List[Dict], topic: str) -> Dict:
+        """Analyze both videos and playlists for a topic"""
+        self.logger.info(f"Analyzing {len(videos)} videos and {len(playlists)} playlists for topic: {topic}")
+        
+        # Analyze videos
         analyzed_videos = []
+        if videos:
+            batch_size = 3
+            for i in range(0, len(videos), batch_size):
+                batch = videos[i:i + batch_size]
+                batch_tasks = []
+                
+                for video in batch:
+                    batch_tasks.append(self._analyze_single_video(video, topic))
+                
+                batch_results = await asyncio.gather(*batch_tasks, return_exceptions=True)
+                
+                for result in batch_results:
+                    if isinstance(result, Exception):
+                        self.logger.error(f"Video analysis failed: {result}")
+                    else:
+                        analyzed_videos.append(result)
         
-        # Process videos in batches to avoid overwhelming APIs
-        batch_size = 3
-        for i in range(0, len(videos), batch_size):
-            batch = videos[i:i + batch_size]
-            batch_tasks = []
-            
-            for video in batch:
-                batch_tasks.append(self._analyze_single_video(video, topic))
-            
-            # Process batch concurrently
-            batch_results = await asyncio.gather(*batch_tasks, return_exceptions=True)
-            
-            for result in batch_results:
-                if isinstance(result, Exception):
-                    self.logger.error(f"Video analysis failed: {result}")
-                else:
-                    analyzed_videos.append(result)
+        # Analyze playlists
+        analyzed_playlists = []
+        if playlists:
+            for playlist in playlists:
+                analyzed_playlist = await self._analyze_single_playlist(playlist, topic)
+                analyzed_playlists.append(analyzed_playlist)
         
-        # Sort by composite score
+        # Sort both by composite score
         analyzed_videos = sorted(analyzed_videos, key=lambda x: x['composite_score'], reverse=True)
-        self.logger.info(f"Analysis complete. Top video: {analyzed_videos[0]['title'] if analyzed_videos else 'None'}")
+        analyzed_playlists = sorted(analyzed_playlists, key=lambda x: x['composite_score'], reverse=True)
         
-        # Apply optimal learning strategy
-        return self._create_optimal_learning_path(analyzed_videos, topic)
+        self.logger.info(f"Analysis complete. Top video: {analyzed_videos[0]['title'] if analyzed_videos else 'None'}")
+        self.logger.info(f"Top playlist: {analyzed_playlists[0]['title'] if analyzed_playlists else 'None'}")
+        
+        # Create comprehensive learning path
+        return self._create_comprehensive_learning_path(analyzed_videos, analyzed_playlists, topic)
+    
+    async def analyze_videos(self, videos: List[Dict], topic: str) -> Dict:
+        """Legacy method for backward compatibility"""
+        return await self.analyze_videos_and_playlists(videos, [], topic)
     
     async def _analyze_single_video(self, video: Dict, topic: str) -> Dict:
         """Analyze a single video with comprehensive scoring"""
@@ -366,6 +381,318 @@ Respond with only a number between 1 and 10."""
                 'video': video,
                 'purpose': purpose_map.get(video.get('coverage_type', ''), 'Supplementary content'),
                 'duration_minutes': duration
+            })
+        
+        return coverage
+    
+    async def _analyze_single_playlist(self, playlist: Dict, topic: str) -> Dict:
+        """Analyze a single playlist with comprehensive scoring"""
+        try:
+            # Calculate relevance score based on title and description
+            relevance_score = await self._calculate_playlist_relevance(playlist, topic)
+            
+            # Calculate quality score based on video count, views, etc.
+            quality_score = self._calculate_playlist_quality_score(playlist)
+            
+            # Calculate engagement score
+            engagement_score = self._calculate_playlist_engagement_score(playlist)
+            
+            # For playlists, sentiment is estimated based on quality indicators
+            sentiment_score = (quality_score + engagement_score) / 2
+            
+            # Calculate composite score
+            composite_score = self._calculate_composite_score(
+                relevance_score, sentiment_score, quality_score, engagement_score
+            )
+            
+            analyzed_playlist = {
+                **playlist,
+                'relevance_score': relevance_score,
+                'sentiment_score': sentiment_score,
+                'quality_score': quality_score,
+                'engagement_score': engagement_score,
+                'composite_score': composite_score,
+                'user_rating': 0.0,  # Playlists don't have user ratings yet
+                'type': 'playlist'
+            }
+            
+            return analyzed_playlist
+        except Exception as e:
+            self.logger.error(f"Failed to analyze playlist {playlist.get('id', 'unknown')}: {e}")
+            # Return playlist with default scores
+            return {
+                **playlist,
+                'relevance_score': 5.0,
+                'sentiment_score': 5.0,
+                'quality_score': 5.0,
+                'engagement_score': 5.0,
+                'composite_score': 5.0,
+                'user_rating': 0.0,
+                'type': 'playlist'
+            }
+    
+    async def _calculate_playlist_relevance(self, playlist: Dict, topic: str) -> float:
+        """Calculate how relevant the playlist is to the topic"""
+        content_parts = [f"Title: {playlist['title']}"]
+        
+        if playlist.get('description'):
+            content_parts.append(f"Description: {playlist['description'][:500]}")
+        
+        content_parts.append(f"Channel: {playlist['channel']}")
+        content_parts.append(f"Video count: {playlist.get('video_count', 0)} videos")
+        
+        content = "\n".join(content_parts)
+        
+        prompt = f"""Analyze how relevant this educational YouTube playlist is to the topic "{topic}".
+Consider the title, description, channel, and video count.
+
+Rate relevance on a scale of 1-10 where:
+- 1-3: Not relevant or off-topic
+- 4-6: Somewhat relevant, touches on the topic
+- 7-8: Highly relevant, directly addresses the topic
+- 9-10: Extremely relevant, comprehensive course coverage
+
+Playlist to analyze:
+{content[:1000]}
+
+Respond with only a number between 1 and 10."""
+        
+        try:
+            response = await self.ai_client.get_completion(prompt)
+            score_match = re.search(r'\b([1-9]|10)\b', response.strip())
+            if score_match:
+                score = float(score_match.group(1))
+                return max(1.0, min(10.0, score))
+            else:
+                self.logger.warning(f"Could not parse playlist relevance score from: {response}")
+                return 5.0
+        except Exception as e:
+            self.logger.error(f"Playlist relevance calculation failed: {e}")
+            return 5.0
+    
+    def _calculate_playlist_quality_score(self, playlist: Dict) -> float:
+        """Calculate playlist quality based on various factors"""
+        score = 5.0
+        
+        # Video count scoring (prefer 5-50 video playlists)
+        video_count = playlist.get('video_count', 0)
+        
+        if 5 <= video_count <= 50:
+            score += 2.0
+        elif 3 <= video_count <= 100:
+            score += 1.0
+        elif video_count < 3:
+            score -= 2.0
+        elif video_count > 100:
+            score -= 1.0
+        
+        # Total views scoring
+        total_views = playlist.get('total_views', 0)
+        if total_views > 500000:
+            score += 2.0
+        elif total_views > 100000:
+            score += 1.0
+        elif total_views < 10000:
+            score -= 1.0
+        
+        # Channel quality indicators
+        channel = playlist.get('channel', '').lower()
+        if any(indicator in channel for indicator in ['university', 'academy', 'education', 'school', 'institute']):
+            score += 1.0
+        
+        # Title quality indicators
+        title = playlist.get('title', '').lower()
+        if any(indicator in title for indicator in ['course', 'tutorial', 'complete', 'full', 'comprehensive', 'series']):
+            score += 1.0
+        
+        return max(1.0, min(10.0, score))
+    
+    def _calculate_playlist_engagement_score(self, playlist: Dict) -> float:
+        """Calculate playlist engagement score"""
+        score = 5.0
+        
+        video_count = playlist.get('video_count', 0)
+        total_views = playlist.get('total_views', 0)
+        
+        if video_count > 0 and total_views > 0:
+            avg_views_per_video = total_views / video_count
+            
+            # Higher average views per video indicates better engagement
+            if avg_views_per_video > 50000:
+                score += 2.0
+            elif avg_views_per_video > 10000:
+                score += 1.0
+            elif avg_views_per_video < 1000:
+                score -= 1.0
+        
+        # Recent updates indicate active maintenance
+        last_updated = playlist.get('last_updated', '').lower()
+        if any(indicator in last_updated for indicator in ['day', 'week', 'month']):
+            score += 0.5
+        
+        return max(1.0, min(10.0, score))
+    
+    def _create_comprehensive_learning_path(self, analyzed_videos: List[Dict], 
+                                          analyzed_playlists: List[Dict], topic: str) -> Dict:
+        """Create comprehensive learning path with both videos and playlists"""
+        
+        # Determine the best primary resource (playlist vs video)
+        best_playlist = analyzed_playlists[0] if analyzed_playlists else None
+        best_video = analyzed_videos[0] if analyzed_videos else None
+        
+        primary_resource = None
+        learning_strategy = 'no_resources_found'
+        
+        if best_playlist and best_video:
+            # Compare scores and characteristics
+            if (best_playlist['composite_score'] > best_video['composite_score'] + 1.0 and 
+                best_playlist.get('video_count', 0) >= 5):
+                primary_resource = best_playlist
+                learning_strategy = 'playlist_primary'
+            else:
+                primary_resource = best_video
+                learning_strategy = 'video_primary_with_playlist_supplement'
+        elif best_playlist:
+            primary_resource = best_playlist
+            learning_strategy = 'playlist_only'
+        elif best_video:
+            primary_resource = best_video
+            learning_strategy = 'video_only'
+        
+        # Build supplementary resources
+        supplementary_videos = []
+        supplementary_playlists = []
+        
+        if primary_resource:
+            # Add supplementary videos (excluding primary if it's a video)
+            for video in analyzed_videos[:5]:
+                if (video['id'] != primary_resource.get('id') and 
+                    video['relevance_score'] >= 6.0 and
+                    video['composite_score'] >= 6.0):
+                    
+                    video['coverage_type'] = self._determine_coverage_type(video, primary_resource, topic)
+                    supplementary_videos.append(video)
+            
+            # Add supplementary playlists (excluding primary if it's a playlist)
+            for playlist in analyzed_playlists[:3]:
+                if (playlist['id'] != primary_resource.get('id') and 
+                    playlist['relevance_score'] >= 6.0 and
+                    playlist['composite_score'] >= 6.0):
+                    
+                    playlist['coverage_type'] = self._determine_playlist_coverage_type(playlist, primary_resource, topic)
+                    supplementary_playlists.append(playlist)
+        
+        # Create coverage analysis
+        coverage_analysis = self._analyze_comprehensive_coverage(
+            primary_resource, supplementary_videos[:2], supplementary_playlists[:2], topic
+        )
+        
+        return {
+            'topic': topic,
+            'primary_resource': primary_resource,
+            'supplementary_videos': supplementary_videos[:2],
+            'supplementary_playlists': supplementary_playlists[:2],
+            'coverage_analysis': coverage_analysis,
+            'learning_strategy': learning_strategy,
+            'total_resources': 1 + len(supplementary_videos[:2]) + len(supplementary_playlists[:2]) if primary_resource else 0
+        }
+    
+    def _determine_playlist_coverage_type(self, playlist: Dict, primary_resource: Dict, topic: str) -> str:
+        """Determine what type of coverage this playlist provides"""
+        video_count = playlist.get('video_count', 0)
+        title_lower = playlist['title'].lower()
+        
+        if video_count <= 5:
+            return 'focused_series'
+        elif 5 < video_count <= 20:
+            if any(word in title_lower for word in ['advanced', 'deep', 'detailed', 'complete']):
+                return 'comprehensive_course'
+            elif any(word in title_lower for word in ['beginner', 'intro', 'basics', 'fundamentals']):
+                return 'foundation_course'
+            else:
+                return 'structured_learning'
+        else:
+            return 'extensive_course'
+    
+    def _analyze_comprehensive_coverage(self, primary_resource: Dict, 
+                                      supplementary_videos: List[Dict], 
+                                      supplementary_playlists: List[Dict], topic: str) -> Dict:
+        """Analyze comprehensive topic coverage including playlists"""
+        coverage = {
+            'primary_covers': [],
+            'supplementary_coverage': [],
+            'recommended_study_order': [],
+            'estimated_study_time': 0
+        }
+        
+        if not primary_resource:
+            return coverage
+        
+        # Analyze primary resource
+        if primary_resource.get('type') == 'playlist':
+            coverage['primary_covers'] = ['comprehensive_course_content']
+            # Estimate 10 minutes per video on average
+            estimated_time = primary_resource.get('video_count', 0) * 10
+            coverage['estimated_study_time'] = estimated_time
+            
+            coverage['recommended_study_order'].append({
+                'resource': primary_resource,
+                'purpose': 'Primary Course - Complete structured learning path',
+                'type': 'playlist',
+                'estimated_minutes': estimated_time
+            })
+        else:
+            coverage['primary_covers'] = self._extract_coverage_keywords(primary_resource, topic)
+            primary_duration = self._parse_duration_to_minutes(primary_resource.get('duration', '0:00'))
+            coverage['estimated_study_time'] = primary_duration
+            
+            coverage['recommended_study_order'].append({
+                'resource': primary_resource,
+                'purpose': 'Primary Video - Foundation understanding',
+                'type': 'video',
+                'estimated_minutes': primary_duration
+            })
+        
+        # Add supplementary playlists
+        for playlist in supplementary_playlists:
+            estimated_time = playlist.get('video_count', 0) * 10
+            coverage['estimated_study_time'] += estimated_time
+            
+            purpose_map = {
+                'focused_series': 'Focused Series - Specific aspect deep dive',
+                'comprehensive_course': 'Alternative Course - Different comprehensive approach',
+                'foundation_course': 'Foundation Course - Build fundamental understanding',
+                'structured_learning': 'Structured Learning - Organized topic exploration',
+                'extensive_course': 'Extensive Course - Comprehensive topic coverage'
+            }
+            
+            coverage['recommended_study_order'].append({
+                'resource': playlist,
+                'purpose': purpose_map.get(playlist.get('coverage_type', ''), 'Supplementary playlist'),
+                'type': 'playlist',
+                'estimated_minutes': estimated_time
+            })
+        
+        # Add supplementary videos
+        for video in supplementary_videos:
+            duration = self._parse_duration_to_minutes(video.get('duration', '0:00'))
+            coverage['estimated_study_time'] += duration
+            
+            purpose_map = {
+                'practice_examples': 'Practice - Apply concepts with examples',
+                'quick_review': 'Review - Quick reinforcement of key points',
+                'focused_concept': 'Deep Focus - Specific concept explanation',
+                'deep_dive': 'Advanced - Detailed exploration of concepts',
+                'practical_tutorial': 'Tutorial - Step-by-step implementation',
+                'concept_explanation': 'Explanation - Alternative perspective',
+                'comprehensive_alternative': 'Alternative - Different comprehensive approach'
+            }
+            
+            coverage['recommended_study_order'].append({
+                'resource': video,
+                'purpose': purpose_map.get(video.get('coverage_type', ''), 'Supplementary content'),
+                'type': 'video',
+                'estimated_minutes': duration
             })
         
         return coverage

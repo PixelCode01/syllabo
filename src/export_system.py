@@ -9,6 +9,14 @@ class ExportSystem:
     def __init__(self):
         self.logger = SyllaboLogger("export_system")
     
+    def _get_resource_url(self, resource: Dict) -> str:
+        """Get the appropriate URL for a video or playlist"""
+        resource_type = resource.get('type', 'video')
+        if resource_type == 'playlist':
+            return f"https://youtube.com/playlist?list={resource['id']}"
+        else:
+            return f"https://youtube.com/watch?v={resource['id']}"
+    
     def export_to_csv(self, videos: List[Dict], topic: str, filename: Optional[str] = None) -> str:
         """Export video results to CSV format"""
         if not filename:
@@ -18,8 +26,8 @@ class ExportSystem:
         try:
             with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
                 fieldnames = [
-                    'topic', 'title', 'channel', 'url', 'duration', 
-                    'view_count', 'relevance_score', 'composite_score',
+                    'topic', 'title', 'channel', 'url', 'type', 'duration', 
+                    'view_count', 'video_count', 'relevance_score', 'composite_score',
                     'transcript_available'
                 ]
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -30,9 +38,11 @@ class ExportSystem:
                         'topic': topic,
                         'title': video['title'],
                         'channel': video['channel'],
-                        'url': f"https://youtube.com/watch?v={video['id']}",
+                        'url': self._get_resource_url(video),
+                        'type': video.get('type', 'video'),
                         'duration': video.get('duration', ''),
                         'view_count': video.get('view_count', 0),
+                        'video_count': video.get('video_count', 0) if video.get('type') == 'playlist' else '',
                         'relevance_score': video.get('relevance_score', 0),
                         'composite_score': video.get('composite_score', 0),
                         'transcript_available': video.get('transcript_available', False)
@@ -42,8 +52,9 @@ class ExportSystem:
             return filename
         except Exception as e:
             self.logger.error(f"CSV export failed: {e}")
-            raise    def e
-xport_to_json(self, videos: List[Dict], topic: str, filename: Optional[str] = None) -> str:
+            raise
+    
+    def export_to_json(self, videos: List[Dict], topic: str, filename: Optional[str] = None) -> str:
         """Export video results to JSON format"""
         if not filename:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -54,13 +65,15 @@ xport_to_json(self, videos: List[Dict], topic: str, filename: Optional[str] = No
                 "topic": topic,
                 "timestamp": datetime.now().isoformat(),
                 "video_count": len(videos),
-                "videos": [
+                "resources": [
                     {
                         "title": v["title"],
                         "channel": v["channel"],
-                        "url": f"https://youtube.com/watch?v={v['id']}",
+                        "url": self._get_resource_url(v),
+                        "type": v.get("type", "video"),
                         "duration": v.get("duration", ""),
                         "view_count": v.get("view_count", 0),
+                        "video_count": v.get("video_count", 0) if v.get("type") == "playlist" else None,
                         "relevance_score": v.get("relevance_score", 0),
                         "composite_score": v.get("composite_score", 0),
                         "transcript_available": v.get("transcript_available", False),
@@ -92,18 +105,29 @@ xport_to_json(self, videos: List[Dict], topic: str, filename: Optional[str] = No
                 f.write(f"Total videos: {len(videos)}\n\n")
                 
                 for i, video in enumerate(videos, 1):
-                    f.write(f"## {i}. {video['title']}\n\n")
+                    resource_type = video.get('type', 'video')
+                    type_indicator = "[PLAYLIST]" if resource_type == 'playlist' else "[VIDEO]"
+                    
+                    f.write(f"## {i}. {type_indicator} {video['title']}\n\n")
                     f.write(f"**Channel:** {video['channel']}\n\n")
-                    f.write(f"**URL:** [Watch on YouTube](https://youtube.com/watch?v={video['id']})\n\n")
-                    f.write(f"**Duration:** {video.get('duration', 'Unknown')}\n\n")
-                    f.write(f"**Views:** {video.get('view_count', 0):,}\n\n")
+                    
+                    if resource_type == 'playlist':
+                        f.write(f"**URL:** [View Playlist on YouTube]({self._get_resource_url(video)})\n\n")
+                        f.write(f"**Videos in Playlist:** {video.get('video_count', 0)}\n\n")
+                        f.write(f"**Total Views:** {video.get('total_views', 0):,}\n\n")
+                    else:
+                        f.write(f"**URL:** [Watch on YouTube]({self._get_resource_url(video)})\n\n")
+                        f.write(f"**Duration:** {video.get('duration', 'Unknown')}\n\n")
+                        f.write(f"**Views:** {video.get('view_count', 0):,}\n\n")
+                    
                     f.write(f"**Relevance Score:** {video.get('relevance_score', 0):.1f}/10\n\n")
                     f.write(f"**Overall Score:** {video.get('composite_score', 0):.1f}/10\n\n")
                     
-                    if video.get('transcript_available'):
-                        f.write("**Transcript:** Available ✅\n\n")
-                    else:
-                        f.write("**Transcript:** Not available ❌\n\n")
+                    if resource_type == 'video':
+                        if video.get('transcript_available'):
+                            f.write("**Transcript:** Available ✅\n\n")
+                        else:
+                            f.write("**Transcript:** Not available ❌\n\n")
                     
                     if video.get('description'):
                         desc = video['description'][:300] + "..." if len(video['description']) > 300 else video['description']
@@ -167,21 +191,34 @@ xport_to_json(self, videos: List[Dict], topic: str, filename: Optional[str] = No
                 for i, video in enumerate(videos, 1):
                     score = video.get('composite_score', 0)
                     score_class = 'high-score' if score >= 7 else 'medium-score' if score >= 5 else 'low-score'
+                    resource_type = video.get('type', 'video')
+                    type_indicator = "[PLAYLIST]" if resource_type == 'playlist' else "[VIDEO]"
                     
                     f.write(f"""
         <div class="video-card">
-            <div class="video-title">{i}. {video['title']}</div>
+            <div class="video-title">{i}. {type_indicator} {video['title']}</div>
             <div class="video-meta">📺 <strong>Channel:</strong> {video['channel']}</div>
-            <div class="video-meta">🔗 <strong>URL:</strong> <a href="https://youtube.com/watch?v={video['id']}" target="_blank">Watch on YouTube</a></div>
+            <div class="video-meta">🔗 <strong>URL:</strong> <a href="{self._get_resource_url(video)}" target="_blank">{'View Playlist' if resource_type == 'playlist' else 'Watch Video'} on YouTube</a></div>""")
+                    
+                    if resource_type == 'playlist':
+                        f.write(f"""
+            <div class="video-meta">📹 <strong>Videos:</strong> {video.get('video_count', 0)}</div>
+            <div class="video-meta">👀 <strong>Total Views:</strong> {video.get('total_views', 0):,}</div>""")
+                    else:
+                        f.write(f"""
             <div class="video-meta">⏱️ <strong>Duration:</strong> {video.get('duration', 'Unknown')}</div>
-            <div class="video-meta">👀 <strong>Views:</strong> {video.get('view_count', 0):,}</div>
+            <div class="video-meta">👀 <strong>Views:</strong> {video.get('view_count', 0):,}</div>""")
+                    
+                    f.write(f"""
             <div class="video-meta">
                 📊 <strong>Scores:</strong> 
                 <span class="score">Relevance: {video.get('relevance_score', 0):.1f}/10</span>
                 <span class="score {score_class}">Overall: {score:.1f}/10</span>
-            </div>
-            <div class="video-meta">📝 <strong>Transcript:</strong> {'Available ✅' if video.get('transcript_available') else 'Not available ❌'}</div>
-""")
+            </div>""")
+                    
+                    if resource_type == 'video':
+                        f.write(f"""
+            <div class="video-meta">📝 <strong>Transcript:</strong> {'Available ✅' if video.get('transcript_available') else 'Not available ❌'}</div>""")
                     
                     if video.get('description'):
                         desc = video['description'][:400] + "..." if len(video['description']) > 400 else video['description']
@@ -227,14 +264,16 @@ xport_to_json(self, videos: List[Dict], topic: str, filename: Optional[str] = No
         
         for topic, videos in topics_videos.items():
             export_data["topics"][topic] = {
-                "video_count": len(videos),
-                "videos": [
+                "resource_count": len(videos),
+                "resources": [
                     {
                         "title": v["title"],
                         "channel": v["channel"],
-                        "url": f"https://youtube.com/watch?v={v['id']}",
+                        "url": self._get_resource_url(v),
+                        "type": v.get("type", "video"),
                         "duration": v.get("duration", ""),
                         "view_count": v.get("view_count", 0),
+                        "video_count": v.get("video_count", 0) if v.get("type") == "playlist" else None,
                         "relevance_score": v.get("relevance_score", 0),
                         "composite_score": v.get("composite_score", 0)
                     }

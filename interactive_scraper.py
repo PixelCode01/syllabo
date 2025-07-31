@@ -464,7 +464,7 @@ def extract_topics_from_syllabus(syllabus_text: str) -> List[Dict]:
         if not line: 
             continue
             
-        # Look for topic headers (Week, Chapter, Unit, etc.)
+        # Look for topic headers (Week, Chapter, Unit etc)
         if re.match(r'^(Week|Chapter|Unit|Topic|Module)\s*\d+', line, re.IGNORECASE):
             if current_topic:
                 topics.append(current_topic)

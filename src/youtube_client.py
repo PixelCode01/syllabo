@@ -43,6 +43,29 @@ class YouTubeClient:
             print(f"Error searching videos: {e}")
             return []
     
+    async def search_playlists(self, query: str, max_results: int = 5) -> List[Dict]:
+        """Search YouTube playlists using web scraping"""
+        try:
+            search_query = f"{query} playlist course tutorial series"
+            encoded_query = quote_plus(search_query)
+            search_url = f"https://www.youtube.com/results?search_query={encoded_query}&sp=EgIQAw%253D%253D"  # Filter for playlists
+            
+            response = self.session.get(search_url)
+            response.raise_for_status()
+            
+            playlists = self._extract_playlists_from_search(response.text, max_results)
+            
+            for playlist in playlists:
+                playlist_details = self._get_playlist_details(playlist['id'])
+                playlist.update(playlist_details)
+                time.sleep(0.5)  # Rate limiting
+            
+            return playlists[:max_results]
+            
+        except Exception as e:
+            print(f"Error searching playlists: {e}")
+            return []
+    
     def _extract_videos_from_search(self, html_content: str, max_results: int) -> List[Dict]:
         """Extract video information from YouTube search results"""
         videos = []
@@ -217,4 +240,109 @@ class YouTubeClient:
                 "This helped me understand the topic better.",
                 "Perfect for students studying this subject."
             ]
+    
+    def _extract_playlists_from_search(self, html_content: str, max_results: int) -> List[Dict]:
+        """Extract playlist information from YouTube search results"""
+        playlists = []
+        
+        # Find the initial data script tag
+        script_pattern = r'var ytInitialData = ({.*?});'
+        match = re.search(script_pattern, html_content)
+        
+        if not match:
+            return playlists
+        
+        try:
+            data = json.loads(match.group(1))
+            
+            # Navigate through the YouTube data structure for playlists
+            contents = data.get('contents', {}).get('twoColumnSearchResultsRenderer', {}).get('primaryContents', {}).get('sectionListRenderer', {}).get('contents', [])
+            
+            for section in contents:
+                items = section.get('itemSectionRenderer', {}).get('contents', [])
+                
+                for item in items:
+                    if 'playlistRenderer' in item:
+                        playlist_data = item['playlistRenderer']
+                        
+                        playlist_id = playlist_data.get('playlistId')
+                        if not playlist_id:
+                            continue
+                        
+                        title = playlist_data.get('title', {}).get('simpleText', 'Unknown Playlist')
+                        
+                        # Get channel info
+                        channel_info = playlist_data.get('shortBylineText', {}).get('runs', [{}])[0]
+                        channel = channel_info.get('text', 'Unknown Channel')
+                        
+                        # Get video count
+                        video_count_text = playlist_data.get('videoCountText', {}).get('simpleText', '0 videos')
+                        video_count = 0
+                        count_match = re.search(r'(\d+)', video_count_text)
+                        if count_match:
+                            video_count = int(count_match.group(1))
+                        
+                        # Get thumbnail
+                        thumbnails = playlist_data.get('thumbnailRenderer', {}).get('playlistVideoThumbnailRenderer', {}).get('thumbnail', {}).get('thumbnails', [])
+                        thumbnail = thumbnails[-1].get('url', '') if thumbnails else ''
+                        
+                        playlists.append({
+                            'id': playlist_id,
+                            'title': title,
+                            'channel': channel,
+                            'video_count': video_count,
+                            'thumbnail': thumbnail,
+                            'type': 'playlist'
+                        })
+                        
+                        if len(playlists) >= max_results:
+                            break
+                
+                if len(playlists) >= max_results:
+                    break
+        
+        except Exception as e:
+            print(f"Error parsing playlist search results: {e}")
+        
+        return playlists
+    
+    def _get_playlist_details(self, playlist_id: str) -> Dict:
+        """Get additional playlist details by scraping the playlist page"""
+        try:
+            playlist_url = f"https://www.youtube.com/playlist?list={playlist_id}"
+            response = self.session.get(playlist_url)
+            response.raise_for_status()
+            
+            # Extract view count and other details
+            view_pattern = r'"stats":\[{"runs":\[{"text":"(\d+(?:,\d+)*)"}'
+            view_match = re.search(view_pattern, response.text)
+            total_views = 0
+            if view_match:
+                total_views = int(view_match.group(1).replace(',', ''))
+            
+            # Extract description
+            description_pattern = r'"description":{"simpleText":"([^"]*)"'
+            description_match = re.search(description_pattern, response.text)
+            description = description_match.group(1) if description_match else ""
+            
+            # Extract last updated info
+            updated_pattern = r'"lastModified":"([^"]*)"'
+            updated_match = re.search(updated_pattern, response.text)
+            last_updated = updated_match.group(1) if updated_match else "Recently"
+            
+            return {
+                'total_views': total_views,
+                'description': description,
+                'last_updated': last_updated,
+                'url': f"https://www.youtube.com/playlist?list={playlist_id}"
+            }
+            
+        except Exception as e:
+            print(f"Error getting playlist details for {playlist_id}: {e}")
+            return {
+                'total_views': 0,
+                'description': "",
+                'last_updated': "Recently",
+                'url': f"https://www.youtube.com/playlist?list={playlist_id}"
+            }
     

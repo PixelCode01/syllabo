@@ -110,43 +110,57 @@ class EnhancedSyllaboCLI:
             print(f"To see results in terminal, add --print-results flag")
     
     async def search_videos(self, args):
-        """Search for videos for a specific topic"""
+        """Search for videos and playlists for a specific topic"""
         if not args.topic:
             print("Error: Please provide a topic to search for")
             return
         
         start_time = time.time()
-        print(f"Searching videos for: {args.topic}")
+        print(f"Searching videos and playlists for: {args.topic}")
         
         enhanced_query = f"{args.topic} tutorial explained"
         videos = await self.youtube_client.search_videos(enhanced_query, args.max_videos)
+        playlists = await self.youtube_client.search_playlists(enhanced_query, max(2, args.max_videos // 3))
         
-        if not videos:
-            print("No videos found")
+        if not videos and not playlists:
+            print("No videos or playlists found")
             print("Try a different topic name or check your internet connection")
             return
         
-        print(f"Found {len(videos)} videos, analyzing with AI...")
+        print(f"Found {len(videos)} videos and {len(playlists)} playlists, analyzing with AI...")
         
-        analyzed_videos = await self.video_analyzer.analyze_videos(videos, args.topic)
+        analysis_result = await self.video_analyzer.analyze_videos_and_playlists(videos, playlists, args.topic)
         
-        quality_videos = [v for v in analyzed_videos if v.get('relevance_score', 0) >= 3.0]
+        # Extract all resources from the analysis result
+        all_resources = []
         
-        if not quality_videos:
-            print("No high-quality videos found for this topic")
+        # Add primary resource
+        if analysis_result.get('primary_resource'):
+            all_resources.append(analysis_result['primary_resource'])
+        
+        # Add supplementary videos
+        all_resources.extend(analysis_result.get('supplementary_videos', []))
+        
+        # Add supplementary playlists
+        all_resources.extend(analysis_result.get('supplementary_playlists', []))
+        
+        quality_resources = [r for r in all_resources if r.get('relevance_score', 0) >= 3.0]
+        
+        if not quality_resources:
+            print("No high-quality resources found for this topic")
             print("Try refining your topic or search for a broader term")
             return
         
-        topic_results = {args.topic: quality_videos}
+        topic_results = {args.topic: quality_resources}
         
         self.display.print_top_video_recommendations(topic_results, min(args.max_videos, 10))
         self.display.print_quick_links_summary(topic_results)
         
         processing_time = time.time() - start_time
-        self.display.print_completion_summary(1, len(quality_videos), processing_time)
+        self.display.print_completion_summary(1, len(quality_resources), processing_time)
         
         if args.save:
-            await self.save_video_results(quality_videos, args.topic, args.export_format or 'json')
+            await self.save_video_results(quality_resources, args.topic, args.export_format or 'json')
     
     async def _identify_missing_topics(self, syllabus_content: str, found_topics: List[Dict]) -> List[str]:
         """Identify topics that might have been missed by AI extraction"""
@@ -177,11 +191,11 @@ Respond with a simple list, one topic per line, or "None" if no additional topic
             return []
     
     async def search_for_topics_enhanced(self, topics: List[Dict], topic_ids: List[int], max_videos: int) -> Dict[str, List[Dict]]:
-        """Search for videos across all topics"""
+        """Search for videos and playlists across all topics"""
         all_results = {}
 
         with Progress(console=self.console) as progress:
-            task = progress.add_task("[cyan]Searching for videos...", total=len(topics))
+            task = progress.add_task("[cyan]Searching for videos and playlists...", total=len(topics))
 
             for i, (topic, topic_id) in enumerate(zip(topics, topic_ids)):
                 topic_name = topic['name']
@@ -189,22 +203,42 @@ Respond with a simple list, one topic per line, or "None" if no additional topic
 
                 try:
                     enhanced_query = self._enhance_search_query(topic_name, topic.get('subtopics', []))
+                    
+                    # Search both videos and playlists
                     videos = await self.youtube_client.search_videos(enhanced_query, max_videos)
+                    playlists = await self.youtube_client.search_playlists(enhanced_query, max(2, max_videos // 3))
 
-                    if videos:
-                        analyzed_videos = await self.video_analyzer.analyze_videos(videos, topic_name)
-                        quality_videos = [v for v in analyzed_videos if v.get('relevance_score', 0) >= 4.0]
+                    if videos or playlists:
+                        # Use the new comprehensive analysis method
+                        analysis_result = await self.video_analyzer.analyze_videos_and_playlists(videos, playlists, topic_name)
+                        
+                        # Extract all resources from the analysis result
+                        all_resources = []
+                        
+                        # Add primary resource
+                        if analysis_result.get('primary_resource'):
+                            all_resources.append(analysis_result['primary_resource'])
+                        
+                        # Add supplementary videos
+                        all_resources.extend(analysis_result.get('supplementary_videos', []))
+                        
+                        # Add supplementary playlists
+                        all_resources.extend(analysis_result.get('supplementary_playlists', []))
+                        
+                        # Filter for quality
+                        quality_resources = [r for r in all_resources if r.get('relevance_score', 0) >= 4.0]
 
-                        for video in quality_videos:
-                            self.db.save_video(video)
-                            self.db.link_topic_video(topic_id, video['id'], video['relevance_score'])
+                        # Save to database
+                        for resource in quality_resources:
+                            self.db.save_video(resource)  # This method can handle both videos and playlists
+                            self.db.link_topic_video(topic_id, resource['id'], resource['relevance_score'])
 
-                        all_results[topic_name] = quality_videos
+                        all_results[topic_name] = quality_resources
                     else:
                         all_results[topic_name] = []
 
                 except Exception as e:
-                    self.logger.error(f"Failed to search videos for {topic_name}: {e}")
+                    self.logger.error(f"Failed to search resources for {topic_name}: {e}")
                     all_results[topic_name] = []
 
         return all_results

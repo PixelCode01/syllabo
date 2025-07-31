@@ -5,15 +5,17 @@ A comprehensive educational resource finder that helps students discover the bes
 ## Key Features
 
 ### Real-Time Content Discovery
-- **YouTube Video Scraping**: Find relevant educational videos without API keys
+- **YouTube Video & Playlist Scraping**: Find relevant educational videos and playlists without API keys
+- **Comprehensive Resource Discovery**: Automatically detects both individual videos and structured playlists
 - **Course Platform Integration**: Discover courses from Coursera, Udemy, and freeCodeCamp
 - **Syllabus Processing**: Extract topics from complete course syllabi
 - **Multi-Format Input**: Support for text input, file loading, and sample syllabi
 - **Interactive Interface**: User-friendly command-line interface
 
 ### Educational Resource Analysis
-- **Video Scoring System**: Multi-criteria analysis including relevance, quality, and engagement
-- **Learning Path Creation**: Organized recommendations with primary and supplementary content
+- **Intelligent Resource Scoring**: Multi-criteria analysis for both videos and playlists including relevance, quality, and engagement
+- **Smart Learning Path Creation**: Automatically selects between individual videos and comprehensive playlists as primary resources
+- **Playlist Analysis**: Evaluates playlist quality based on video count, total views, and educational value
 - **Resource Categorization**: Free vs paid course filtering and recommendations
 - **Coverage Analysis**: Shows which syllabus topics are well-covered by available resources
 
@@ -242,6 +244,34 @@ Topics Analysis:
 ```
 
 ## Advanced Features
+
+### Playlist Integration
+The system now automatically searches for and analyzes YouTube playlists alongside individual videos:
+
+- **Automatic Playlist Detection**: Searches for educational playlists related to each topic
+- **Playlist Quality Analysis**: Evaluates playlists based on video count, total views, and educational indicators
+- **Smart Resource Selection**: Automatically chooses between individual videos and comprehensive playlists as primary learning resources
+- **Mixed Recommendations**: Provides both individual videos and playlists in results when appropriate
+
+Example output with playlist support:
+```
+Topic: Machine Learning Basics
+------------------------------------------------------------
+
+   1. [PLAYLIST] Complete Machine Learning Course 2024
+      Channel: freeCodeCamp.org
+      URL: https://youtube.com/playlist?list=PLWKjhJtqVAblQe2CCWqV4Zy3LY01Z8aF1
+      Videos: 25 | Total Views: 1,250,000
+      Relevance: 9.5/10 | Overall: 9.2/10
+      Tags: Highly Relevant | Comprehensive Course
+
+   2. [VIDEO] Machine Learning Explained in 10 Minutes
+      Channel: Zach Star
+      URL: https://youtube.com/watch?v=ukzFI9rgwfU
+      Duration: 10:30 | Views: 847,392
+      Relevance: 8.8/10 | Overall: 8.5/10
+      Tags: Highly Relevant | Quick Review
+```
 
 ### Batch Processing
 - Process multiple topics concurrently

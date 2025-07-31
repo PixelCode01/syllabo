@@ -105,15 +105,27 @@ class TerminalDisplay:
     def _print_video_card(self, video: Dict, rank: int):
         """Print a single video card"""
         title = video['title'][:65] + "..." if len(video['title']) > 65 else video['title']
-        print(f"\n   {self.colorize(f'{rank}.', 'bold')} {self.colorize(title, 'white')}")
+        resource_type = video.get('type', 'video')
+        type_indicator = "[PLAYLIST]" if resource_type == 'playlist' else "[VIDEO]"
+        
+        print(f"\n   {self.colorize(f'{rank}.', 'bold')} {self.colorize(type_indicator, 'purple')} {self.colorize(title, 'white')}")
         
         print(f"      Channel: {video['channel']}")
-        video_url = f"https://youtube.com/watch?v={video['id']}"
-        print(f"      URL: {self.colorize(video_url, 'blue')}")
         
-        duration = video.get('duration', 'Unknown')
-        views = video.get('view_count', 0)
-        print(f"      Duration: {duration} | Views: {views:,}")
+        if resource_type == 'playlist':
+            playlist_url = f"https://youtube.com/playlist?list={video['id']}"
+            print(f"      URL: {self.colorize(playlist_url, 'blue')}")
+            
+            video_count = video.get('video_count', 0)
+            total_views = video.get('total_views', 0)
+            print(f"      Videos: {video_count} | Total Views: {total_views:,}")
+        else:
+            video_url = f"https://youtube.com/watch?v={video['id']}"
+            print(f"      URL: {self.colorize(video_url, 'blue')}")
+            
+            duration = video.get('duration', 'Unknown')
+            views = video.get('view_count', 0)
+            print(f"      Duration: {duration} | Views: {views:,}")
         
         relevance = video.get('relevance_score', 0)
         composite = video.get('composite_score', 0)
@@ -124,16 +136,19 @@ class TerminalDisplay:
         print(f"      Relevance: {self.colorize(f'{relevance:.1f}/10', relevance_color)} | "
               f"Overall: {self.colorize(f'{composite:.1f}/10', composite_color)}")
         
-        transcript_status = "Available" if video.get('transcript_available') else "Not available"
-        print(f"      Transcript: {transcript_status}")
+        if resource_type == 'video':
+            transcript_status = "Available" if video.get('transcript_available') else "Not available"
+            print(f"      Transcript: {transcript_status}")
         
         quality_indicators = []
         if video.get('relevance_score', 0) >= 8:
             quality_indicators.append("Highly Relevant")
         if video.get('sentiment_score', 0) >= 7:
             quality_indicators.append("Well Received")
-        if video.get('transcript_available'):
+        if resource_type == 'video' and video.get('transcript_available'):
             quality_indicators.append("Has Transcript")
+        if resource_type == 'playlist' and video.get('video_count', 0) >= 10:
+            quality_indicators.append("Comprehensive Course")
         
         if quality_indicators:
             print(f"      Tags: {' | '.join(quality_indicators)}")
@@ -155,9 +170,18 @@ class TerminalDisplay:
         for topic_name, videos in topic_results.items():
             if videos:
                 top_video = videos[0]
+                resource_type = top_video.get('type', 'video')
+                type_indicator = "[PLAYLIST]" if resource_type == 'playlist' else "[VIDEO]"
+                
                 print(f"\n{self.colorize(topic_name, 'cyan')}")
-                print(f"   Best: {top_video['title'][:50]}...")
-                print(f"   Link: {self.colorize(f'https://youtube.com/watch?v={top_video['id']}', 'blue')}")
+                print(f"   Best: {type_indicator} {top_video['title'][:45]}...")
+                
+                if resource_type == 'playlist':
+                    link = f"https://youtube.com/playlist?list={top_video['id']}"
+                else:
+                    link = f"https://youtube.com/watch?v={top_video['id']}"
+                
+                print(f"   Link: {self.colorize(link, 'blue')}")
                 print(f"   Score: {top_video.get('relevance_score', 0):.1f}/10")
     
     def print_topic_coverage_analysis(self, requested_topics: List[str], 
