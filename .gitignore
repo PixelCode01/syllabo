@@ -72,6 +72,10 @@ logs/
 study_guide_*.json
 syllabo_study_guide_*.json
 
+# Spaced repetition data files
+spaced_repetition.json
+demo_spaced_repetition.json
+
 # Temporary/working files
 *_working.py
 *_new.py
@@ -88,15 +92,21 @@ simple_test.py
 CODING_STYLE_COMPLIANCE.md
 VIDEO_LINKS_FIX.md
 PROJECT_STRUCTURE.md
+OPTIMAL_LEARNING_GUIDE.md
+USAGE_GUIDE.md
 
 # Sample/demo files that are not core functionality
 sample_syllabus.txt
+demo_*.py
+test_*.py
 
-# Legacy/unused components
+# Legacy/unused components and duplicate files
 src/mock_data.py
 src/app.py
 src/terminal_display.py
 src/styles.css
+syllabo_final.py
+run_syllabo.py
 
 # Temporary files
 *.tmp
@@ -125,3 +135,4 @@ coverage.xml
 .kiro/cache/
 .kiro/temp/
 .kiro/
+coding-style.md

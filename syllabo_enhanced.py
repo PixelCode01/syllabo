@@ -19,7 +19,7 @@ from src.ai_client import AIClient
 from src.video_analyzer import VideoAnalyzer
 from src.database import SyllaboDatabase
 from src.logger import SyllaboLogger
-from src.terminal_display import TerminalDisplay
+
 from src.spaced_repetition import SpacedRepetitionEngine
 from src.notification_system import NotificationSystem
 
@@ -37,7 +37,7 @@ class EnhancedSyllaboCLI:
         self.youtube_client = YouTubeClient()
         self.video_analyzer = VideoAnalyzer(self.ai_client)
         self.syllabus_parser = SyllabusParser()
-        self.display = TerminalDisplay()
+
         self.console = Console()
         self.spaced_repetition = SpacedRepetitionEngine()
         self.notifications = NotificationSystem()
@@ -85,7 +85,10 @@ class EnhancedSyllaboCLI:
         
         missing_topics = await self._identify_missing_topics(syllabus_content, topics)
         
-        self.display.print_topic_analysis_summary(topics, missing_topics, syllabus_title)
+        print(f"\nTopic Analysis Summary for: {syllabus_title}")
+        print(f"Found {len(topics)} topics")
+        if missing_topics:
+            print(f"Potentially missed topics: {', '.join(missing_topics[:3])}")
         
         if not topics:
             print("No clear topics found. Try refining your syllabus content.")
@@ -99,15 +102,11 @@ class EnhancedSyllaboCLI:
             topic_results = await self.search_for_topics_enhanced(topics, topic_ids, args.max_videos)
             
             if args.print_results:
-                self.display.print_top_video_recommendations(topic_results, args.max_videos)
-                self.display.print_quick_links_summary(topic_results)
-                
-                topic_names = [t['name'] for t in topics]
-                self.display.print_topic_coverage_analysis(topic_names, topic_results)
+                self.print_video_results(topic_results, args.max_videos)
             
             total_videos = sum(len(videos) for videos in topic_results.values())
             processing_time = time.time() - start_time
-            self.display.print_completion_summary(len(topics), total_videos, processing_time)
+            print(f"\nCompleted analysis: {len(topics)} topics, {total_videos} videos found in {processing_time:.1f}s")
             
             if args.save or args.export_format:
                 await self.save_comprehensive_results(topic_results, syllabus_title, args.export_format or 'json')
@@ -167,11 +166,10 @@ class EnhancedSyllaboCLI:
         
         topic_results = {args.topic: quality_resources}
         
-        self.display.print_top_video_recommendations(topic_results, min(args.max_videos, 10))
-        self.display.print_quick_links_summary(topic_results)
+        self.print_video_results(topic_results, min(args.max_videos, 10))
         
         processing_time = time.time() - start_time
-        self.display.print_completion_summary(1, len(quality_resources), processing_time)
+        print(f"\nCompleted search: 1 topic, {len(quality_resources)} videos found in {processing_time:.1f}s")
         
         if args.save:
             await self.save_video_results(quality_resources, args.topic, args.export_format or 'json')
@@ -435,6 +433,30 @@ Respond with a simple list, one topic per line, or "None" if no additional topic
             return
 
         await self.save_comprehensive_results(topic_results, syllabus['title'], args.format)
+    
+    def print_video_results(self, topic_results: Dict[str, List[Dict]], max_videos: int):
+        """Print video results in a clean format"""
+        print("\nTop Video Recommendations:")
+        print("=" * 60)
+        
+        for topic_name, videos in topic_results.items():
+            if not videos:
+                continue
+                
+            print(f"\nTopic: {topic_name}")
+            print("-" * 50)
+            
+            for i, video in enumerate(videos[:max_videos], 1):
+                title = video.get('title', 'Unknown Title')[:60]
+                channel = video.get('channel', 'Unknown Channel')
+                score = video.get('relevance_score', 0)
+                url = f"https://youtube.com/watch?v={video.get('id', '')}"
+                
+                print(f"{i}. {title}")
+                print(f"   Channel: {channel}")
+                print(f"   Score: {score:.1f}/10")
+                print(f"   URL: {url}")
+                print()
     
     def add_topics_to_spaced_repetition(self, topics: List[Dict]):
         """Add extracted topics to spaced repetition system"""

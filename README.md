@@ -49,23 +49,28 @@ cp .env.example .env
 ```
 
 ### Basic Usage
+
+**Main Application (Recommended):**
 ```bash
-# Interactive syllabus processor with real course scraping
-python interactive_scraper.py
-
-# Main application with full features
-python syllabo_final.py
-
-# Enhanced CLI interface with spaced repetition
-python syllabo_enhanced.py analyze --file syllabus.pdf --add-to-review
-
-# Standalone spaced repetition tool
-python forgetmenot.py add "Neural Networks" -d "Forward and backward pass"
-python forgetmenot.py list --urgent
-
-# Run syllabo with simple interface
-python run_syllabo.py
+# Full-featured CLI with spaced repetition
+python syllabo_enhanced.py analyze --file syllabus.pdf --search-videos --add-to-review --print-results
 ```
+
+**Quick Spaced Repetition:**
+```bash
+# Standalone spaced repetition tool
+forgetmenot add "Neural Networks" -d "Forward and backward pass"
+forgetmenot list --urgent
+forgetmenot review "Neural Networks" --success
+```
+
+**Interactive Interface:**
+```bash
+# User-friendly interactive interface
+python interactive_scraper.py
+```
+
+See [USAGE.md](USAGE.md) for detailed usage instructions.
 
 ## Interactive Scraper Usage
 
@@ -136,30 +141,20 @@ Each video receives multiple scores:
 
 ```
 syllabo/
-├── src/
-│   ├── ai_client.py          # AI client for enhanced features
-│   ├── app.py               # Terminal UI application
-│   ├── database.py          # SQLite database management
-│   ├── export_system.py     # Multi-format export system
-│   ├── feedback_system.py   # User feedback and ratings
-│   ├── logger.py            # Comprehensive logging
-│   ├── notes_generator.py   # Study materials generator
-│   ├── notification_system.py # Desktop notification system
-│   ├── optimal_learning_engine.py  # Learning optimization
+├── syllabo_enhanced.py      # Main CLI application (RECOMMENDED)
+├── forgetmenot.py          # Standalone spaced repetition CLI
+├── interactive_scraper.py  # Interactive syllabus processor
+├── src/                    # Core modules (don't run directly)
+│   ├── ai_client.py        # AI integration
+│   ├── database.py         # Database management
+│   ├── export_system.py    # Export functionality
 │   ├── spaced_repetition.py # Spaced repetition engine
-│   ├── syllabus_parser.py   # PDF/text parsing
-│   ├── utils.py             # Utility functions
-│   ├── video_analyzer.py    # Video analysis and scoring
-│   └── youtube_client.py    # YouTube scraping client
-├── forgetmenot.py           # Standalone spaced repetition CLI
-├── interactive_scraper.py   # Main interactive syllabus processor
-├── syllabo_final.py         # Complete application
-├── syllabo_enhanced.py      # Enhanced CLI interface with spaced repetition
-├── run_syllabo.py          # Simple runner script
-├── requirements.txt         # Python dependencies
-├── sample_syllabus.txt     # Example syllabus for testing
-├── SPACED_REPETITION_GUIDE.md # Comprehensive spaced repetition guide
-└── README.md               # This documentation
+│   ├── notification_system.py # Desktop notifications
+│   └── ... (other core modules)
+├── requirements.txt        # Python dependencies
+├── README.md              # Project overview
+├── USAGE.md               # Usage instructions
+└── SPACED_REPETITION_GUIDE.md # Spaced repetition guide
 ```
 
 ## Study Materials Generation
