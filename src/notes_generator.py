@@ -6,6 +6,40 @@ class NotesGenerator:
     def __init__(self, ai_client: AIClient):
         self.ai_client = ai_client
     
+    async def generate_optimal_study_materials(self, learning_path: Dict) -> Dict:
+        """Generate study materials using the optimal learning path"""
+        topic = learning_path['topic']
+        primary_video = learning_path['primary_video']
+        supplementary_videos = learning_path['supplementary_videos']
+        
+        if not primary_video:
+            return {
+                'topic': topic,
+                'error': 'No videos available for this topic',
+                'materials': {}
+            }
+        
+        primary_materials = await self.generate_study_notes(topic, primary_video, None)
+        
+        supplementary_materials = []
+        for video in supplementary_videos:
+            materials = await self.generate_study_notes(topic, video, None)
+            materials['coverage_type'] = video.get('coverage_type', 'supplementary')
+            supplementary_materials.append(materials)
+        
+        study_guide = await self._create_comprehensive_guide(
+            topic, primary_materials, supplementary_materials, learning_path
+        )
+        
+        return {
+            'topic': topic,
+            'learning_strategy': learning_path['learning_strategy'],
+            'primary_materials': primary_materials,
+            'supplementary_materials': supplementary_materials,
+            'comprehensive_guide': study_guide,
+            'coverage_analysis': learning_path['coverage_analysis']
+        }
+    
     async def generate_study_notes(self, topic: str, video_data: Dict, transcript: Optional[str] = None) -> Dict:
         """Generate comprehensive study notes for a topic and video"""
         
@@ -262,4 +296,185 @@ Keep it concise and focused on learning outcomes."""
                     "Progress to intermediate concepts",
                     "Practice with advanced examples"
                 ]
-            }
+            }  
+  async def _create_comprehensive_guide(self, topic: str, primary_materials: Dict, 
+                                        supplementary_materials: List[Dict], learning_path: Dict) -> Dict:
+        """Create a comprehensive study guide combining all materials"""
+        
+        # Combine all key concepts
+        all_concepts = primary_materials.get('key_concepts', [])
+        for materials in supplementary_materials:
+            all_concepts.extend(materials.get('key_concepts', []))
+        
+        # Remove duplicates while preserving order
+        unique_concepts = []
+        seen = set()
+        for concept in all_concepts:
+            if concept.lower() not in seen:
+                unique_concepts.append(concept)
+                seen.add(concept.lower())
+        
+        # Create study plan
+        study_plan = self._create_study_plan(learning_path)
+        
+        # Generate comprehensive questions
+        comprehensive_questions = await self._generate_comprehensive_questions(
+            topic, primary_materials, supplementary_materials
+        )
+        
+        return {
+            'study_plan': study_plan,
+            'key_concepts_summary': unique_concepts[:10],
+            'comprehensive_questions': comprehensive_questions,
+            'learning_objectives': self._extract_learning_objectives(topic, primary_materials, supplementary_materials),
+            'study_tips': self._generate_advanced_study_tips(topic, learning_path)
+        }
+    
+    def _create_study_plan(self, learning_path: Dict) -> List[Dict]:
+        """Create a structured study plan"""
+        plan = []
+        coverage = learning_path.get('coverage_analysis', {})
+        
+        for i, item in enumerate(coverage.get('recommended_study_order', []), 1):
+            video = item['video']
+            plan.append({
+                'step': i,
+                'video_title': video['title'],
+                'video_id': video['id'],
+                'purpose': item['purpose'],
+                'duration_minutes': item['duration_minutes'],
+                'focus_areas': self._get_focus_areas(video),
+                'study_method': self._recommend_study_method(video, item['purpose'])
+            })
+        
+        return plan
+    
+    def _get_focus_areas(self, video: Dict) -> List[str]:
+        """Extract focus areas from video"""
+        title_lower = video['title'].lower()
+        focus_areas = []
+        
+        if any(word in title_lower for word in ['concept', 'theory', 'principle']):
+            focus_areas.append('Understand core concepts')
+        
+        if any(word in title_lower for word in ['example', 'practice', 'problem']):
+            focus_areas.append('Work through examples')
+        
+        if any(word in title_lower for word in ['application', 'real world', 'use case']):
+            focus_areas.append('Learn practical applications')
+        
+        if any(word in title_lower for word in ['advanced', 'complex', 'detailed']):
+            focus_areas.append('Master advanced topics')
+        
+        return focus_areas if focus_areas else ['General understanding']
+    
+    def _recommend_study_method(self, video: Dict, purpose: str) -> str:
+        """Recommend study method based on video type"""
+        if 'Foundation' in purpose:
+            return 'Watch actively, take detailed notes, pause to reflect'
+        elif 'Practice' in purpose:
+            return 'Follow along, try examples yourself, practice similar problems'
+        elif 'Review' in purpose:
+            return 'Quick watch for reinforcement, focus on key points'
+        elif 'Tutorial' in purpose:
+            return 'Follow step-by-step, implement alongside the video'
+        elif 'Advanced' in purpose:
+            return 'Watch carefully, connect to foundation concepts, take notes'
+        else:
+            return 'Watch attentively, relate to main topic, note new insights'
+    
+    async def _generate_comprehensive_questions(self, topic: str, primary_materials: Dict, 
+                                              supplementary_materials: List[Dict]) -> List[str]:
+        """Generate questions that span all materials"""
+        
+        # Collect all existing questions
+        all_questions = primary_materials.get('questions', [])
+        for materials in supplementary_materials:
+            all_questions.extend(materials.get('questions', []))
+        
+        # Generate synthesis questions
+        synthesis_prompt = f"""Based on comprehensive study of "{topic}" from multiple sources, create 5 synthesis questions that:
+- Connect concepts across different videos
+- Test deep understanding
+- Encourage critical thinking
+- Help identify knowledge gaps
+
+Topic: {topic}
+Number of sources: {1 + len(supplementary_materials)}
+
+Generate questions that go beyond individual video content."""
+
+        try:
+            response = await self.ai_client.get_completion(synthesis_prompt)
+            synthesis_questions = []
+            
+            for line in response.split('\n'):
+                line = line.strip()
+                if line and ('?' in line or line.lower().startswith(('what', 'how', 'why', 'explain', 'compare', 'analyze'))):
+                    clean_question = line.lstrip('•-*123456789. ')
+                    if not clean_question.endswith('?') and not clean_question.lower().startswith(('explain', 'describe', 'compare', 'analyze')):
+                        clean_question += '?'
+                    synthesis_questions.append(clean_question)
+            
+            # Combine with best individual questions
+            selected_individual = all_questions[:8]  # Top 8 individual questions
+            comprehensive = synthesis_questions[:5] + selected_individual
+            
+            return comprehensive[:12]  # Limit total questions
+            
+        except Exception as e:
+            return all_questions[:10]  # Fallback to existing questions
+    
+    def _extract_learning_objectives(self, topic: str, primary_materials: Dict, 
+                                   supplementary_materials: List[Dict]) -> List[str]:
+        """Extract comprehensive learning objectives"""
+        objectives = [
+            f"Master fundamental {topic} concepts through comprehensive video study",
+            f"Apply {topic} knowledge through practical examples and exercises",
+            f"Synthesize information from multiple sources for deeper understanding"
+        ]
+        
+        # Add specific objectives based on coverage types
+        coverage_types = set()
+        for materials in supplementary_materials:
+            coverage_type = materials.get('coverage_type', '')
+            coverage_types.add(coverage_type)
+        
+        if 'practice_examples' in coverage_types:
+            objectives.append(f"Solve {topic} problems using demonstrated techniques")
+        
+        if 'deep_dive' in coverage_types:
+            objectives.append(f"Analyze advanced {topic} concepts in detail")
+        
+        if 'practical_tutorial' in coverage_types:
+            objectives.append(f"Implement {topic} solutions step-by-step")
+        
+        return objectives[:5]
+    
+    def _generate_advanced_study_tips(self, topic: str, learning_path: Dict) -> List[str]:
+        """Generate advanced study tips based on learning path"""
+        base_tips = [
+            f"Start with the primary video to build a solid {topic} foundation",
+            "Take breaks between videos to process and consolidate information",
+            "Use supplementary videos to fill knowledge gaps and reinforce learning"
+        ]
+        
+        strategy = learning_path.get('learning_strategy', '')
+        total_time = learning_path.get('coverage_analysis', {}).get('estimated_study_time', 0)
+        
+        if strategy == 'comprehensive_primary':
+            base_tips.append("The primary video provides excellent coverage - focus on understanding it thoroughly")
+        
+        if total_time > 60:
+            base_tips.append("Break study sessions into 30-45 minute chunks with breaks")
+        
+        if len(learning_path.get('supplementary_videos', [])) > 2:
+            base_tips.append("Use supplementary videos strategically - don't try to watch everything at once")
+        
+        base_tips.extend([
+            "Create connections between concepts from different videos",
+            "Test your understanding with the provided questions after each video",
+            "Review key concepts regularly to improve retention"
+        ])
+        
+        return base_tips[:7]

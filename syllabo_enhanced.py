@@ -21,6 +21,11 @@ from src.database import SyllaboDatabase
 from src.logger import SyllaboLogger
 from src.terminal_display import TerminalDisplay
 
+from rich.console import Console
+from rich.panel import Panel
+
+from rich.progress import Progress
+
 class EnhancedSyllaboCLI: 
     def __init__(self):
         load_dotenv()
@@ -31,9 +36,10 @@ class EnhancedSyllaboCLI:
         self.video_analyzer = VideoAnalyzer(self.ai_client)
         self.syllabus_parser = SyllabusParser()
         self.display = TerminalDisplay()
+        self.console = Console()
     
     def print_banner(self):
-        self.display.print_banner("SYLLABO ENHANCED")
+        self.console.print(Panel.fit("[bold cyan]SYLLABO ENHANCED[/bold cyan]", subtitle="AI-Powered YouTube Video Finder"))
     
     async def run(self, args):
         self.print_banner()
@@ -173,42 +179,34 @@ Respond with a simple list, one topic per line, or "None" if no additional topic
     async def search_for_topics_enhanced(self, topics: List[Dict], topic_ids: List[int], max_videos: int) -> Dict[str, List[Dict]]:
         """Search for videos across all topics"""
         all_results = {}
-        
-        for i, (topic, topic_id) in enumerate(zip(topics, topic_ids)):
-            topic_name = topic['name']
-            
-            self.display.print_video_search_progress(i + 1, len(topics), topic_name)
-            
-            try:
-                enhanced_query = self._enhance_search_query(topic_name, topic.get('subtopics', []))
-                videos = await self.youtube_client.search_videos(enhanced_query, max_videos)
-                
-                if videos:
-                    print(f"   Found {len(videos)} videos, analyzing relevance...")
-                    analyzed_videos = await self.video_analyzer.analyze_videos(videos, topic_name)
-                    
-                    quality_videos = [v for v in analyzed_videos if v.get('relevance_score', 0) >= 4.0]
-                    
-                    for video in quality_videos:
-                        self.db.save_video(video)
-                        self.db.link_topic_video(topic_id, video['id'], video['relevance_score'])
-                    
-                    all_results[topic_name] = quality_videos
-                    
-                    if quality_videos:
-                        top_video = quality_videos[0]
-                        print(f"   Top result: {top_video['title'][:50]}... (Relevance: {top_video['relevance_score']:.1f}/10)")
+
+        with Progress(console=self.console) as progress:
+            task = progress.add_task("[cyan]Searching for videos...", total=len(topics))
+
+            for i, (topic, topic_id) in enumerate(zip(topics, topic_ids)):
+                topic_name = topic['name']
+                progress.update(task, advance=1, description=f"Searching for: {topic_name}")
+
+                try:
+                    enhanced_query = self._enhance_search_query(topic_name, topic.get('subtopics', []))
+                    videos = await self.youtube_client.search_videos(enhanced_query, max_videos)
+
+                    if videos:
+                        analyzed_videos = await self.video_analyzer.analyze_videos(videos, topic_name)
+                        quality_videos = [v for v in analyzed_videos if v.get('relevance_score', 0) >= 4.0]
+
+                        for video in quality_videos:
+                            self.db.save_video(video)
+                            self.db.link_topic_video(topic_id, video['id'], video['relevance_score'])
+
+                        all_results[topic_name] = quality_videos
                     else:
-                        print(f"   No high-quality videos found (all below 4.0 relevance)")
-                else:
-                    print(f"   No videos found")
+                        all_results[topic_name] = []
+
+                except Exception as e:
+                    self.logger.error(f"Failed to search videos for {topic_name}: {e}")
                     all_results[topic_name] = []
-                    
-            except Exception as e:
-                self.logger.error(f"Failed to search videos for {topic_name}: {e}")
-                print(f"   Error searching for {topic_name}: {str(e)}")
-                all_results[topic_name] = []
-        
+
         return all_results
     
     def _enhance_search_query(self, topic_name: str, subtopics: List[str]) -> str:
@@ -340,23 +338,55 @@ Respond with a simple list, one topic per line, or "None" if no additional topic
     
     def show_history(self, args):
         """Show recent syllabi and searches"""
-        print("\nRecent Syllabi:")
-        print("-" * 50)
-        
+        self.console.print("[bold]Recent Syllabi[/bold]")
         recent_syllabi = self.db.get_recent_syllabi(args.limit)
-        
+
         if not recent_syllabi:
-            print("No syllabi found in database")
+            self.console.print("No syllabi found in database")
             return
-        
-        for i, syllabus in enumerate(recent_syllabi, 1):
-            print(f"{i}. {syllabus['title']}")
-            print(f"   Created: {syllabus['created_at']}")
-            print()
+
+        table = Table(show_header=True, header_style="bold magenta")
+        table.add_column("ID", style="dim", width=6)
+        table.add_column("Title")
+        table.add_column("Created At", justify="right")
+
+        for syllabus in recent_syllabi:
+            table.add_row(
+                str(syllabus['id']),
+                syllabus['title'],
+                syllabus['created_at']
+            )
+        self.console.print(table)
     
     async def export_results(self, args):
-        """Export results in various formats"""
-        print("Export functionality coming soon...")
+        """Export results for a given syllabus ID"""
+        if not args.syllabus_id:
+            print("Error: Please provide a syllabus ID to export.")
+            self.show_history(argparse.Namespace(limit=5))
+            return
+
+        print(f"Exporting results for syllabus ID: {args.syllabus_id}")
+        syllabus = self.db.get_syllabus_by_id(args.syllabus_id)
+        if not syllabus:
+            print(f"Error: Syllabus with ID {args.syllabus_id} not found.")
+            return
+
+        topics = self.db.get_topics_by_syllabus_id(args.syllabus_id)
+        if not topics:
+            print(f"No topics found for syllabus: {syllabus['title']}")
+            return
+
+        topic_results = {}
+        for topic in topics:
+            videos = self.db.get_topic_videos(topic['id'])
+            if videos:
+                topic_results[topic['name']] = videos
+
+        if not topic_results:
+            print("No video results found for this syllabus.")
+            return
+
+        await self.save_comprehensive_results(topic_results, syllabus['title'], args.format)
     
     def show_help(self):
         """Show help information"""
@@ -412,6 +442,7 @@ def main():
     export_parser = subparsers.add_parser('export', help='Export results in various formats')
     export_parser.add_argument('--format', choices=['csv', 'json', 'markdown', 'html'], 
                               default='json', help='Export format')
+    export_parser.add_argument('--syllabus-id', type=int, help='Syllabus ID to export')
     
     args = parser.parse_args()
     

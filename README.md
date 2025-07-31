@@ -1,42 +1,27 @@
-# Syllabo Enhanced
+# Syllabo
 
-An AI-powered Python application that helps students find the most relevant YouTube videos for their course syllabus topics. Works without YouTube API keys using web scraping and includes AI-generated study materials.
+A comprehensive educational resource finder that helps students discover the best learning materials for their course syllabus. Features real-time YouTube video scraping and educational course discovery from major platforms like Coursera, Udemy, and freeCodeCamp.
 
 ## Key Features
 
-### AI-Powered Analysis
-- **Smart Topic Extraction**: AI extracts topics and subtopics from syllabus text/PDF
-- **Multi-Criteria Video Scoring**: Relevance, quality, engagement, and sentiment analysis
-- **Study Materials Generation**: AI creates personalized notes, questions, and key concepts
-- **No API Keys Required**: Works without YouTube API using web scraping
-- **Intelligent Caching**: Reduces API calls and improves performance
-- **Enhanced Error Handling**: Graceful degradation when services are unavailable
+### Real-Time Content Discovery
+- **YouTube Video Scraping**: Find relevant educational videos without API keys
+- **Course Platform Integration**: Discover courses from Coursera, Udemy, and freeCodeCamp
+- **Syllabus Processing**: Extract topics from complete course syllabi
+- **Multi-Format Input**: Support for text input, file loading, and sample syllabi
+- **Interactive Interface**: User-friendly command-line interface
 
-### Comprehensive Video Analysis & Study Materials
-- **Relevance Scoring**: How well videos match your topics (1-10 scale)
-- **Quality Assessment**: Duration, view count, like ratio analysis
-- **Engagement Metrics**: Comment analysis and interaction rates
-- **Sentiment Analysis**: AI analyzes comments for educational value
-- **Study Notes Generation**: AI creates concise study notes from video content
-- **Practice Questions**: Generates review questions to test understanding
-- **Key Concepts Extraction**: Identifies important terms and concepts
-- **Study Tips**: Provides personalized learning recommendations
+### Educational Resource Analysis
+- **Video Scoring System**: Multi-criteria analysis including relevance, quality, and engagement
+- **Learning Path Creation**: Organized recommendations with primary and supplementary content
+- **Resource Categorization**: Free vs paid course filtering and recommendations
+- **Coverage Analysis**: Shows which syllabus topics are well-covered by available resources
 
-### Data Persistence
-- **SQLite Database**: Stores syllabi, topics, videos, and user feedback
-- **Search History**: Track and revisit previous analyses
-- **User Feedback System**: Rate videos and improve recommendations
-
-### Multiple Export Formats
-- **JSON**: Structured data for further processing
-- **CSV**: Spreadsheet-compatible format
-- **Markdown**: Human-readable documentation
-- **HTML**: Beautiful web reports with styling
-
-### Multiple Interfaces
-- **Enhanced CLI**: Advanced command-line interface with rich features
-- **Terminal UI**: Interactive textual interface (original)
-- **Comprehensive Logging**: Detailed logs for debugging and monitoring
+### Professional Output
+- **Clean Interface**: Professional, emoji-free output following coding standards
+- **Comprehensive Results**: Detailed analysis with direct links to courses and videos
+- **Resource Recommendations**: Books, courses, documentation, and community resources
+- **Export Options**: Multiple output formats for different use cases
 
 ## Quick Start
 
@@ -56,69 +41,53 @@ cp .env.example .env
 
 ### Basic Usage
 ```bash
-# Demo without API keys - shows web scraping and study materials
-python demo_no_api.py
+# Interactive syllabus processor with real course scraping
+python interactive_scraper.py
 
-# Simple CLI with study materials generation
-python syllabo_cli.py
+# Main application with full features
+python syllabo_final.py
 
-# Test the new features
-python test_new_cli.py
+# Enhanced CLI interface
+python syllabo_enhanced.py
 
-# Enhanced CLI with full features
-python syllabo_enhanced.py analyze --file syllabus.pdf --search-videos --print-results
-
-# Search specific topic and save results
-python syllabo_enhanced.py search --topic "Machine Learning" --max-videos 10 --save --export-format html
+# Run syllabo with simple interface
+python run_syllabo.py
 ```
 
-## Enhanced CLI Usage
+## Interactive Scraper Usage
 
-### Analyze Syllabus
+The main feature is the interactive syllabus processor that finds real educational resources:
+
+### Input Methods
+1. **Enter syllabus text directly** - Type or paste your syllabus content
+2. **Load syllabus from file** - Import from text or PDF files
+3. **Use sample syllabus** - Try with built-in example
+4. **Quick demo** - Test with a single topic
+5. **Exit** - Clean exit option
+
+### Resource Discovery
+- **YouTube Videos**: Real-time scraping of educational videos
+- **Coursera Courses**: Live course search with direct links
+- **Udemy Courses**: Current course listings with pricing
+- **freeCodeCamp**: Direct links to certification programs
+- **Additional Resources**: Documentation, tutorials, and community resources
+
+### Resource Filtering
+- **Free resources only** - Focus on no-cost learning materials
+- **Paid resources only** - Premium courses and content
+- **Both free and paid** - Complete resource overview
+
+## No API Keys Required
+
+The application works completely without API keys by using web scraping to fetch real data from:
+- **YouTube**: Video search and metadata extraction
+- **Coursera**: Course listings and information
+- **Udemy**: Course search and pricing data
+- **freeCodeCamp**: Curriculum and certification links
+
+### Optional Environment Variables (.env)
 ```bash
-# Complete analysis with terminal display and HTML export
-python syllabo_enhanced.py analyze --file syllabus.pdf --search-videos --print-results --save --export-format html
-
-# From text input with detailed results
-python syllabo_enhanced.py analyze --text "Week 1: AI Basics, Week 2: ML..." --search-videos --print-results
-
-# Quick topic extraction only
-python syllabo_enhanced.py analyze --file syllabus.txt
-
-# Analyze with custom video limits
-python syllabo_enhanced.py analyze --file syllabus.pdf --search-videos --max-videos 8 --print-results
-```
-
-### Search Videos for Specific Topics
-```bash
-# Search for specific topic
-python syllabo_enhanced.py search --topic "Machine Learning" --max-videos 10 --save
-
-# Search with custom parameters
-python syllabo_enhanced.py search --topic "Data Structures" --max-videos 15
-```
-
-### View History and Export
-```bash
-# View recent syllabi
-python syllabo_enhanced.py history --limit 10
-
-# Export results (coming soon)
-python syllabo_enhanced.py export --format html
-```
-
-## API Requirements
-
-### No API Keys Required for Basic Functionality
-The app now works without any API keys by using web scraping to fetch real YouTube data.
-
-### Optional (for Enhanced Features)
-- **Gemini API**: For enhanced AI analysis (falls back to Hack Club AI if not provided)
-- **YouTube Data API**: For additional metadata (app works without it)
-
-### Environment Variables (.env)
-```bash
-# Optional - app works without these
+# Optional - for enhanced AI features in other components
 GEMINI_API_KEY="your_gemini_api_key_here_optional"
 YOUTUBE_API_KEY="your_youtube_api_key_here_optional"
 ```
@@ -155,24 +124,25 @@ Each video receives multiple scores:
 ```
 syllabo/
 ├── src/
-│   ├── ai_client.py          # Enhanced AI client with caching
-│   ├── app.py               # Original terminal UI
+│   ├── ai_client.py          # AI client for enhanced features
+│   ├── app.py               # Terminal UI application
 │   ├── database.py          # SQLite database management
 │   ├── export_system.py     # Multi-format export system
 │   ├── feedback_system.py   # User feedback and ratings
 │   ├── logger.py            # Comprehensive logging
-│   ├── notes_generator.py   # AI-powered study materials generator
-│   ├── syllabus_parser.py   # PDF/text parsing with AI
+│   ├── notes_generator.py   # Study materials generator
+│   ├── optimal_learning_engine.py  # Learning optimization
+│   ├── syllabus_parser.py   # PDF/text parsing
 │   ├── utils.py             # Utility functions
-│   ├── video_analyzer.py    # Enhanced video analysis
-│   └── youtube_client.py    # Web scraping YouTube client (no API needed)
-├── main.py                  # Original entry point
-├── syllabo_cli.py           # Simple CLI with study materials
+│   ├── video_analyzer.py    # Video analysis and scoring
+│   └── youtube_client.py    # YouTube scraping client
+├── interactive_scraper.py   # Main interactive syllabus processor
+├── syllabo_final.py         # Complete application
 ├── syllabo_enhanced.py      # Enhanced CLI interface
-├── demo_no_api.py          # Demo without API keys
-├── test_new_cli.py         # Test new features
+├── run_syllabo.py          # Simple runner script
 ├── requirements.txt         # Python dependencies
-└── README.md               # This file
+├── sample_syllabus.txt     # Example syllabus for testing
+└── README.md               # This documentation
 ```
 
 ## Study Materials Generation

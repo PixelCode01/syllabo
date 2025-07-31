@@ -12,7 +12,7 @@ class VideoAnalyzer:
         self.feedback_system = FeedbackSystem()
         self.logger = SyllaboLogger("video_analyzer")
     
-    async def analyze_videos(self, videos: List[Dict], topic: str) -> List[Dict]:
+    async def analyze_videos(self, videos: List[Dict], topic: str) -> Dict:
         self.logger.info(f"Analyzing {len(videos)} videos for topic: {topic}")
         analyzed_videos = []
         
@@ -37,7 +37,9 @@ class VideoAnalyzer:
         # Sort by composite score
         analyzed_videos = sorted(analyzed_videos, key=lambda x: x['composite_score'], reverse=True)
         self.logger.info(f"Analysis complete. Top video: {analyzed_videos[0]['title'] if analyzed_videos else 'None'}")
-        return analyzed_videos
+        
+        # Apply optimal learning strategy
+        return self._create_optimal_learning_path(analyzed_videos, topic)
     
     async def _analyze_single_video(self, video: Dict, topic: str) -> Dict:
         """Analyze a single video with comprehensive scoring"""
@@ -255,6 +257,143 @@ Respond with only a number between 1 and 10."""
         )
         
         return round(composite, 2)
+    
+    def _create_optimal_learning_path(self, analyzed_videos: List[Dict], topic: str) -> Dict:
+        """Create optimal learning path with primary video and supplements"""
+        if not analyzed_videos:
+            return {
+                'topic': topic,
+                'primary_video': None,
+                'supplementary_videos': [],
+                'coverage_analysis': {},
+                'learning_strategy': 'no_videos_found'
+            }
+        
+        primary_candidates = []
+        for video in analyzed_videos[:5]:
+            duration_minutes = self._parse_duration_to_minutes(video.get('duration', '0:00'))
+            if (video['relevance_score'] >= 7.0 and 
+                15 <= duration_minutes <= 90 and 
+                video['composite_score'] >= 7.0):
+                primary_candidates.append(video)
+        
+        if primary_candidates:
+            primary_video = primary_candidates[0]
+            strategy = 'comprehensive_primary'
+        else:
+            primary_video = analyzed_videos[0]
+            strategy = 'best_available_primary'
+        
+        supplementary = []
+        for video in analyzed_videos[1:6]:
+            if (video['id'] != primary_video['id'] and 
+                video['relevance_score'] >= 6.0 and
+                video['composite_score'] >= 6.0):
+                
+                video['coverage_type'] = self._determine_coverage_type(video, primary_video, topic)
+                supplementary.append(video)
+        
+        coverage_analysis = self._analyze_topic_coverage(primary_video, supplementary, topic)
+        
+        return {
+            'topic': topic,
+            'primary_video': primary_video,
+            'supplementary_videos': supplementary[:3],
+            'coverage_analysis': coverage_analysis,
+            'learning_strategy': strategy,
+            'total_videos': len([primary_video] + supplementary[:3])
+        }
+    
+    def _determine_coverage_type(self, video: Dict, primary_video: Dict, topic: str) -> str:
+        """Determine what type of coverage this video provides"""
+        duration_minutes = self._parse_duration_to_minutes(video.get('duration', '0:00'))
+        title_lower = video['title'].lower()
+        
+        if duration_minutes <= 15:
+            if any(word in title_lower for word in ['example', 'practice', 'problem', 'exercise']):
+                return 'practice_examples'
+            elif any(word in title_lower for word in ['quick', 'summary', 'overview', 'intro']):
+                return 'quick_review'
+            else:
+                return 'focused_concept'
+        
+        elif 15 < duration_minutes <= 45:
+            if any(word in title_lower for word in ['advanced', 'deep', 'detailed', 'complete']):
+                return 'deep_dive'
+            elif any(word in title_lower for word in ['tutorial', 'how to', 'step by step']):
+                return 'practical_tutorial'
+            else:
+                return 'concept_explanation'
+        
+        else:
+            return 'comprehensive_alternative'
+    
+    def _analyze_topic_coverage(self, primary_video: Dict, supplementary_videos: List[Dict], topic: str) -> Dict:
+        """Analyze what aspects of the topic are covered"""
+        coverage = {
+            'primary_covers': self._extract_coverage_keywords(primary_video, topic),
+            'gaps_filled_by_supplements': [],
+            'recommended_study_order': [],
+            'estimated_study_time': 0
+        }
+        
+        # Calculate study time
+        primary_duration = self._parse_duration_to_minutes(primary_video.get('duration', '0:00'))
+        coverage['estimated_study_time'] = primary_duration
+        
+        # Build study order
+        coverage['recommended_study_order'].append({
+            'video': primary_video,
+            'purpose': 'Foundation - Start here for comprehensive overview',
+            'duration_minutes': primary_duration
+        })
+        
+        for video in supplementary_videos:
+            duration = self._parse_duration_to_minutes(video.get('duration', '0:00'))
+            coverage['estimated_study_time'] += duration
+            
+            purpose_map = {
+                'practice_examples': 'Practice - Apply concepts with examples',
+                'quick_review': 'Review - Quick reinforcement of key points',
+                'focused_concept': 'Deep Focus - Specific concept explanation',
+                'deep_dive': 'Advanced - Detailed exploration of concepts',
+                'practical_tutorial': 'Tutorial - Step-by-step implementation',
+                'concept_explanation': 'Explanation - Alternative perspective',
+                'comprehensive_alternative': 'Alternative - Different comprehensive approach'
+            }
+            
+            coverage['recommended_study_order'].append({
+                'video': video,
+                'purpose': purpose_map.get(video.get('coverage_type', ''), 'Supplementary content'),
+                'duration_minutes': duration
+            })
+        
+        return coverage
+    
+    def _extract_coverage_keywords(self, video: Dict, topic: str) -> List[str]:
+        """Extract what specific aspects this video covers"""
+        title = video['title'].lower()
+        description = video.get('description', '').lower()
+        
+        # Common educational keywords
+        coverage_indicators = []
+        
+        if any(word in title for word in ['introduction', 'intro', 'basics', 'fundamentals']):
+            coverage_indicators.append('fundamentals')
+        
+        if any(word in title for word in ['advanced', 'complex', 'detailed']):
+            coverage_indicators.append('advanced_concepts')
+        
+        if any(word in title for word in ['example', 'practice', 'problem']):
+            coverage_indicators.append('practical_examples')
+        
+        if any(word in title for word in ['theory', 'concept', 'principle']):
+            coverage_indicators.append('theoretical_foundation')
+        
+        if any(word in title for word in ['application', 'real world', 'use case']):
+            coverage_indicators.append('real_world_applications')
+        
+        return coverage_indicators if coverage_indicators else ['general_coverage']
     
     def _parse_duration_to_minutes(self, duration_str: str) -> int:
         """Parse duration string to minutes"""
