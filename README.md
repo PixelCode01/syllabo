@@ -12,6 +12,13 @@ A comprehensive educational resource finder that helps students discover the bes
 - **Multi-Format Input**: Support for text input, file loading, and sample syllabi
 - **Interactive Interface**: User-friendly command-line interface
 
+### Spaced Repetition Learning System
+- **Intelligent Review Scheduling**: Uses the scientifically-proven Leitner algorithm to optimize retention
+- **Automatic Topic Integration**: Add syllabus topics directly to your review schedule
+- **Progress Tracking**: Monitor mastery levels and success rates across all topics
+- **Desktop Notifications**: Get reminded when topics are due for review
+- **Standalone CLI Tool**: Use `forgetmenot.py` for quick spaced repetition access
+
 ### Educational Resource Analysis
 - **Intelligent Resource Scoring**: Multi-criteria analysis for both videos and playlists including relevance, quality, and engagement
 - **Smart Learning Path Creation**: Automatically selects between individual videos and comprehensive playlists as primary resources
@@ -49,8 +56,12 @@ python interactive_scraper.py
 # Main application with full features
 python syllabo_final.py
 
-# Enhanced CLI interface
-python syllabo_enhanced.py
+# Enhanced CLI interface with spaced repetition
+python syllabo_enhanced.py analyze --file syllabus.pdf --add-to-review
+
+# Standalone spaced repetition tool
+python forgetmenot.py add "Neural Networks" -d "Forward and backward pass"
+python forgetmenot.py list --urgent
 
 # Run syllabo with simple interface
 python run_syllabo.py
@@ -133,17 +144,21 @@ syllabo/
 │   ├── feedback_system.py   # User feedback and ratings
 │   ├── logger.py            # Comprehensive logging
 │   ├── notes_generator.py   # Study materials generator
+│   ├── notification_system.py # Desktop notification system
 │   ├── optimal_learning_engine.py  # Learning optimization
+│   ├── spaced_repetition.py # Spaced repetition engine
 │   ├── syllabus_parser.py   # PDF/text parsing
 │   ├── utils.py             # Utility functions
 │   ├── video_analyzer.py    # Video analysis and scoring
 │   └── youtube_client.py    # YouTube scraping client
+├── forgetmenot.py           # Standalone spaced repetition CLI
 ├── interactive_scraper.py   # Main interactive syllabus processor
 ├── syllabo_final.py         # Complete application
-├── syllabo_enhanced.py      # Enhanced CLI interface
+├── syllabo_enhanced.py      # Enhanced CLI interface with spaced repetition
 ├── run_syllabo.py          # Simple runner script
 ├── requirements.txt         # Python dependencies
 ├── sample_syllabus.txt     # Example syllabus for testing
+├── SPACED_REPETITION_GUIDE.md # Comprehensive spaced repetition guide
 └── README.md               # This documentation
 ```
 
@@ -242,6 +257,47 @@ Topics Analysis:
    Partially Covered: 1
    Not Covered: 0
 ```
+
+## Spaced Repetition System
+
+Syllabo includes a powerful spaced repetition system that helps you retain what you've learned using scientifically-proven memory techniques.
+
+### How It Works
+The system uses the **Leitner algorithm** with these review intervals:
+- **Day 1**: New topics (1 day interval)
+- **Day 3**: First review (3 day interval)
+- **Day 5**: Second review (5 day interval)
+- **Day 11, 25, 44, 88**: Progressive intervals based on success
+
+### Integration with Syllabo
+```bash
+# Analyze syllabus and add topics to review schedule
+python syllabo_enhanced.py analyze --file syllabus.pdf --add-to-review
+
+# Check what's due for review
+python syllabo_enhanced.py review due --notify
+
+# Mark a topic as successfully reviewed
+python syllabo_enhanced.py review mark --topic "Neural Networks" --success
+```
+
+### Standalone Forget-Me-Not Tool
+```bash
+# Quick spaced repetition commands
+forgetmenot add "Machine Learning" -d "Supervised and unsupervised learning"
+forgetmenot list --urgent
+forgetmenot review "Machine Learning" --success
+forgetmenot stats
+```
+
+### Features
+- **Automatic Scheduling**: Topics appear for review at optimal intervals
+- **Progress Tracking**: Monitor success rates and mastery levels
+- **Desktop Notifications**: Get reminded when reviews are due
+- **Local Storage**: All data stored locally in JSON format
+- **Cross-Platform**: Works on Windows, macOS, and Linux
+
+See [SPACED_REPETITION_GUIDE.md](SPACED_REPETITION_GUIDE.md) for complete documentation.
 
 ## Advanced Features
 

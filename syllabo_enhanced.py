@@ -20,10 +20,12 @@ from src.video_analyzer import VideoAnalyzer
 from src.database import SyllaboDatabase
 from src.logger import SyllaboLogger
 from src.terminal_display import TerminalDisplay
+from src.spaced_repetition import SpacedRepetitionEngine
+from src.notification_system import NotificationSystem
 
 from rich.console import Console
 from rich.panel import Panel
-
+from rich.table import Table
 from rich.progress import Progress
 
 class EnhancedSyllaboCLI: 
@@ -37,6 +39,8 @@ class EnhancedSyllaboCLI:
         self.syllabus_parser = SyllabusParser()
         self.display = TerminalDisplay()
         self.console = Console()
+        self.spaced_repetition = SpacedRepetitionEngine()
+        self.notifications = NotificationSystem()
     
     def print_banner(self):
         self.console.print(Panel.fit("[bold cyan]SYLLABO ENHANCED[/bold cyan]", subtitle="AI-Powered YouTube Video Finder"))
@@ -52,6 +56,8 @@ class EnhancedSyllaboCLI:
             self.show_history(args)
         elif args.command == 'export':
             await self.export_results(args)
+        elif args.command == 'review':
+            self.handle_review_commands(args)
         else:
             self.show_help()
     
@@ -105,9 +111,17 @@ class EnhancedSyllaboCLI:
             
             if args.save or args.export_format:
                 await self.save_comprehensive_results(topic_results, syllabus_title, args.export_format or 'json')
+            
+            # Add topics to spaced repetition if requested
+            if args.add_to_review:
+                self.add_topics_to_spaced_repetition(topics)
         else:
             print(f"\nTo search for videos, add --search-videos flag")
             print(f"To see results in terminal, add --print-results flag")
+            
+            # Still offer to add topics to spaced repetition
+            if args.add_to_review:
+                self.add_topics_to_spaced_repetition(topics)
     
     async def search_videos(self, args):
         """Search for videos and playlists for a specific topic"""
@@ -422,12 +436,243 @@ Respond with a simple list, one topic per line, or "None" if no additional topic
 
         await self.save_comprehensive_results(topic_results, syllabus['title'], args.format)
     
+    def add_topics_to_spaced_repetition(self, topics: List[Dict]):
+        """Add extracted topics to spaced repetition system"""
+        added_count = 0
+        
+        for topic in topics:
+            topic_name = topic['name']
+            description = topic.get('description', '')
+            
+            if self.spaced_repetition.add_topic(topic_name, description):
+                added_count += 1
+                print(f"Added to review schedule: {topic_name}")
+            else:
+                print(f"Already in review schedule: {topic_name}")
+        
+        if added_count > 0:
+            print(f"\nAdded {added_count} topics to spaced repetition schedule")
+            print("Use 'python syllabo_enhanced.py review list' to see your review schedule")
+        else:
+            print("\nAll topics were already in your review schedule")
+    
+    def handle_review_commands(self, args):
+        """Handle all review-related commands"""
+        if args.review_action == 'add':
+            self.add_review_topic(args)
+        elif args.review_action == 'list':
+            self.list_review_topics(args)
+        elif args.review_action == 'due':
+            self.show_due_reviews(args)
+        elif args.review_action == 'mark':
+            self.mark_topic_review(args)
+        elif args.review_action == 'stats':
+            self.show_review_stats(args)
+        elif args.review_action == 'remove':
+            self.remove_review_topic(args)
+        else:
+            self.show_review_help()
+    
+    def add_review_topic(self, args):
+        """Add a topic to spaced repetition manually"""
+        if not args.topic:
+            print("Error: Please provide a topic name with --topic")
+            return
+        
+        description = args.description or ""
+        
+        if self.spaced_repetition.add_topic(args.topic, description):
+            print(f"Added '{args.topic}' to review schedule")
+            print(f"First review scheduled for tomorrow")
+        else:
+            print(f"Topic '{args.topic}' is already in your review schedule")
+    
+    def list_review_topics(self, args):
+        """List all topics in spaced repetition"""
+        topics = self.spaced_repetition.get_all_topics()
+        
+        if not topics:
+            print("No topics in your review schedule")
+            print("Add topics with: python syllabo_enhanced.py review add --topic 'Topic Name'")
+            return
+        
+        self.console.print("[bold]Your Review Schedule[/bold]")
+        
+        table = Table(show_header=True, header_style="bold magenta")
+        table.add_column("Topic", style="cyan", width=30)
+        table.add_column("Mastery", justify="center", width=12)
+        table.add_column("Success Rate", justify="center", width=12)
+        table.add_column("Next Review", justify="center", width=12)
+        table.add_column("Interval", justify="center", width=10)
+        
+        for topic in sorted(topics, key=lambda x: x['days_until_review']):
+            mastery_color = {
+                'Learning': 'red',
+                'Beginner': 'yellow',
+                'Intermediate': 'blue',
+                'Advanced': 'green',
+                'Mastered': 'bright_green'
+            }.get(topic['mastery_level'], 'white')
+            
+            days_until = topic['days_until_review']
+            if days_until <= 0:
+                next_review_text = f"[red]Due now[/red]"
+            elif days_until == 1:
+                next_review_text = "Tomorrow"
+            else:
+                next_review_text = f"{days_until} days"
+            
+            table.add_row(
+                topic['topic_name'][:28] + "..." if len(topic['topic_name']) > 28 else topic['topic_name'],
+                f"[{mastery_color}]{topic['mastery_level']}[/{mastery_color}]",
+                f"{topic['success_rate']}%",
+                next_review_text,
+                f"{topic['current_interval']}d"
+            )
+        
+        self.console.print(table)
+        
+        # Show summary
+        summary = self.spaced_repetition.get_study_summary()
+        print(f"\nSummary: {summary['total_topics']} topics, {summary['due_now']} due now, {summary['mastered_topics']} mastered")
+    
+    def show_due_reviews(self, args):
+        """Show topics that are due for review"""
+        due_topics = self.spaced_repetition.get_due_topics()
+        
+        if not due_topics:
+            print("No topics are due for review right now")
+            
+            # Show upcoming reviews
+            upcoming = self.spaced_repetition.get_upcoming_topics(3)
+            if upcoming:
+                print("\nUpcoming reviews in the next 3 days:")
+                for item in upcoming[:5]:
+                    days_until = (datetime.fromisoformat(item.next_review) - datetime.now()).days
+                    print(f"  • {item.topic_name} - in {days_until} day{'s' if days_until != 1 else ''}")
+            return
+        
+        print(f"You have {len(due_topics)} topic{'s' if len(due_topics) != 1 else ''} due for review:")
+        print()
+        
+        for i, item in enumerate(due_topics, 1):
+            overdue_days = (datetime.now() - datetime.fromisoformat(item.next_review)).days
+            overdue_text = f" (overdue by {overdue_days} day{'s' if overdue_days != 1 else ''})" if overdue_days > 0 else ""
+            
+            print(f"{i}. {item.topic_name}{overdue_text}")
+            if item.description:
+                print(f"   Description: {item.description}")
+            print(f"   Success rate: {(item.total_successes/item.total_reviews*100):.1f}% ({item.total_successes}/{item.total_reviews})")
+            print()
+        
+        print("To mark a review, use:")
+        print("  python syllabo_enhanced.py review mark --topic 'Topic Name' --success")
+        print("  python syllabo_enhanced.py review mark --topic 'Topic Name' --failure")
+        
+        # Send notification if enabled
+        if args.notify:
+            self.notifications.notify_due_reviews(len(due_topics))
+    
+    def mark_topic_review(self, args):
+        """Mark a topic as reviewed"""
+        if not args.topic:
+            print("Error: Please provide a topic name with --topic")
+            return
+        
+        if not args.success and not args.failure:
+            print("Error: Please specify --success or --failure")
+            return
+        
+        success = args.success
+        
+        if self.spaced_repetition.mark_review(args.topic, success):
+            result_text = "successful" if success else "failed"
+            print(f"Marked '{args.topic}' as {result_text} review")
+            
+            # Show updated stats
+            stats = self.spaced_repetition.get_topic_stats(args.topic)
+            if stats:
+                print(f"Next review in {stats['current_interval']} days ({stats['next_review_date']})")
+                print(f"Success rate: {stats['success_rate']}% - {stats['mastery_level']}")
+        else:
+            print(f"Topic '{args.topic}' not found in review schedule")
+    
+    def show_review_stats(self, args):
+        """Show detailed review statistics"""
+        if args.topic:
+            # Show stats for specific topic
+            stats = self.spaced_repetition.get_topic_stats(args.topic)
+            if not stats:
+                print(f"Topic '{args.topic}' not found in review schedule")
+                return
+            
+            print(f"Statistics for: {stats['topic_name']}")
+            print("-" * 50)
+            print(f"Description: {stats['description'] or 'No description'}")
+            print(f"Mastery Level: {stats['mastery_level']}")
+            print(f"Success Rate: {stats['success_rate']}%")
+            print(f"Success Streak: {stats['success_streak']}")
+            print(f"Total Reviews: {stats['total_reviews']}")
+            print(f"Current Interval: {stats['current_interval']} days")
+            print(f"Next Review: {stats['next_review_date']} ({stats['days_until_review']} days)")
+        else:
+            # Show overall stats
+            summary = self.spaced_repetition.get_study_summary()
+            
+            print("Overall Review Statistics")
+            print("-" * 50)
+            print(f"Total Topics: {summary['total_topics']}")
+            print(f"Due Now: {summary['due_now']}")
+            print(f"Due Today: {summary['due_today']}")
+            print(f"Mastered Topics: {summary['mastered_topics']}")
+            print(f"Average Success Rate: {summary['average_success_rate']}%")
+            
+            if summary['total_topics'] > 0:
+                mastery_rate = (summary['mastered_topics'] / summary['total_topics']) * 100
+                print(f"Mastery Rate: {mastery_rate:.1f}%")
+    
+    def remove_review_topic(self, args):
+        """Remove a topic from spaced repetition"""
+        if not args.topic:
+            print("Error: Please provide a topic name with --topic")
+            return
+        
+        if self.spaced_repetition.remove_topic(args.topic):
+            print(f"Removed '{args.topic}' from review schedule")
+        else:
+            print(f"Topic '{args.topic}' not found in review schedule")
+    
+    def show_review_help(self):
+        """Show help for review commands"""
+        print("\nSpaced Repetition Review Commands:")
+        print("-" * 50)
+        print("Add topic to review schedule:")
+        print("  python syllabo_enhanced.py review add --topic 'Neural Networks' --description 'Forward/backward pass'")
+        print()
+        print("List all topics in review schedule:")
+        print("  python syllabo_enhanced.py review list")
+        print()
+        print("Show topics due for review:")
+        print("  python syllabo_enhanced.py review due --notify")
+        print()
+        print("Mark a topic as reviewed:")
+        print("  python syllabo_enhanced.py review mark --topic 'Neural Networks' --success")
+        print("  python syllabo_enhanced.py review mark --topic 'Neural Networks' --failure")
+        print()
+        print("Show review statistics:")
+        print("  python syllabo_enhanced.py review stats")
+        print("  python syllabo_enhanced.py review stats --topic 'Neural Networks'")
+        print()
+        print("Remove topic from review schedule:")
+        print("  python syllabo_enhanced.py review remove --topic 'Neural Networks'")
+        print()
+    
     def show_help(self):
         """Show help information"""
         print("\nSyllabo Enhanced - Usage Examples:")
         print("-" * 60)
-        print("Analyze syllabus with video search and terminal display:")
-        print("  python syllabo_enhanced.py analyze --file syllabus.pdf --search-videos --print-results")
+        print("Analyze syllabus with video search and add to review schedule:")
+        print("  python syllabo_enhanced.py analyze --file syllabus.pdf --search-videos --print-results --add-to-review")
         print()
         print("Analyze and save results in HTML format:")
         print("  python syllabo_enhanced.py analyze --text 'Week 1: AI...' --search-videos --save --export-format html")
@@ -438,11 +683,16 @@ Respond with a simple list, one topic per line, or "None" if no additional topic
         print("View search history:")
         print("  python syllabo_enhanced.py history --limit 10")
         print()
+        print("Spaced repetition review:")
+        print("  python syllabo_enhanced.py review due")
+        print("  python syllabo_enhanced.py review list")
+        print()
         print("Key Features:")
         print("  • --print-results: Show detailed results in terminal")
         print("  • --save: Save results to file")
         print("  • --export-format: Choose json, csv, markdown, or html")
         print("  • --max-videos: Control number of videos per topic")
+        print("  • --add-to-review: Add topics to spaced repetition schedule")
         print()
 
 def main():
@@ -459,6 +709,7 @@ def main():
     analyze_parser.add_argument('--save', action='store_true', help='Save results to file')
     analyze_parser.add_argument('--export-format', choices=['json', 'csv', 'markdown', 'html'], 
                               default='json', help='Export format for saved results')
+    analyze_parser.add_argument('--add-to-review', action='store_true', help='Add topics to spaced repetition schedule')
     
     # Search command
     search_parser = subparsers.add_parser('search', help='Search videos for a specific topic')
@@ -477,6 +728,37 @@ def main():
     export_parser.add_argument('--format', choices=['csv', 'json', 'markdown', 'html'], 
                               default='json', help='Export format')
     export_parser.add_argument('--syllabus-id', type=int, help='Syllabus ID to export')
+    
+    # Review command (spaced repetition)
+    review_parser = subparsers.add_parser('review', help='Spaced repetition review system')
+    review_subparsers = review_parser.add_subparsers(dest='review_action', help='Review actions')
+    
+    # Review add
+    add_review_parser = review_subparsers.add_parser('add', help='Add topic to review schedule')
+    add_review_parser.add_argument('--topic', required=True, help='Topic name to add')
+    add_review_parser.add_argument('--description', '-d', help='Topic description')
+    
+    # Review list
+    list_review_parser = review_subparsers.add_parser('list', help='List all topics in review schedule')
+    
+    # Review due
+    due_review_parser = review_subparsers.add_parser('due', help='Show topics due for review')
+    due_review_parser.add_argument('--notify', action='store_true', help='Send desktop notification')
+    
+    # Review mark
+    mark_review_parser = review_subparsers.add_parser('mark', help='Mark topic as reviewed')
+    mark_review_parser.add_argument('--topic', required=True, help='Topic name to mark')
+    mark_group = mark_review_parser.add_mutually_exclusive_group(required=True)
+    mark_group.add_argument('--success', action='store_true', help='Mark review as successful')
+    mark_group.add_argument('--failure', action='store_true', help='Mark review as failed')
+    
+    # Review stats
+    stats_review_parser = review_subparsers.add_parser('stats', help='Show review statistics')
+    stats_review_parser.add_argument('--topic', help='Show stats for specific topic')
+    
+    # Review remove
+    remove_review_parser = review_subparsers.add_parser('remove', help='Remove topic from review schedule')
+    remove_review_parser.add_argument('--topic', required=True, help='Topic name to remove')
     
     args = parser.parse_args()
     
