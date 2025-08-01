@@ -76,6 +76,14 @@ syllabo_study_guide_*.json
 spaced_repetition.json
 demo_spaced_repetition.json
 
+# New feature data files
+study_goals.json
+bookmarks.json
+quiz_results_*.json
+progress_report_*.txt
+bookmarks_export_*.*
+session_data.json
+
 # Temporary/working files
 *_working.py
 *_new.py

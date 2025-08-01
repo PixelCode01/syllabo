@@ -1,12 +1,14 @@
 import json
 import os
-from typing import Dict, List
+from typing import Dict, List, Optional
 from datetime import datetime
+from .logger import SyllaboLogger
 
 class FeedbackSystem:
     def __init__(self, feedback_file="feedback.json"):
         self.feedback_file = feedback_file
         self.feedback_data = self._load_feedback()
+        self.logger = SyllaboLogger("feedback_system")
     
     def _load_feedback(self) -> Dict:
         if os.path.exists(self.feedback_file):

@@ -33,6 +33,14 @@ from src.database import SyllaboDatabase
 from src.logger import SyllaboLogger
 from src.spaced_repetition import SpacedRepetitionEngine
 from src.notification_system import NotificationSystem
+from src.quiz_generator import QuizGenerator
+from src.progress_dashboard import ProgressDashboard
+from src.goals_manager import GoalsManager
+from src.platform_integrator import PlatformIntegrator
+from src.podcast_integrator import PodcastIntegrator
+from src.bookmark_manager import BookmarkManager
+from src.difficulty_analyzer import DifficultyAnalyzer
+from src.study_session_manager import StudySessionManager
 from src.cli.formatting import OutputFormatter
 from src.cli.error_handler import CLIErrorHandler
 from src.cli.session_history import SessionHistory
@@ -81,6 +89,16 @@ class EnhancedSyllaboCLI:
         # Initialize export system
         from src.export_system import ExportSystem
         self.exporter = ExportSystem()
+        
+        # Initialize new feature systems
+        self.quiz_generator = QuizGenerator(self.ai_client, self.db)
+        self.progress_dashboard = ProgressDashboard(self.db, self.spaced_repetition)
+        self.goals_manager = GoalsManager(self.db)
+        self.platform_integrator = PlatformIntegrator()
+        self.podcast_integrator = PodcastIntegrator()
+        self.bookmark_manager = BookmarkManager()
+        self.difficulty_analyzer = DifficultyAnalyzer(self.ai_client)
+        self.study_session_manager = StudySessionManager(self.spaced_repetition)
     
     def print_banner(self):
         self.console.print(Panel.fit("[bold cyan]SYLLABO ENHANCED[/bold cyan]", subtitle="AI-Powered Educational Resource Finder"))

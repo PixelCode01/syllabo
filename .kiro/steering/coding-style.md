@@ -3,7 +3,8 @@ inclusion: always
 ---
 
 # Coding Style Guidelines
-
+All output messages are emoji-free and professional:
+also commit files when it is ready or succwefully made and before commiting always check all unnecessay files are git ignored and also not being track double check also commit messages should be like a human has written it not ai without emoji also and also check all markdown and all files are looking human written also update readme if required like readme is outdated  then commit also commit msg should be human like and less size commit as you feel it needed 
 ## Core Principles
 
 Write code that looks human-written, professional, and maintainable. Follow these guidelines consistently across all files.
@@ -177,7 +178,7 @@ When writing new code:
 Look at these files as examples of good style:
 - `src/ai_client.py` - Clean error handling and caching
 - `src/database.py` - Professional database operations
-- `syllabo_enhanced.py` - Well-structured CLI interface
+- `syllabo.py` - Well-structured CLI interface
 
 ## Examples to Avoid
 

@@ -4,13 +4,20 @@ A comprehensive educational resource finder that helps students discover the bes
 
 ## Key Features
 
+### Learning Enhancement
+- **Interactive Quiz System**: Auto-generate quizzes from video content and study notes
+- **Progress Tracking Dashboard**: Visual progress charts, learning streaks, and performance analytics
+- **Study Goals & Milestones**: Set and track daily, weekly, and monthly learning objectives
+- **Focus Timer**: Integrated Pomodoro technique with break reminders and session tracking
+- **Smart Bookmarking**: Save and organize important video timestamps with notes and tags
+
 ### Content Discovery
 - **YouTube Video & Playlist Scraping**: Find relevant educational videos and playlists without API keys
+- **Multi-Platform Integration**: Search Coursera, Khan Academy, edX, and other learning platforms
+- **Podcast Integration**: Discover educational podcasts and audio content
+- **Reading Resources**: Find articles, academic papers, and supplementary reading materials
+- **Content Difficulty Rating**: AI-powered complexity assessment for all resources
 - **Comprehensive Resource Discovery**: Automatically detects both individual videos and structured playlists
-- **Course Platform Integration**: Discover courses from Coursera, Udemy, and freeCodeCamp
-- **Syllabus Processing**: Extract topics from complete course syllabi
-- **Multi-Format Input**: Support for text input, file loading, and sample syllabi
-- **Interactive Interface**: User-friendly command-line interface
 
 ### Spaced Repetition Learning System
 - **Intelligent Review Scheduling**: Uses the scientifically-proven Leitner algorithm to optimize retention
@@ -50,24 +57,35 @@ cp .env.example .env
 
 ### Basic Usage
 
-**Main Application (Recommended):**
+**Enhanced CLI (Recommended):**
+```bash
+# Comprehensive analysis with multi-platform search
+python enhanced_cli.py analyze --file syllabus.pdf --search-videos --include-podcasts --include-reading --add-to-review
+
+# Interactive quiz generation and taking
+python enhanced_cli.py quiz generate --topic "Machine Learning" --num-questions 10
+python enhanced_cli.py quiz take
+
+# Progress tracking and goals
+python enhanced_cli.py progress
+python enhanced_cli.py goals create --title "Study 30 min daily" --type daily --target 30 --unit minutes
+
+# Study session management
+python enhanced_cli.py session start --topic "Neural Networks" --duration 25
+python enhanced_cli.py session break --break-type short
+python enhanced_cli.py session end --notes "Completed backpropagation review"
+
+# Multi-platform content search
+python enhanced_cli.py platforms --topic "Data Science" --free-only --include-coursera --include-khan
+
+# Smart bookmarking
+python enhanced_cli.py bookmarks add --video-id "abc123" --video-title "ML Tutorial" --timestamp "15:30" --note "Important concept" --topic "Machine Learning"
+```
+
+**Original CLI:**
 ```bash
 # Full-featured CLI with spaced repetition
 python syllabo.py analyze --file syllabus.pdf --search-videos --add-to-review --print-results
-```
-
-**Quick Spaced Repetition:**
-```bash
-# Standalone spaced repetition tool
-forgetmenot add "Neural Networks" -d "Forward and backward pass"
-forgetmenot list --urgent
-forgetmenot review "Neural Networks" --success
-```
-
-**Interactive Interface:**
-```bash
-# User-friendly interactive interface
-python interactive_scraper.py
 ```
 
 See [USAGE.md](USAGE.md) for detailed usage instructions.
