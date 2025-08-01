@@ -287,4 +287,21 @@ def create_parser():
         description='Display detailed help and examples for using the spaced repetition system.'
     )
 
+    # AI Status command
+    ai_parser = subparsers.add_parser(
+        'ai-status', 
+        help='Check AI service status and test functionality',
+        description='Test all available AI services and show their current status.'
+    )
+    ai_parser.add_argument(
+        '--test', 
+        action='store_true', 
+        help='Run comprehensive tests on all AI services'
+    )
+    ai_parser.add_argument(
+        '--verbose', '-v',
+        action='store_true',
+        help='Show detailed information about each service'
+    )
+
     return parser

@@ -73,7 +73,39 @@ YOUTUBE_API_KEY=your_youtube_api_key_here
 **With API keys**: Enhanced AI analysis and additional YouTube data.
 
 See [API_SETUP.md](API_SETUP.md) for detailed setup instructions.
+
+### AI Services
+
+Syllabo uses multiple AI services with automatic fallback to ensure reliable functionality:
+
+#### Available AI Services
+- **Google Gemini** (optional, requires API key) - Premium AI analysis
+- **HackClub AI** (free, no API key) - Community AI service for educational use
+- **Free GPT** (free, no API key) - Community-maintained GPT service
+- **GPT4Free** (free, no API key) - Open-source AI service
+- **Intelligent Fallback** (always available) - Local text analysis algorithms
+
+#### AI Functionality
+- **Topic Extraction** - Automatically identify key learning topics from syllabi
+- **Content Relevance Rating** - Score how well resources match your topics
+- **Difficulty Analysis** - Assess content complexity levels
+- **Content Summarization** - Generate concise summaries of educational materials
+- **Question Generation** - Create study questions from content
+- **Keyword Extraction** - Identify important terms and concepts
+
+#### Testing AI Services
+```bash
+# Check which AI services are working
+python syllabo.py ai-status
+
+# Run comprehensive AI functionality tests
+python syllabo.py ai-status --test
+
+# Show detailed service information
+python syllabo.py ai-status --verbose
 ```
+
+The system automatically tries multiple AI services and falls back to local algorithms if all external services fail, ensuring you always get results.
 
 ### Basic Usage
 

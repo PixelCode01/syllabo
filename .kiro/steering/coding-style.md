@@ -4,7 +4,31 @@ inclusion: always
 
 # Coding Style Guidelines
 All output messages are emoji-free and professional:
-also commit files when it is ready or succwefully made and before commiting always check all unnecessay files are git ignored and also not being track double check also commit messages should be like a human has written it not ai without emoji also and also check all markdown and all files are looking human written also update readme if required like readme is outdated  then commit also commit msg should be human like and less size commit as you feel it needed 
+also commit files when it is ready or successfully made and before committing always check all unnecessary files are git ignored and also not being tracked double check also commit messages should be like a human has written it not ai without emoji also and also check all markdown and all files are looking human written also update readme if required like readme is outdated then commit also commit msg should be human like and concise
+
+## Commit Message Guidelines
+
+Write commit messages that feel natural and human:
+
+**Good commit messages:**
+- "Fix user authentication bug"
+- "Add search functionality" 
+- "Update documentation"
+- "Improve error handling"
+- "Refactor database queries"
+
+**Bad commit messages:**
+- "🎉 Add amazing new feature with super cool functionality! ✨"
+- "Fix-bug-in-authentication-system-that-was-causing-issues-with-user-login-process"
+- "Implement comprehensive search functionality with advanced filtering capabilities and optimized performance"
+
+**Rules:**
+- Keep messages under 50 characters when possible
+- Use simple, clear language
+- No emojis or excessive punctuation
+- Avoid long lists of changes separated by dashes
+- Write in present tense ("Add" not "Added")
+- Be specific but concise 
 ## Core Principles
 
 Write code that looks human-written, professional, and maintainable. Follow these guidelines consistently across all files.
@@ -86,7 +110,7 @@ def extract_super_awesome_topics(self, content: str) -> List[Dict]:
     proc_time = time.time() - start_time
 ```
 
-also commit files when it is ready or succwefully made and before commiting always check all unnecessay files are git ignored and also not being track double check also commit messages should be like a human has written it not ai without emoji also and also check all markdown and all files are looking human written than commit 
+also commit files when it is ready or successfully made and before committing always check all unnecessary files are git ignored and also not being tracked double check also commit messages should be like a human has written it not ai without emoji also and also check all markdown and all files are looking human written then commit 
 
 ### 4. Error Handling
 - Simple, clear error messages

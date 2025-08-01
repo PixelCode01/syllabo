@@ -130,6 +130,8 @@ class EnhancedSyllaboCLI:
                 result = await export(args)
             elif args.command == 'review':
                 result = self.handle_review_commands(args)
+            elif args.command == 'ai-status':
+                result = await self.handle_ai_status(args)
             else:
                 self.show_help()
                 result = {'status': 'help_displayed'}
@@ -847,6 +849,7 @@ Respond with a simple list, one topic per line, or "None" if no additional topic
         table.add_row("history", "View a history of your past syllabus analyses.")
         table.add_row("export", "Export your syllabus analysis results to various formats.")
         table.add_row("review", "Manage your spaced repetition study schedule.")
+        table.add_row("ai-status", "Check AI service status and test functionality.")
         
         self.console.print(table)
         
@@ -874,6 +877,127 @@ Respond with a simple list, one topic per line, or "None" if no additional topic
         for syllabus in recent_syllabi:
             table.add_row(str(syllabus['id']), syllabus['title'], syllabus['created_at'])
         self.console.print(table)
+
+    async def handle_ai_status(self, args) -> Dict[str, Any]:
+        """Handle AI status and testing commands
+        
+        Args:
+            args: Command-line arguments with test and verbose flags
+            
+        Returns:
+            Dictionary with command execution status
+        """
+        self.formatter.print_title("AI Services Status")
+        
+        # Show service configuration
+        if args.verbose:
+            self.console.print(Panel(
+                self.ai_client.get_service_status(),
+                title="Service Configuration",
+                border_style="blue"
+            ))
+            self.console.print()
+        
+        if args.test:
+            # Run comprehensive tests
+            self.formatter.print_info("Testing all AI services...")
+            
+            with Progress() as progress:
+                task = progress.add_task("Testing services...", total=100)
+                
+                # Test services
+                service_results = await self.ai_client.test_services()
+                progress.update(task, advance=50)
+                
+                # Test functionality
+                test_results = await self._test_ai_functionality()
+                progress.update(task, advance=50)
+            
+            # Display results
+            self._display_service_results(service_results)
+            self._display_functionality_results(test_results)
+            
+            return {
+                'status': 'success',
+                'service_results': service_results,
+                'test_results': test_results
+            }
+        else:
+            # Quick status check
+            service_results = await self.ai_client.test_services()
+            self._display_service_results(service_results)
+            
+            return {
+                'status': 'success',
+                'service_results': service_results
+            }
+    
+    async def _test_ai_functionality(self) -> Dict[str, bool]:
+        """Test different AI functionality types"""
+        test_cases = {
+            'Topic Extraction': 'Extract topics from: Python programming covers variables, functions, and data structures.',
+            'Relevance Rating': 'Rate relevance of "Python Tutorial" to topic "Python Programming"',
+            'Content Analysis': 'Analyze this content: Machine learning uses algorithms to find patterns in data.',
+            'Difficulty Assessment': 'Assess difficulty: Advanced neural network optimization techniques'
+        }
+        
+        results = {}
+        for test_name, prompt in test_cases.items():
+            try:
+                result = await self.ai_client.get_completion(prompt)
+                results[test_name] = not result.startswith("Error:")
+            except:
+                results[test_name] = False
+        
+        return results
+    
+    def _display_service_results(self, service_results: Dict[str, bool]):
+        """Display service test results in a table"""
+        table = Table(show_header=True, header_style="bold magenta")
+        table.add_column("Service", style="cyan", width=20)
+        table.add_column("Status", justify="center", width=15)
+        table.add_column("Description", style="dim")
+        
+        service_descriptions = {
+            'Gemini': 'Google Gemini API (requires API key)',
+            'HackClub AI': 'Free AI service for educational use',
+            'Free GPT': 'Community-maintained free GPT service',
+            'GPT4Free': 'Open-source free AI service',
+            'Intelligent Fallback': 'Local text analysis algorithms'
+        }
+        
+        for service, status in service_results.items():
+            status_text = "[green]✓ Working[/green]" if status else "[red]✗ Failed[/red]"
+            description = service_descriptions.get(service, "AI service")
+            table.add_row(service, status_text, description)
+        
+        self.console.print(table)
+    
+    def _display_functionality_results(self, test_results: Dict[str, bool]):
+        """Display functionality test results"""
+        self.console.print()
+        self.formatter.print_title("Functionality Tests")
+        
+        table = Table(show_header=True, header_style="bold magenta")
+        table.add_column("Function", style="cyan", width=20)
+        table.add_column("Status", justify="center", width=15)
+        
+        for function, status in test_results.items():
+            status_text = "[green]✓ Working[/green]" if status else "[red]✗ Failed[/red]"
+            table.add_row(function, status_text)
+        
+        self.console.print(table)
+        
+        # Summary
+        working_count = sum(test_results.values())
+        total_count = len(test_results)
+        
+        if working_count == total_count:
+            self.formatter.print_success(f"All {total_count} AI functions are working correctly")
+        elif working_count > 0:
+            self.formatter.print_warning(f"{working_count}/{total_count} AI functions are working")
+        else:
+            self.formatter.print_error("No AI functions are working - using fallback algorithms only")
 
 
 async def main():
