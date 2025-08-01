@@ -81,7 +81,8 @@ class NotesGenerator:
     
     async def _generate_notes(self, content: str, topic: str) -> List[str]:
         """Generate structured study notes"""
-        prompt = f"""Based on this educational content about "{topic}", create concise study notes.
+        try:
+            prompt = f"""Based on this educational content about "{topic}", create concise study notes.
 
 Content:
 {content}
@@ -93,7 +94,6 @@ Generate 5-8 key study notes that capture the most important information. Each n
 
 Format as a simple list, one note per line."""
 
-        try:
             response = await self.ai_client.get_completion(prompt)
             
             # Parse response into list
@@ -106,15 +106,14 @@ Format as a simple list, one note per line."""
                     if clean_line:
                         notes.append(clean_line)
             
-            return notes[:8] if notes else [f"Key concepts related to {topic} are covered in this video."]
-            
+            if notes and len(notes) >= 3:
+                return notes[:8]
+            else:
+                raise ValueError("Insufficient notes generated")
+                
         except Exception as e:
-            return [
-                f"This video covers important concepts related to {topic}.",
-                "Review the main points discussed in the video content.",
-                "Practice applying the concepts shown in examples.",
-                "Take notes on key terminology and definitions."
-            ]
+            # Fallback to template-based note generation
+            return self._generate_template_notes(content, topic)
     
     async def _generate_questions(self, content: str, topic: str) -> List[str]:
         """Generate study questions for review"""
@@ -148,6 +147,116 @@ Format as questions, one per line."""
             return questions[:10] if questions else [
                 f"What are the main concepts covered in this {topic} video?",
                 f"How can you apply the {topic} principles shown?",
+                f"What are the key benefits of learning {topic}?"
+            ]
+            
+        except Exception as e:
+            # Fallback to template-based questions
+            return self._generate_template_questions(topic)
+    
+    def _generate_template_notes(self, content: str, topic: str) -> List[str]:
+        """Generate notes using templates when AI is unavailable"""
+        content_lower = content.lower()
+        notes = []
+        
+        # Topic-specific note templates
+        if 'python' in topic.lower():
+            notes = [
+                "Python is a high-level, interpreted programming language known for its simplicity and readability.",
+                "Python uses indentation to define code blocks instead of curly braces.",
+                "Variables in Python are dynamically typed and don't need explicit declaration.",
+                "Python supports multiple programming paradigms including procedural, object-oriented, and functional programming.",
+                "The Python standard library provides extensive built-in functionality for common tasks."
+            ]
+        elif 'machine learning' in topic.lower():
+            notes = [
+                "Machine learning enables computers to learn and make decisions from data without explicit programming.",
+                "Supervised learning uses labeled training data to learn patterns and make predictions.",
+                "Unsupervised learning finds hidden patterns in data without labeled examples.",
+                "Feature selection and data preprocessing are crucial steps in machine learning workflows.",
+                "Model evaluation helps determine how well a machine learning algorithm performs on new data."
+            ]
+        elif 'data science' in topic.lower():
+            notes = [
+                "Data science combines statistics, programming, and domain expertise to extract insights from data.",
+                "The data science process typically includes data collection, cleaning, analysis, and visualization.",
+                "Python and R are popular programming languages for data science applications.",
+                "Data visualization helps communicate findings and patterns to stakeholders effectively.",
+                "Statistical analysis provides the foundation for making data-driven decisions."
+            ]
+        elif 'pandas' in topic.lower():
+            notes = [
+                "Pandas is a powerful Python library for data manipulation and analysis.",
+                "DataFrames are the primary data structure in pandas for handling tabular data.",
+                "Pandas provides efficient tools for reading and writing data in various formats.",
+                "Data cleaning and preprocessing are made easier with pandas built-in functions.",
+                "Pandas supports advanced operations like grouping, merging, and pivoting data."
+            ]
+        elif 'numpy' in topic.lower():
+            notes = [
+                "NumPy provides support for large, multi-dimensional arrays and matrices in Python.",
+                "NumPy arrays are more efficient than Python lists for numerical computations.",
+                "Broadcasting allows NumPy to perform operations on arrays of different shapes.",
+                "NumPy includes a comprehensive collection of mathematical functions.",
+                "Many other Python scientific libraries are built on top of NumPy."
+            ]
+        else:
+            # Generic notes based on content analysis
+            notes = [
+                f"This content covers fundamental concepts related to {topic}.",
+                f"Understanding {topic} requires both theoretical knowledge and practical application.",
+                f"Key terminology and definitions are important for mastering {topic}.",
+                f"Practice and repetition help reinforce {topic} concepts.",
+                f"Real-world examples demonstrate the practical applications of {topic}."
+            ]
+        
+        return notes[:6]
+    
+    def _generate_template_questions(self, topic: str) -> List[str]:
+        """Generate questions using templates when AI is unavailable"""
+        topic_lower = topic.lower()
+        questions = []
+        
+        # Topic-specific question templates
+        if 'python' in topic_lower:
+            questions = [
+                "What are the key features that make Python popular for programming?",
+                "How does Python's syntax differ from other programming languages?",
+                "What are the main data types available in Python?",
+                "How do you define and call functions in Python?",
+                "What is the difference between lists and tuples in Python?",
+                "How does Python handle object-oriented programming concepts?"
+            ]
+        elif 'machine learning' in topic_lower:
+            questions = [
+                "What is the difference between supervised and unsupervised learning?",
+                "How do you evaluate the performance of a machine learning model?",
+                "What is overfitting and how can it be prevented?",
+                "What are the main steps in a typical machine learning workflow?",
+                "How do you choose the right algorithm for a machine learning problem?",
+                "What role does feature engineering play in machine learning?"
+            ]
+        elif 'data science' in topic_lower:
+            questions = [
+                "What are the main components of the data science process?",
+                "How do you handle missing or incomplete data in analysis?",
+                "What is the importance of data visualization in data science?",
+                "How do you ensure the quality and reliability of your data analysis?",
+                "What statistical concepts are most important for data science?",
+                "How do you communicate data science findings to non-technical stakeholders?"
+            ]
+        else:
+            # Generic questions
+            questions = [
+                f"What are the main concepts covered in this {topic} content?",
+                f"How can you apply {topic} knowledge in real-world scenarios?",
+                f"What are the key benefits of learning {topic}?",
+                f"What prerequisites are needed to understand {topic} effectively?",
+                f"How does {topic} relate to other related fields or technologies?",
+                f"What are common challenges when learning {topic}?"
+            ]
+        
+        return questions[:8]
                 f"What are the key benefits of understanding {topic}?",
                 "Can you explain the main points in your own words?"
             ]

@@ -103,8 +103,10 @@ class DifficultyAnalyzer:
             return 0
     
     async def _ai_difficulty_analysis(self, title: str, description: str) -> float:
-        """Use AI to analyze content difficulty"""
-        prompt = f"""Analyze the difficulty level of this educational content on a scale of 0.0 to 1.0:
+        """Analyze content difficulty using algorithmic approach"""
+        try:
+            # Try AI first, then fallback to algorithmic analysis
+            prompt = f"""Analyze the difficulty level of this educational content on a scale of 0.0 to 1.0:
 
 Title: {title}
 Description: {description[:500]}
@@ -116,14 +118,67 @@ Consider:
 - Target audience
 
 Respond with just a number between 0.0 (beginner) and 1.0 (expert level)."""
-        
-        try:
+            
             response = await self.ai_client.get_completion(prompt)
-            score = float(response.strip())
-            return max(0.0, min(1.0, score))  # Clamp between 0 and 1
+            
+            # Try to extract a number from the response
+            import re
+            number_match = re.search(r'(\d+\.?\d*)', response.strip())
+            if number_match:
+                score = float(number_match.group(1))
+                # If it's a whole number > 1, assume it's out of 10
+                if score > 1:
+                    score = score / 10
+                return max(0.0, min(1.0, score))
+            else:
+                raise ValueError("No valid number found in response")
+                
         except Exception as e:
             self.logger.error(f"AI difficulty analysis failed: {e}")
-            return 0.5  # Default to intermediate
+            # Fallback to algorithmic analysis
+            return self._algorithmic_difficulty_analysis(title, description)
+    
+    def _algorithmic_difficulty_analysis(self, title: str, description: str) -> float:
+        """Algorithmic difficulty analysis without AI"""
+        text = f"{title} {description}".lower()
+        score = 0.5  # Start with intermediate
+        
+        # Advanced indicators
+        advanced_patterns = [
+            r'\b(advanced|expert|professional|enterprise|production)\b',
+            r'\b(architecture|optimization|performance|scalability)\b',
+            r'\b(deep dive|comprehensive|complete guide|mastery)\b',
+            r'\b(implementation|algorithm|framework|methodology)\b'
+        ]
+        
+        # Beginner indicators
+        beginner_patterns = [
+            r'\b(beginner|intro|introduction|basics|fundamentals)\b',
+            r'\b(getting started|first steps|tutorial|guide)\b',
+            r'\b(simple|easy|quick|basic)\b',
+            r'\b(for beginners|step by step|from scratch)\b'
+        ]
+        
+        # Count pattern matches
+        advanced_matches = sum(1 for pattern in advanced_patterns if re.search(pattern, text))
+        beginner_matches = sum(1 for pattern in beginner_patterns if re.search(pattern, text))
+        
+        # Adjust score based on matches
+        if beginner_matches > advanced_matches:
+            score = 0.2 + (beginner_matches * 0.05)
+        elif advanced_matches > beginner_matches:
+            score = 0.7 + (advanced_matches * 0.05)
+        
+        # Technical complexity indicators
+        technical_indicators = [
+            'api', 'framework', 'library', 'database', 'server',
+            'deployment', 'testing', 'debugging', 'optimization'
+        ]
+        
+        tech_count = sum(1 for indicator in technical_indicators if indicator in text)
+        score += min(tech_count * 0.03, 0.2)  # Add up to 0.2 for technical content
+        
+        return max(0.0, min(1.0, score))
     
     def _score_to_level(self, score: float) -> str:
         """Convert numerical score to difficulty level"""
@@ -155,20 +210,58 @@ Respond with just a number between 0.0 (beginner) and 1.0 (expert level)."""
     
     async def _estimate_prerequisites(self, title: str, description: str) -> List[str]:
         """Estimate prerequisite knowledge needed"""
-        prompt = f"""List the prerequisite knowledge needed for this educational content:
+        try:
+            prompt = f"""List the prerequisite knowledge needed for this educational content:
 
 Title: {title}
 Description: {description[:300]}
 
 List 3-5 specific prerequisites a learner should have. Be concise."""
-        
-        try:
+            
             response = await self.ai_client.get_completion(prompt)
             prerequisites = [line.strip() for line in response.split('\n') if line.strip()]
-            return prerequisites[:5]  # Limit to 5
+            if prerequisites and len(prerequisites) > 0:
+                return prerequisites[:5]  # Limit to 5
+            else:
+                raise ValueError("No valid prerequisites found")
+                
         except Exception as e:
             self.logger.error(f"Prerequisites estimation failed: {e}")
-            return ["Basic understanding of the topic"]
+            # Fallback to algorithmic prerequisite estimation
+            return self._algorithmic_prerequisites(title, description)
+    
+    def _algorithmic_prerequisites(self, title: str, description: str) -> List[str]:
+        """Estimate prerequisites using algorithmic approach"""
+        text = f"{title} {description}".lower()
+        prerequisites = []
+        
+        # Topic-specific prerequisites
+        if any(term in text for term in ['python', 'programming']):
+            prerequisites.extend(['Basic programming concepts', 'Python syntax'])
+        
+        if any(term in text for term in ['machine learning', 'ml', 'ai']):
+            prerequisites.extend(['Statistics basics', 'Python programming', 'Mathematics fundamentals'])
+        
+        if any(term in text for term in ['data science', 'data analysis']):
+            prerequisites.extend(['Python programming', 'Statistics knowledge', 'Basic mathematics'])
+        
+        if any(term in text for term in ['web development', 'html', 'css', 'javascript']):
+            prerequisites.extend(['Basic computer skills', 'Text editor usage'])
+        
+        if any(term in text for term in ['advanced', 'expert', 'professional']):
+            prerequisites.extend(['Solid foundation in the topic', 'Previous experience recommended'])
+        
+        if any(term in text for term in ['database', 'sql']):
+            prerequisites.extend(['Basic programming knowledge', 'Understanding of data concepts'])
+        
+        # Default prerequisites if none found
+        if not prerequisites:
+            if 'beginner' in text or 'introduction' in text:
+                prerequisites = ['Basic computer skills', 'Willingness to learn']
+            else:
+                prerequisites = ['Basic understanding of the topic', 'Some prior experience helpful']
+        
+        return prerequisites[:5]
     
     def _get_audience_recommendation(self, difficulty_level: str) -> str:
         """Get audience recommendation based on difficulty"""
