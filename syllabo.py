@@ -687,7 +687,12 @@ Respond with a simple list, one topic per line, or "None" if no additional topic
         table.add_column("Next Review", justify="center", width=12)
         table.add_column("Interval", justify="center", width=10)
         
-        for topic in sorted(topics, key=lambda x: x['days_until_review']):
+        # Safe sorting with None handling
+        def safe_sort_key(topic):
+            days = topic.get('days_until_review')
+            return days if days is not None else 0
+        
+        for topic in sorted(topics, key=safe_sort_key):
             mastery_color = {'Learning': 'red', 'Beginner': 'yellow', 'Intermediate': 'blue', 
                              'Advanced': 'green', 'Mastered': 'bright_green'}.get(topic['mastery_level'], 'white')
             next_review_text = f"Due now" if topic['days_until_review'] <= 0 else f"{topic['days_until_review']} days"

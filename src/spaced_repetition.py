@@ -158,6 +158,10 @@ class SpacedRepetitionEngine:
         next_review = datetime.fromisoformat(item.next_review)
         days_until_review = (next_review - datetime.now()).days
         
+        # Ensure days_until_review is never None
+        if days_until_review is None:
+            days_until_review = 0
+        
         return {
             'topic_name': item.topic_name,
             'description': item.description,
@@ -187,7 +191,12 @@ class SpacedRepetitionEngine:
     
     def get_all_topics(self) -> List[Dict]:
         """Get all topics with their statistics"""
-        return [self.get_topic_stats(name) for name in self.items.keys()]
+        topics = []
+        for name in self.items.keys():
+            stats = self.get_topic_stats(name)
+            if stats is not None:
+                topics.append(stats)
+        return topics
     
     def remove_topic(self, topic_name: str) -> bool:
         """Remove a topic from spaced repetition"""

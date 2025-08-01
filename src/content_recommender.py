@@ -21,21 +21,113 @@ class ContentRecommender:
         
         recommendations = []
         
-        # Get topics that need review
+        # Get topics that need review from spaced repetition system
         due_topics = self._get_due_topics()
         
-        for topic in due_topics:
-            content = await self._find_optimal_content(
-                topic, learning_style, difficulty_preference, time_available
+        for topic_name in due_topics:
+            content = self._find_optimal_content_offline(
+                topic_name, learning_style, difficulty_preference, time_available
             )
             recommendations.append({
-                'topic': topic,
+                'topic': topic_name,
                 'content': content,
-                'priority': self._calculate_priority(topic),
-                'estimated_time': self._estimate_study_time(content)
+                'priority': self._calculate_priority_offline(topic_name),
+                'estimated_time': self._estimate_study_time_offline(content)
             })
         
         return sorted(recommendations, key=lambda x: x['priority'], reverse=True)
+    
+    def _get_due_topics(self) -> List[str]:
+        """Get topics that need review"""
+        if hasattr(self, 'spaced_repetition') and self.spaced_repetition:
+            due_items = self.spaced_repetition.get_due_topics()
+            return [item.topic_name for item in due_items[:5]]
+        else:
+            # Return some default topics for demonstration
+            return ['Python Basics', 'Data Structures', 'Algorithms']
+    
+    def _find_optimal_content_offline(self, topic: str, learning_style: str, 
+                                    difficulty: str, time_available: int) -> List[Dict]:
+        """Find optimal content without external APIs"""
+        content = []
+        
+        # Content database organized by topic and learning style
+        content_database = {
+            'python': {
+                'visual': [
+                    {'type': 'video', 'title': 'Python Visual Tutorial', 'duration': 25, 'difficulty': 'beginner'},
+                    {'type': 'infographic', 'title': 'Python Syntax Guide', 'duration': 10, 'difficulty': 'beginner'}
+                ],
+                'auditory': [
+                    {'type': 'podcast', 'title': 'Python Explained', 'duration': 30, 'difficulty': 'intermediate'},
+                    {'type': 'audio_book', 'title': 'Learn Python by Listening', 'duration': 45, 'difficulty': 'beginner'}
+                ],
+                'kinesthetic': [
+                    {'type': 'interactive', 'title': 'Python Coding Exercise', 'duration': 20, 'difficulty': 'intermediate'},
+                    {'type': 'project', 'title': 'Build a Python App', 'duration': 60, 'difficulty': 'advanced'}
+                ]
+            },
+            'data structures': {
+                'visual': [
+                    {'type': 'animation', 'title': 'Data Structures Visualized', 'duration': 35, 'difficulty': 'intermediate'},
+                    {'type': 'diagram', 'title': 'Tree and Graph Structures', 'duration': 15, 'difficulty': 'advanced'}
+                ],
+                'auditory': [
+                    {'type': 'lecture', 'title': 'Data Structures Explained', 'duration': 40, 'difficulty': 'intermediate'}
+                ],
+                'kinesthetic': [
+                    {'type': 'coding_challenge', 'title': 'Implement Data Structures', 'duration': 50, 'difficulty': 'advanced'}
+                ]
+            }
+        }
+        
+        # Find matching content
+        topic_key = topic.lower().replace(' ', '_')
+        for key in content_database:
+            if key in topic_key or topic_key in key:
+                style_content = content_database[key].get(learning_style, [])
+                
+                # Filter by difficulty and time
+                for item in style_content:
+                    if (item['difficulty'] == difficulty or difficulty == 'any') and \
+                       item['duration'] <= time_available:
+                        content.append(item)
+                
+                break
+        
+        # If no specific content found, provide generic recommendations
+        if not content:
+            content = [
+                {'type': 'tutorial', 'title': f'{topic} Tutorial', 'duration': min(30, time_available), 'difficulty': difficulty},
+                {'type': 'practice', 'title': f'{topic} Exercises', 'duration': min(20, time_available), 'difficulty': difficulty}
+            ]
+        
+        return content[:3]  # Return top 3 recommendations
+    
+    def _calculate_priority_offline(self, topic: str) -> float:
+        """Calculate priority based on topic characteristics"""
+        # Simple priority calculation based on topic name analysis
+        priority_keywords = {
+            'fundamental': 0.9,
+            'basic': 0.8,
+            'advanced': 0.6,
+            'python': 0.85,
+            'algorithm': 0.9,
+            'data': 0.8
+        }
+        
+        topic_lower = topic.lower()
+        priority = 0.5  # Base priority
+        
+        for keyword, weight in priority_keywords.items():
+            if keyword in topic_lower:
+                priority = max(priority, weight)
+        
+        return priority
+    
+    def _estimate_study_time_offline(self, content: List[Dict]) -> int:
+        """Estimate total study time for content"""
+        return sum(item.get('duration', 20) for item in content)
     
     async def suggest_learning_path(self, syllabus_topics: List[str]) -> Dict:
         """Create an optimal learning path through syllabus topics"""

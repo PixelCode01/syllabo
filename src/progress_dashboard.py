@@ -124,14 +124,14 @@ Avg Session: {stats['average_session_length']} min
         due_topics = self.spaced_repetition.get_due_topics()
         return due_topics[:5]  # Next 5 reviews
     
-    def _display_upcoming_reviews(self, reviews: List[Dict]):
+    def _display_upcoming_reviews(self, reviews: List):
         """Display upcoming reviews"""
         if not reviews:
             self.console.print(Panel("No reviews due", title="Upcoming Reviews"))
             return
         
         review_text = "\n".join([
-            f"• {review.get('topic_name', 'Unknown')} - Due: {review.get('next_review', 'Now')}"
+            f"• {getattr(review, 'topic_name', 'Unknown')} - Due: {getattr(review, 'next_review', 'Now')}"
             for review in reviews
         ])
         

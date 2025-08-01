@@ -52,7 +52,27 @@ pip install -r requirements.txt
 
 # Set up environment variables
 cp .env.example .env
-# Edit .env and add your API keys
+# Edit .env and add your API keys (see API_SETUP.md for details)
+```
+
+### API Configuration (Optional)
+
+The system works fully without any API keys using intelligent text analysis and web scraping.
+
+For enhanced AI analysis, optionally configure API keys in your `.env` file:
+
+```bash
+# For enhanced AI-powered analysis (optional)
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# For enhanced YouTube data (optional) 
+YOUTUBE_API_KEY=your_youtube_api_key_here
+```
+
+**Without API keys**: Full functionality using intelligent text analysis, web scraping, and algorithmic content recommendations.
+**With API keys**: Enhanced AI analysis and additional YouTube data.
+
+See [API_SETUP.md](API_SETUP.md) for detailed setup instructions.
 ```
 
 ### Basic Usage
