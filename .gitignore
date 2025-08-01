@@ -105,7 +105,6 @@ USAGE_GUIDE.md
 
 # Sample/demo files that are not core functionality
 sample_syllabus.txt
-demo_*.py
 
 # Redundant/old script files
 syllabo_enhanced.py
