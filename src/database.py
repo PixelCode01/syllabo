@@ -16,7 +16,6 @@ class SyllaboDatabase:
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.cursor()
                 
-                # Syllabi table
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS syllabi (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -26,7 +25,6 @@ class SyllaboDatabase:
                     )
                 ''')
                 
-                # Topics table
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS topics (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -38,7 +36,6 @@ class SyllaboDatabase:
                     )
                 ''')
                 
-                # Videos table
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS videos (
                         id TEXT PRIMARY KEY,
@@ -54,7 +51,6 @@ class SyllaboDatabase:
                     )
                 ''')
                 
-                # Topic-Video relationships
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS topic_videos (
                         topic_id INTEGER,
@@ -67,7 +63,6 @@ class SyllaboDatabase:
                     )
                 ''')
                 
-                # User feedback
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS feedback (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -152,6 +147,38 @@ class SyllaboDatabase:
         except Exception as e:
             self.logger.error(f"Failed to link topic-video: {e}")
     
+    def get_syllabus_by_id(self, syllabus_id: int) -> Optional[Dict]:
+        """Get a single syllabus by its ID"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                cursor.execute(
+                    "SELECT * FROM syllabi WHERE id = ?",
+                    (syllabus_id,)
+                )
+                row = cursor.fetchone()
+                return dict(row) if row else None
+        except Exception as e:
+            self.logger.error(f"Failed to get syllabus by ID: {e}")
+            return None
+
+    def get_topics_by_syllabus_id(self, syllabus_id: int) -> List[Dict]:
+        """Get all topics for a given syllabus ID."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                cursor.execute(
+                    "SELECT * FROM topics WHERE syllabus_id = ?",
+                    (syllabus_id,)
+                )
+                rows = cursor.fetchall()
+                return [dict(row) for row in rows]
+        except Exception as e:
+            self.logger.error(f"Failed to get topics by syllabus ID: {e}")
+            return []
+
     def get_recent_syllabi(self, limit: int = 10) -> List[Dict]:
         """Get recent syllabi"""
         try:

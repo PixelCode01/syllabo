@@ -59,17 +59,14 @@ class VideoAnalyzer:
     async def _analyze_single_video(self, video: Dict, topic: str) -> Dict:
         """Analyze a single video with comprehensive scoring"""
         try:
-            # Get additional data
             transcript = self.youtube_client.get_transcript(video['id'])
             comments = self.youtube_client.get_comments(video['id'])
             
-            # Calculate various scores
             relevance_score = await self._calculate_relevance(video, transcript, topic)
             sentiment_score = await self._analyze_comments(comments)
             quality_score = self._calculate_quality_score(video, transcript)
             engagement_score = self._calculate_engagement_score(video, comments)
             
-            # Calculate composite score
             composite_score = self._calculate_composite_score(
                 relevance_score, sentiment_score, quality_score, engagement_score
             )
@@ -92,7 +89,6 @@ class VideoAnalyzer:
             return analyzed_video
         except Exception as e:
             self.logger.error(f"Failed to analyze video {video.get('id', 'unknown')}: {e}")
-            # Return video with default scores
             return {
                 **video,
                 'relevance_score': 5.0,

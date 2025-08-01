@@ -222,11 +222,11 @@ class YouTubeClient:
             # If no comments found, return some generic positive comments
             if not comments:
                 comments = [
-                    "Great tutorial! Very helpful for learning this topic.",
+                    "Great tutorial. Very helpful for learning this topic.",
                     "Thanks for the clear explanation. This helped me understand better.",
                     "Excellent content. Perfect for students studying this subject.",
-                    "This video made the concept much clearer. Highly recommend!",
-                    "Amazing explanation! This is exactly what I was looking for."
+                    "This video made the concept much clearer. Highly recommend.",
+                    "Amazing explanation. This is exactly what I was looking for."
                 ]
             
             return comments[:max_results]
@@ -234,7 +234,7 @@ class YouTubeClient:
         except Exception as e:
             print(f"Error getting comments for {video_id}: {e}")
             return [
-                "Great tutorial! Very helpful for learning this topic.",
+                "Great tutorial. Very helpful for learning this topic.",
                 "Thanks for the clear explanation.",
                 "Excellent educational content.",
                 "This helped me understand the topic better.",

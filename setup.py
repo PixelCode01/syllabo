@@ -75,7 +75,7 @@ def main():
     print("1. Run demo: python demo_no_api.py")
     print("2. Simple CLI: python syllabo_cli.py")
     print("3. Test features: python test_new_cli.py")
-    print("4. Enhanced CLI: python syllabo_enhanced.py --help")
+    print("4. Main CLI: python syllabo.py --help")
     print()
     print("Note: The app works without any API keys using web scraping!")
     

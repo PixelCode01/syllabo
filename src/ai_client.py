@@ -94,7 +94,7 @@ class AIClient:
             return "None"
         
         else:
-            return "This is a mock AI response for testing purposes."
+            return "Mock response for testing purposes."
     
     async def _get_hackclub_completion(self, prompt: str) -> str:
         payload = {

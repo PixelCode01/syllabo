@@ -4,24 +4,24 @@ This guide explains which files to use for different purposes.
 
 ## Main Applications
 
-### 1. `syllabo_enhanced.py` - Full-Featured CLI (RECOMMENDED)
+### 1. `syllabo.py` - Full-Featured CLI
 The main application with all features including spaced repetition.
 
 ```bash
 # Analyze syllabus and add topics to spaced repetition
-python syllabo_enhanced.py analyze --file syllabus.pdf --search-videos --add-to-review --print-results
+python syllabo.py analyze --file syllabus.pdf --search-videos --add-to-review --print-results
 
 # Search for specific topic
-python syllabo_enhanced.py search --topic "Machine Learning" --max-videos 10
+python syllabo.py search --topic "Machine Learning" --max-videos 10
 
 # Spaced repetition commands
-python syllabo_enhanced.py review list
-python syllabo_enhanced.py review due --notify
-python syllabo_enhanced.py review mark --topic "Neural Networks" --success
+python syllabo.py review list
+python syllabo.py review due --notify
+python syllabo.py review mark --topic "Neural Networks" --success
 
 # View history and export
-python syllabo_enhanced.py history
-python syllabo_enhanced.py export --syllabus-id 1 --format html
+python syllabo.py history
+python syllabo.py export --syllabus-id 1 --format html
 ```
 
 ### 2. `forgetmenot.py` - Standalone Spaced Repetition
@@ -73,7 +73,7 @@ These are the building blocks used by the main applications:
 
 1. **For comprehensive syllabus analysis with spaced repetition:**
    ```bash
-   python syllabo_enhanced.py analyze --file your_syllabus.pdf --search-videos --add-to-review --print-results
+   python syllabo.py analyze --file your_syllabus.pdf --search-videos --add-to-review --print-results
    ```
 
 2. **For daily review routine:**
@@ -91,9 +91,7 @@ These are the building blocks used by the main applications:
 
 ```
 syllabo/
-├── syllabo_enhanced.py      # Main CLI application (USE THIS)
-├── forgetmenot.py          # Standalone spaced repetition
-├── interactive_scraper.py  # Interactive interface
+├── syllabo.py              # Main CLI application
 ├── src/                    # Core modules (don't run directly)
 ├── README.md              # Project overview
 ├── SPACED_REPETITION_GUIDE.md  # Detailed spaced repetition docs

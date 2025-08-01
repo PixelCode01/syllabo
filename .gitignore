@@ -98,6 +98,15 @@ USAGE_GUIDE.md
 # Sample/demo files that are not core functionality
 sample_syllabus.txt
 demo_*.py
+
+# Redundant/old script files
+syllabo_enhanced.py
+syllabo_enhanced_fixed.py
+interactive_scraper.py
+main.py
+run_syllabo.py
+forgetmenot.py
+
 test_*.py
 
 # Legacy/unused components and duplicate files
@@ -106,7 +115,6 @@ src/app.py
 src/terminal_display.py
 src/styles.css
 syllabo_final.py
-run_syllabo.py
 
 # Temporary files
 *.tmp
@@ -134,5 +142,3 @@ coverage.xml
 # Kiro IDE (keep steering rules but ignore other temp files)
 .kiro/cache/
 .kiro/temp/
-.kiro/
-coding-style.md

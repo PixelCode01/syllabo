@@ -1,0 +1,16 @@
+Course: Introduction to Machine Learning
+
+Week 1: Python Fundamentals
+- Variables and data types
+- Functions and control structures
+- Libraries: NumPy, Pandas
+
+Week 2: Data Preprocessing
+- Data cleaning techniques
+- Feature scaling and normalization
+- Handling missing data
+
+Week 3: Supervised Learning
+- Linear regression
+- Classification algorithms
+- Model evaluation metrics

@@ -4,7 +4,7 @@ A comprehensive educational resource finder that helps students discover the bes
 
 ## Key Features
 
-### Real-Time Content Discovery
+### Content Discovery
 - **YouTube Video & Playlist Scraping**: Find relevant educational videos and playlists without API keys
 - **Comprehensive Resource Discovery**: Automatically detects both individual videos and structured playlists
 - **Course Platform Integration**: Discover courses from Coursera, Udemy, and freeCodeCamp
@@ -27,7 +27,7 @@ A comprehensive educational resource finder that helps students discover the bes
 - **Coverage Analysis**: Shows which syllabus topics are well-covered by available resources
 
 ### Professional Output
-- **Clean Interface**: Professional, emoji-free output following coding standards
+- **Clean Interface**: Professional output following coding standards
 - **Comprehensive Results**: Detailed analysis with direct links to courses and videos
 - **Resource Recommendations**: Books, courses, documentation, and community resources
 - **Export Options**: Multiple output formats for different use cases
@@ -53,7 +53,7 @@ cp .env.example .env
 **Main Application (Recommended):**
 ```bash
 # Full-featured CLI with spaced repetition
-python syllabo_enhanced.py analyze --file syllabus.pdf --search-videos --add-to-review --print-results
+python syllabo.py analyze --file syllabus.pdf --search-videos --add-to-review --print-results
 ```
 
 **Quick Spaced Repetition:**
@@ -141,16 +141,17 @@ Each video receives multiple scores:
 
 ```
 syllabo/
-├── syllabo_enhanced.py      # Main CLI application (RECOMMENDED)
-├── forgetmenot.py          # Standalone spaced repetition CLI
-├── interactive_scraper.py  # Interactive syllabus processor
-├── src/                    # Core modules (don't run directly)
+├── syllabo.py              # Main CLI application
+├── src/                    # Core modules
 │   ├── ai_client.py        # AI integration
 │   ├── database.py         # Database management
 │   ├── export_system.py    # Export functionality
 │   ├── spaced_repetition.py # Spaced repetition engine
 │   ├── notification_system.py # Desktop notifications
-│   └── ... (other core modules)
+│   ├── video_analyzer.py   # Video analysis and scoring
+│   ├── youtube_client.py   # YouTube API integration
+│   ├── syllabus_parser.py  # Syllabus parsing
+│   └── cli/               # CLI components
 ├── requirements.txt        # Python dependencies
 ├── README.md              # Project overview
 ├── USAGE.md               # Usage instructions
@@ -267,13 +268,13 @@ The system uses the **Leitner algorithm** with these review intervals:
 ### Integration with Syllabo
 ```bash
 # Analyze syllabus and add topics to review schedule
-python syllabo_enhanced.py analyze --file syllabus.pdf --add-to-review
+python syllabo.py analyze --file syllabus.pdf --add-to-review
 
 # Check what's due for review
-python syllabo_enhanced.py review due --notify
+python syllabo.py review due --notify
 
 # Mark a topic as successfully reviewed
-python syllabo_enhanced.py review mark --topic "Neural Networks" --success
+python syllabo.py review mark --topic "Neural Networks" --success
 ```
 
 ### Standalone Forget-Me-Not Tool
