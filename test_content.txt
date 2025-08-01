@@ -1,0 +1,17 @@
+Machine Learning Basics
+
+Machine learning is a subset of artificial intelligence that enables computers to learn and make decisions from data without being explicitly programmed. There are three main types of machine learning:
+
+1. Supervised Learning: Uses labeled data to train models. Examples include classification and regression problems.
+
+2. Unsupervised Learning: Finds patterns in data without labels. Examples include clustering and dimensionality reduction.
+
+3. Reinforcement Learning: Learns through interaction with an environment using rewards and penalties.
+
+Key concepts in machine learning include:
+- Training data: The dataset used to teach the algorithm
+- Features: Individual measurable properties of observed phenomena
+- Model: The mathematical representation of a real-world process
+- Algorithm: The method used to create the model
+
+Popular machine learning algorithms include linear regression, decision trees, neural networks, and support vector machines.
