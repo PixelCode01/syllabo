@@ -4,38 +4,38 @@ This guide explains which files to use for different purposes.
 
 ## Main Applications
 
-### 1. `enhanced_cli.py` - Enhanced Full-Featured CLI (RECOMMENDED)
-The enhanced application with all new features including quizzes, progress tracking, and multi-platform search.
+### 1. `main.py` - Enhanced Full-Featured CLI (RECOMMENDED)
+The main application with all features including quizzes, progress tracking, multi-platform search, and spaced repetition.
 
 ```bash
 # Comprehensive syllabus analysis with multi-platform resources
-python enhanced_cli.py analyze --file syllabus.pdf --search-videos --include-podcasts --include-reading --add-to-review --difficulty-filter intermediate
+python main.py analyze --file syllabus.pdf --search-videos --include-podcasts --include-reading --add-to-review --difficulty-filter intermediate
 
 # Interactive quiz system
-python enhanced_cli.py quiz generate --topic "Machine Learning" --num-questions 10
-python enhanced_cli.py quiz take
+python main.py quiz generate --topic "Machine Learning" --num-questions 10
+python main.py quiz take
 
 # Progress tracking and analytics
-python enhanced_cli.py progress --export
+python main.py progress --export
 
 # Study goals management
-python enhanced_cli.py goals create --title "Study 30 min daily" --type daily --target 30 --unit minutes
-python enhanced_cli.py goals list
-python enhanced_cli.py goals suggest
+python main.py goals create --title "Study 30 min daily" --type daily --target 30 --unit minutes
+python main.py goals list
+python main.py goals suggest
 
 # Multi-platform content search
-python enhanced_cli.py platforms --topic "Data Science" --free-only --include-coursera --include-edx --include-khan
+python main.py platforms --topic "Data Science" --free-only
 
 # Smart bookmarking system
-python enhanced_cli.py bookmarks add --video-id "abc123" --video-title "ML Tutorial" --timestamp "15:30" --note "Key concept explanation" --topic "Machine Learning" --tags ml tutorial --importance 4
-python enhanced_cli.py bookmarks search --query "neural networks"
-python enhanced_cli.py bookmarks export --format markdown
+python main.py bookmarks add --video-id "abc123" --video-title "ML Tutorial" --timestamp "15:30" --note "Key concept explanation" --topic "Machine Learning" --tags ml tutorial --importance 4
+python main.py bookmarks search --query "neural networks"
+python main.py bookmarks export --format markdown
 
 # Study session management (Pomodoro technique)
-python enhanced_cli.py session start --topic "Neural Networks" --duration 25
-python enhanced_cli.py session break --break-type short
-python enhanced_cli.py session end --notes "Completed backpropagation review"
-python enhanced_cli.py session stats
+python main.py session start --topic "Neural Networks" --duration 25
+python main.py session break --break-type short
+python main.py session end --notes "Completed backpropagation review"
+python main.py session stats
 ```
 
 ### 2. `syllabo.py` - Original Full-Featured CLI
@@ -65,13 +65,13 @@ Generate and take quizzes from your study content:
 
 ```bash
 # Generate quiz from content file
-python enhanced_cli.py quiz generate --topic "Machine Learning" --content-file notes.txt --num-questions 10
+python main.py quiz generate --topic "Machine Learning" --content-file notes.txt --num-questions 10
 
 # Take a quiz interactively
-python enhanced_cli.py quiz take
+python main.py quiz take
 
 # View quiz history
-python enhanced_cli.py quiz history
+python main.py quiz history
 ```
 
 ### Progress Tracking Dashboard
@@ -79,10 +79,10 @@ Monitor your learning progress with visual analytics:
 
 ```bash
 # View comprehensive progress dashboard
-python enhanced_cli.py progress
+python main.py progress
 
 # Export progress report
-python enhanced_cli.py progress --export
+python main.py progress --export
 ```
 
 ### Study Goals & Milestones
@@ -90,15 +90,15 @@ Set and track learning objectives:
 
 ```bash
 # Create different types of goals
-python enhanced_cli.py goals create --title "Daily Study" --type daily --target 30 --unit minutes
-python enhanced_cli.py goals create --title "Weekly Topics" --type weekly --target 3 --unit topics
-python enhanced_cli.py goals create --title "Quiz Mastery" --type milestone --target 90 --unit percent
+python main.py goals create --title "Daily Study" --type daily --target 30 --unit minutes
+python main.py goals create --title "Weekly Topics" --type weekly --target 3 --unit topics
+python main.py goals create --title "Quiz Mastery" --type milestone --target 90 --unit percent
 
 # List active goals
-python enhanced_cli.py goals list
+python main.py goals list
 
 # Get goal suggestions based on your level
-python enhanced_cli.py goals suggest
+python main.py goals suggest
 ```
 
 ### Multi-Platform Content Search
@@ -106,13 +106,10 @@ Search across multiple learning platforms:
 
 ```bash
 # Search all platforms
-python enhanced_cli.py platforms --topic "Python Programming"
+python main.py platforms --topic "Python Programming"
 
 # Filter for free content only
-python enhanced_cli.py platforms --topic "Data Science" --free-only
-
-# Search specific platforms
-python enhanced_cli.py platforms --topic "Machine Learning" --include-coursera --include-edx
+python main.py platforms --topic "Data Science" --free-only
 ```
 
 ### Smart Bookmarking
@@ -120,17 +117,17 @@ Save important video moments with context:
 
 ```bash
 # Add bookmark with full details
-python enhanced_cli.py bookmarks add --video-id "dQw4w9WgXcQ" --video-title "Python Tutorial" --timestamp "15:30" --note "Important function explanation" --topic "Python" --tags tutorial function --importance 4
+python main.py bookmarks add --video-id "dQw4w9WgXcQ" --video-title "Python Tutorial" --timestamp "15:30" --note "Important function explanation" --topic "Python" --tags tutorial function --importance 4
 
 # List bookmarks by topic
-python enhanced_cli.py bookmarks list --topic "Python"
+python main.py bookmarks list --topic "Python"
 
 # Search bookmarks
-python enhanced_cli.py bookmarks search --query "function"
+python main.py bookmarks search --query "function"
 
 # Export bookmarks in different formats
-python enhanced_cli.py bookmarks export --format markdown
-python enhanced_cli.py bookmarks export --format csv
+python main.py bookmarks export --format markdown
+python main.py bookmarks export --format csv
 ```
 
 ### Study Session Management (Pomodoro)
@@ -138,17 +135,17 @@ Manage focused study sessions:
 
 ```bash
 # Start a study session
-python enhanced_cli.py session start --topic "Neural Networks" --duration 25
+python main.py session start --topic "Neural Networks" --duration 25
 
 # Take breaks during study
-python enhanced_cli.py session break --break-type short
-python enhanced_cli.py session break --break-type long
+python main.py session break --break-type short
+python main.py session break --break-type long
 
 # End session with notes
-python enhanced_cli.py session end --notes "Completed backpropagation chapter"
+python main.py session end --notes "Completed backpropagation chapter"
 
 # Check current session status
-python enhanced_cli.py session stats
+python main.py session stats
 ```
 
 ## Core Modules (src/)
@@ -171,28 +168,39 @@ These are the building blocks used by the main applications:
 
 ## Quick Start
 
-1. **For comprehensive syllabus analysis with spaced repetition:**
+1. **For comprehensive analysis with all new features:**
    ```bash
-   python syllabo.py analyze --file your_syllabus.pdf --search-videos --add-to-review --print-results
+   python main.py analyze --file your_syllabus.pdf --search-videos --include-podcasts --include-reading --add-to-review --print-results
    ```
 
-2. **For daily review routine:**
+2. **For interactive quiz and study sessions:**
    ```bash
-   forgetmenot list --urgent
-   forgetmenot review "Topic Name" --success
+   python main.py quiz generate --topic "Your Topic" --num-questions 5
+   python main.py session start --topic "Your Topic" --duration 25
    ```
 
-3. **For interactive exploration:**
+3. **For progress tracking and goals:**
    ```bash
-   python interactive_scraper.py
+   python main.py progress
+   python main.py goals create --title "Daily Study" --type daily --target 30 --unit minutes
    ```
 
 ## File Structure
 
 ```
 syllabo/
-├── syllabo.py              # Main CLI application
-├── src/                    # Core modules (don't run directly)
+├── main.py                 # Enhanced main CLI application (RECOMMENDED)
+├── syllabo.py              # Original CLI application
+├── src/                    # Core modules with all new features
+│   ├── quiz_generator.py   # Interactive quiz system
+│   ├── progress_dashboard.py # Progress tracking
+│   ├── goals_manager.py    # Study goals management
+│   ├── platform_integrator.py # Multi-platform search
+│   ├── podcast_integrator.py # Podcast and reading resources
+│   ├── bookmark_manager.py # Smart bookmarking
+│   ├── difficulty_analyzer.py # Content difficulty rating
+│   ├── study_session_manager.py # Pomodoro sessions
+│   └── ... (other core modules)
 ├── README.md              # Project overview
 ├── SPACED_REPETITION_GUIDE.md  # Detailed spaced repetition docs
 └── USAGE.md               # This file

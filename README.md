@@ -57,29 +57,29 @@ cp .env.example .env
 
 ### Basic Usage
 
-**Enhanced CLI (Recommended):**
+**Main Application (Recommended):**
 ```bash
 # Comprehensive analysis with multi-platform search
-python enhanced_cli.py analyze --file syllabus.pdf --search-videos --include-podcasts --include-reading --add-to-review
+python main.py analyze --file syllabus.pdf --search-videos --include-podcasts --include-reading --add-to-review
 
 # Interactive quiz generation and taking
-python enhanced_cli.py quiz generate --topic "Machine Learning" --num-questions 10
-python enhanced_cli.py quiz take
+python main.py quiz generate --topic "Machine Learning" --num-questions 10
+python main.py quiz take
 
 # Progress tracking and goals
-python enhanced_cli.py progress
-python enhanced_cli.py goals create --title "Study 30 min daily" --type daily --target 30 --unit minutes
+python main.py progress
+python main.py goals create --title "Study 30 min daily" --type daily --target 30 --unit minutes
 
 # Study session management
-python enhanced_cli.py session start --topic "Neural Networks" --duration 25
-python enhanced_cli.py session break --break-type short
-python enhanced_cli.py session end --notes "Completed backpropagation review"
+python main.py session start --topic "Neural Networks" --duration 25
+python main.py session break --break-type short
+python main.py session end --notes "Completed backpropagation review"
 
 # Multi-platform content search
-python enhanced_cli.py platforms --topic "Data Science" --free-only --include-coursera --include-khan
+python main.py platforms --topic "Data Science" --free-only
 
 # Smart bookmarking
-python enhanced_cli.py bookmarks add --video-id "abc123" --video-title "ML Tutorial" --timestamp "15:30" --note "Important concept" --topic "Machine Learning"
+python main.py bookmarks add --video-id "abc123" --video-title "ML Tutorial" --timestamp "15:30" --note "Important concept" --topic "Machine Learning"
 ```
 
 **Original CLI:**
