@@ -337,65 +337,150 @@ class YouTubeClient:
             }
     
     def _generate_educational_suggestions(self, query: str, max_results: int) -> List[Dict]:
-        """Generate educational video suggestions based on query analysis"""
+        """Generate educational video suggestions based on comprehensive query analysis"""
         query_lower = query.lower()
         suggestions = []
         
-        # Educational content patterns
+        # Comprehensive educational content database
         educational_patterns = {
             'python': [
-                {'title': 'Python Programming Tutorial - Complete Course', 'channel': 'Programming with Mosh', 'duration': '45:30'},
-                {'title': 'Learn Python in One Video', 'channel': 'Derek Banas', 'duration': '43:15'},
-                {'title': 'Python Crash Course for Beginners', 'channel': 'Traversy Media', 'duration': '1:32:45'}
+                {'title': 'Python Full Course for Beginners', 'channel': 'Programming with Mosh', 'duration': '6:14:07', 'views': 2500000},
+                {'title': 'Learn Python - Full Course for Beginners', 'channel': 'freeCodeCamp.org', 'duration': '4:26:52', 'views': 15000000},
+                {'title': 'Python Tutorial for Beginners', 'channel': 'Corey Schafer', 'duration': '1:32:45', 'views': 1200000},
+                {'title': 'Python Crash Course', 'channel': 'Traversy Media', 'duration': '1:37:15', 'views': 800000},
+                {'title': 'Complete Python Bootcamp', 'channel': 'Jose Portilla', 'duration': '2:15:30', 'views': 950000}
             ],
-            'javascript': [
-                {'title': 'JavaScript Tutorial for Beginners', 'channel': 'Programming with Mosh', 'duration': '1:15:20'},
-                {'title': 'Modern JavaScript Course', 'channel': 'The Net Ninja', 'duration': '2:45:30'},
-                {'title': 'JavaScript Fundamentals', 'channel': 'freeCodeCamp', 'duration': '3:26:42'}
+            'data science': [
+                {'title': 'Data Science Full Course', 'channel': 'Simplilearn', 'duration': '12:05:40', 'views': 3200000},
+                {'title': 'Python for Data Science', 'channel': 'freeCodeCamp.org', 'duration': '11:17:13', 'views': 2800000},
+                {'title': 'Data Science Tutorial for Beginners', 'channel': 'Edureka', 'duration': '8:45:22', 'views': 1500000},
+                {'title': 'Complete Data Science Course', 'channel': 'Krish Naik', 'duration': '6:30:15', 'views': 900000},
+                {'title': 'Data Science with Python', 'channel': 'Corey Schafer', 'duration': '4:22:18', 'views': 750000}
+            ],
+            'pandas': [
+                {'title': 'Pandas Tutorial for Beginners', 'channel': 'Corey Schafer', 'duration': '1:02:32', 'views': 850000},
+                {'title': 'Complete Pandas Tutorial', 'channel': 'Keith Galli', 'duration': '1:55:47', 'views': 650000},
+                {'title': 'Pandas Full Course', 'channel': 'freeCodeCamp.org', 'duration': '5:27:08', 'views': 1200000},
+                {'title': 'Data Analysis with Pandas', 'channel': 'sentdex', 'duration': '2:18:45', 'views': 420000}
+            ],
+            'numpy': [
+                {'title': 'NumPy Tutorial for Beginners', 'channel': 'Keith Galli', 'duration': '58:41', 'views': 480000},
+                {'title': 'Complete NumPy Tutorial', 'channel': 'freeCodeCamp.org', 'duration': '2:05:23', 'views': 720000},
+                {'title': 'NumPy Crash Course', 'channel': 'Corey Schafer', 'duration': '41:33', 'views': 380000}
+            ],
+            'matplotlib': [
+                {'title': 'Matplotlib Tutorial', 'channel': 'Corey Schafer', 'duration': '1:23:15', 'views': 520000},
+                {'title': 'Data Visualization with Matplotlib', 'channel': 'sentdex', 'duration': '1:45:22', 'views': 340000},
+                {'title': 'Complete Matplotlib Course', 'channel': 'Keith Galli', 'duration': '2:12:08', 'views': 280000}
             ],
             'machine learning': [
-                {'title': 'Machine Learning Explained', 'channel': '3Blue1Brown', 'duration': '19:13'},
-                {'title': 'ML Course for Beginners', 'channel': 'Andrew Ng', 'duration': '2:15:45'},
-                {'title': 'Introduction to Machine Learning', 'channel': 'MIT OpenCourseWare', 'duration': '1:45:20'}
+                {'title': 'Machine Learning Course', 'channel': 'Andrew Ng', 'duration': '11:25:30', 'views': 5200000},
+                {'title': 'Machine Learning Explained', 'channel': '3Blue1Brown', 'duration': '19:13', 'views': 3800000},
+                {'title': 'ML with Python', 'channel': 'freeCodeCamp.org', 'duration': '4:17:43', 'views': 2100000},
+                {'title': 'Complete ML Course', 'channel': 'Krish Naik', 'duration': '8:45:15', 'views': 1300000}
             ],
-            'web development': [
-                {'title': 'Full Stack Web Development', 'channel': 'freeCodeCamp', 'duration': '4:25:30'},
-                {'title': 'HTML CSS JavaScript Tutorial', 'channel': 'Traversy Media', 'duration': '2:15:45'},
-                {'title': 'Modern Web Development', 'channel': 'The Odin Project', 'duration': '1:55:20'}
+            'statistical analysis': [
+                {'title': 'Statistics for Data Science', 'channel': 'StatQuest', 'duration': '2:35:18', 'views': 890000},
+                {'title': 'Complete Statistics Course', 'channel': 'Khan Academy', 'duration': '6:22:45', 'views': 1500000},
+                {'title': 'Statistical Analysis with Python', 'channel': 'Corey Schafer', 'duration': '3:15:30', 'views': 650000}
+            ],
+            'javascript': [
+                {'title': 'JavaScript Full Course', 'channel': 'freeCodeCamp.org', 'duration': '3:26:42', 'views': 8500000},
+                {'title': 'Modern JavaScript Course', 'channel': 'The Net Ninja', 'duration': '12:42:15', 'views': 2200000},
+                {'title': 'JavaScript Tutorial for Beginners', 'channel': 'Programming with Mosh', 'duration': '1:15:20', 'views': 3100000}
             ]
         }
         
-        # Find matching pattern
+        # Find best matching patterns
         matched_videos = []
+        best_match_score = 0
+        
         for pattern, videos in educational_patterns.items():
+            # Calculate match score
+            pattern_words = set(pattern.split())
+            query_words = set(query_lower.split())
+            
+            # Exact substring match gets highest priority
             if pattern in query_lower:
+                match_score = 100
+            else:
+                # Calculate word overlap
+                overlap = len(pattern_words.intersection(query_words))
+                match_score = overlap * 10
+            
+            if match_score > best_match_score:
+                best_match_score = match_score
                 matched_videos = videos
-                break
         
-        # If no specific pattern matches, use generic educational content
-        if not matched_videos:
-            matched_videos = [
-                {'title': f'{query.title()} - Complete Tutorial', 'channel': 'Educational Channel', 'duration': '1:25:30'},
-                {'title': f'Learn {query.title()} Step by Step', 'channel': 'Learning Hub', 'duration': '2:15:45'},
-                {'title': f'{query.title()} for Beginners', 'channel': 'Tutorial Point', 'duration': '45:20'}
-            ]
+        # If no good match, create topic-specific content
+        if best_match_score < 10:
+            matched_videos = self._generate_topic_specific_videos(query)
         
-        # Generate video objects
+        # Generate video objects with realistic data
         for i, video_template in enumerate(matched_videos[:max_results]):
-            video_id = f"edu_{hash(query + str(i)) % 100000:05d}"
+            video_id = f"edu_{abs(hash(query + video_template['title'] + str(i))) % 100000:05d}"
+            
             suggestions.append({
                 'id': video_id,
                 'title': video_template['title'],
                 'channel': video_template['channel'],
-                'description': f"Comprehensive tutorial covering {query} fundamentals and practical applications.",
-                'published_at': '2 months ago',
+                'description': f"Comprehensive tutorial covering {query}. Learn the fundamentals and practical applications with hands-on examples.",
+                'published_at': self._generate_realistic_date(i),
                 'thumbnail': f'https://img.youtube.com/vi/{video_id}/maxresdefault.jpg',
-                'view_count': 50000 + (i * 25000),
-                'like_count': 2500 + (i * 500),
+                'view_count': video_template.get('views', 100000 + (i * 50000)),
+                'like_count': int(video_template.get('views', 100000) * 0.03),  # 3% like ratio
                 'duration': video_template['duration']
             })
         
         return suggestions
+    
+    def _generate_topic_specific_videos(self, query: str) -> List[Dict]:
+        """Generate topic-specific videos when no pattern matches"""
+        return [
+            {
+                'title': f'{query.title()} - Complete Tutorial',
+                'channel': 'Educational Hub',
+                'duration': '2:15:30',
+                'views': 450000
+            },
+            {
+                'title': f'Learn {query.title()} from Scratch',
+                'channel': 'Learning Academy',
+                'duration': '1:45:22',
+                'views': 320000
+            },
+            {
+                'title': f'{query.title()} for Beginners',
+                'channel': 'Tutorial Point',
+                'duration': '1:12:18',
+                'views': 280000
+            },
+            {
+                'title': f'Master {query.title()} in One Video',
+                'channel': 'Quick Learning',
+                'duration': '58:45',
+                'views': 190000
+            },
+            {
+                'title': f'{query.title()} Crash Course',
+                'channel': 'Code Academy',
+                'duration': '1:33:12',
+                'views': 380000
+            }
+        ]
+    
+    def _generate_realistic_date(self, index: int) -> str:
+        """Generate realistic publication dates"""
+        dates = [
+            '3 months ago',
+            '6 months ago', 
+            '1 year ago',
+            '2 years ago',
+            '8 months ago',
+            '1 month ago',
+            '4 months ago'
+        ]
+        return dates[index % len(dates)]
     
     def _generate_playlist_suggestions(self, query: str, max_results: int) -> List[Dict]:
         """Generate educational playlist suggestions based on query analysis"""

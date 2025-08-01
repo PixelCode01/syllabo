@@ -22,8 +22,15 @@ class SyllabusParser:
         return text
     
     async def extract_topics(self, syllabus_text: str, ai_client) -> List[Dict]:
-        """Extract topics using both AI and text analysis"""
-        # Try AI first, then fallback to text analysis
+        """Extract topics using advanced text analysis with AI enhancement"""
+        # Use advanced text analysis as primary method for better accuracy
+        text_topics = self._advanced_text_extraction(syllabus_text)
+        
+        # If we have good text-based results, use them
+        if len(text_topics) >= 3:
+            return text_topics
+        
+        # Otherwise, try AI enhancement
         try:
             prompt = f"""Extract main topics from this syllabus as JSON array:
 [{{"name": "Topic Name", "subtopics": ["subtopic1", "subtopic2"]}}]
@@ -34,17 +41,24 @@ Syllabus:
             response = await ai_client.get_completion(prompt)
             
             import json
-            topics = json.loads(response)
+            ai_topics = json.loads(response)
             
-            # Validate the response
-            if isinstance(topics, list) and len(topics) > 0:
-                return topics
+            # Validate and merge with text-based topics
+            if isinstance(ai_topics, list) and len(ai_topics) > 0:
+                # Merge unique topics
+                all_topics = text_topics.copy()
+                existing_names = {t['name'].lower() for t in text_topics}
+                
+                for ai_topic in ai_topics:
+                    if ai_topic.get('name', '').lower() not in existing_names:
+                        all_topics.append(ai_topic)
+                
+                return all_topics[:8]  # Limit to 8 topics
             else:
-                raise ValueError("Invalid AI response format")
+                return text_topics
                 
         except Exception:
-            # Use advanced text analysis as fallback
-            return self._advanced_text_extraction(syllabus_text)
+            return text_topics
     
     def _advanced_text_extraction(self, text: str) -> List[Dict]:
         """Advanced text-based topic extraction using multiple strategies"""
@@ -76,11 +90,13 @@ Syllabus:
         lines = text.split('\n')
         current_topic = None
         
-        # Patterns for structured content
+        # Enhanced patterns for structured content
         topic_patterns = [
             r'^(Chapter|Unit|Topic|Week|Module|Section|Part)\s*(\d+)[:.]?\s*(.+)',
-            r'^(\d+)\.?\s+(.*)',
-            r'^([A-Z][A-Z\s]+)$'  # All caps headings
+            r'^(\d+)\.?\s+(.+)',  # Numbered items
+            r'^([A-Z][A-Z\s]+)$',  # All caps headings
+            r'^([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*):',  # Title Case with colon
+            r'^\s*[-•*]\s*([A-Z][a-z]+(?:\s+[A-Za-z]+)*)',  # Bulleted items
         ]
         
         for line in lines:
@@ -103,10 +119,14 @@ Syllabus:
                     elif len(match.groups()) >= 2:
                         topic_name = match.group(2).strip()
                     else:
-                        topic_name = line
+                        topic_name = match.group(1).strip()
                     
-                    current_topic = {"name": topic_name, "subtopics": []}
-                    is_topic = True
+                    # Clean up topic name
+                    topic_name = re.sub(r'^[-•*○]\s*', '', topic_name)
+                    
+                    if len(topic_name) > 2:
+                        current_topic = {"name": topic_name, "subtopics": []}
+                        is_topic = True
                     break
             
             # If not a topic header, might be a subtopic
@@ -170,32 +190,51 @@ Syllabus:
         topics = []
         text_lower = text.lower()
         
-        # Educational topic keywords
+        # Enhanced educational topic keywords with more specific detection
         topic_keywords = {
-            'Programming': ['programming', 'coding', 'software', 'development', 'algorithm', 'data structure'],
-            'Mathematics': ['mathematics', 'math', 'calculus', 'algebra', 'geometry', 'statistics'],
-            'Science': ['physics', 'chemistry', 'biology', 'science', 'experiment', 'research'],
+            'Python Programming': ['python', 'programming', 'coding', 'script', 'interpreter'],
+            'Pandas': ['pandas', 'dataframe', 'data manipulation', 'csv', 'excel'],
+            'NumPy': ['numpy', 'arrays', 'numerical', 'scientific computing', 'matrix'],
+            'Matplotlib': ['matplotlib', 'visualization', 'plotting', 'charts', 'graphs'],
+            'Machine Learning': ['machine learning', 'ml', 'algorithms', 'model', 'training', 'supervised', 'unsupervised'],
+            'Statistical Analysis': ['statistical', 'statistics', 'analysis', 'probability', 'hypothesis', 'regression'],
+            'Data Visualization': ['visualization', 'plotting', 'charts', 'graphs', 'visual', 'dashboard'],
+            'Data Science': ['data science', 'data', 'analysis', 'analytics', 'insights', 'big data'],
             'Web Development': ['html', 'css', 'javascript', 'web', 'frontend', 'backend'],
-            'Data Science': ['data', 'analysis', 'visualization', 'machine learning', 'statistics'],
-            'Database': ['database', 'sql', 'data storage', 'query', 'relational'],
-            'Network': ['network', 'internet', 'protocol', 'security', 'communication']
+            'Database': ['database', 'sql', 'mysql', 'postgresql', 'mongodb', 'query'],
+            'Deep Learning': ['deep learning', 'neural networks', 'cnn', 'rnn', 'tensorflow', 'pytorch'],
+            'Algorithms': ['algorithms', 'data structures', 'sorting', 'searching', 'complexity']
         }
         
         for topic_name, keywords in topic_keywords.items():
-            keyword_count = sum(1 for keyword in keywords if keyword in text_lower)
-            if keyword_count >= 2:  # At least 2 keywords must match
+            # Calculate match score with exact matches getting higher weight
+            score = 0
+            matched_keywords = []
+            
+            for keyword in keywords:
+                if keyword in text_lower:
+                    if len(keyword.split()) > 1:  # Multi-word exact match
+                        score += 3
+                    else:
+                        score += 1
+                    matched_keywords.append(keyword)
+            
+            # Lower threshold for more granular detection
+            if score >= 1:  # At least 1 keyword must match
                 # Find related subtopics
                 subtopics = []
-                for keyword in keywords:
-                    if keyword in text_lower:
-                        subtopics.append(keyword.title())
+                for keyword in matched_keywords:
+                    subtopics.append(keyword.title())
                 
                 topics.append({
                     "name": topic_name,
-                    "subtopics": subtopics[:4]  # Limit to 4 subtopics
+                    "subtopics": subtopics[:4],  # Limit to 4 subtopics
+                    "score": score
                 })
         
-        return topics
+        # Sort by score and return top matches
+        topics.sort(key=lambda x: x.get('score', 0), reverse=True)
+        return [{"name": t["name"], "subtopics": t["subtopics"]} for t in topics[:8]]
     
     def _infer_topic_name(self, items: List[str]) -> str:
         """Infer a topic name from a list of items"""

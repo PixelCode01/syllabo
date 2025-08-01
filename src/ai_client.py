@@ -3,7 +3,7 @@ import requests
 import hashlib
 import json
 import time
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 from .logger import SyllaboLogger
 
 class AIClient:
@@ -163,56 +163,125 @@ class AIClient:
         return str(round(score, 1))
     
     def _extract_topics_from_text(self, prompt: str) -> str:
-        """Extract topics using text analysis and keyword detection"""
+        """Extract topics using advanced text analysis and keyword detection"""
         content = prompt.lower()
         
-        # Common educational topic patterns
+        # Enhanced educational topic patterns with more specific detection
         topic_patterns = {
-            'programming': ['python', 'javascript', 'java', 'c++', 'programming', 'coding', 'software', 'development'],
+            'python programming': ['python', 'programming', 'coding', 'software', 'development', 'script'],
+            'pandas': ['pandas', 'dataframe', 'data manipulation', 'data analysis', 'csv', 'excel'],
+            'numpy': ['numpy', 'numerical', 'arrays', 'scientific computing', 'linear algebra', 'matrix'],
+            'matplotlib': ['matplotlib', 'visualization', 'plotting', 'charts', 'graphs', 'seaborn'],
+            'machine learning': ['machine learning', 'ml', 'ai', 'artificial intelligence', 'algorithms', 'model', 'training', 'supervised', 'unsupervised'],
+            'statistical analysis': ['statistical', 'statistics', 'analysis', 'probability', 'hypothesis', 'regression', 'correlation'],
+            'data visualization': ['visualization', 'plotting', 'charts', 'graphs', 'visual', 'dashboard', 'infographic'],
+            'data science': ['data science', 'data', 'analysis', 'analytics', 'insights', 'big data', 'data mining'],
             'web development': ['html', 'css', 'web', 'frontend', 'backend', 'react', 'angular', 'vue', 'node'],
-            'data science': ['data', 'analysis', 'statistics', 'pandas', 'numpy', 'visualization', 'machine learning'],
-            'machine learning': ['ml', 'ai', 'neural', 'deep learning', 'algorithm', 'model', 'training'],
-            'database': ['sql', 'database', 'mysql', 'postgresql', 'mongodb', 'data storage'],
-            'mathematics': ['math', 'calculus', 'algebra', 'geometry', 'statistics', 'probability'],
-            'science': ['physics', 'chemistry', 'biology', 'science', 'experiment', 'research']
+            'database': ['sql', 'database', 'mysql', 'postgresql', 'mongodb', 'data storage', 'nosql'],
+            'javascript': ['javascript', 'js', 'node', 'react', 'angular', 'vue', 'typescript'],
+            'deep learning': ['deep learning', 'neural networks', 'cnn', 'rnn', 'tensorflow', 'pytorch', 'keras'],
+            'algorithms': ['algorithms', 'data structures', 'sorting', 'searching', 'complexity', 'optimization'],
+            'mathematics': ['math', 'calculus', 'algebra', 'geometry', 'linear algebra', 'discrete math'],
+            'computer science': ['computer science', 'cs', 'programming', 'algorithms', 'data structures', 'software engineering']
         }
         
         detected_topics = []
         
+        # First pass: Look for exact matches and multi-word terms
         for topic_name, keywords in topic_patterns.items():
-            keyword_count = sum(1 for keyword in keywords if keyword in content)
-            if keyword_count >= 2:  # At least 2 keywords match
-                # Generate subtopics based on detected keywords
-                matched_keywords = [kw for kw in keywords if kw in content]
-                subtopics = [kw.title() for kw in matched_keywords[:3]]
+            score = 0
+            matched_keywords = []
+            
+            # Check for multi-word exact matches first
+            for keyword in keywords:
+                if len(keyword.split()) > 1 and keyword in content:
+                    score += 3  # Higher weight for exact multi-word matches
+                    matched_keywords.append(keyword)
+                elif keyword in content:
+                    score += 1
+                    matched_keywords.append(keyword)
+            
+            # Lower threshold for more granular topic detection
+            if score >= 2 or (score >= 1 and any(len(kw.split()) > 1 for kw in matched_keywords)):
+                # Generate subtopics based on matched keywords
+                subtopics = []
+                for kw in matched_keywords[:4]:
+                    if kw not in subtopics:
+                        subtopics.append(kw.title())
                 
                 detected_topics.append({
                     "name": topic_name.title(),
-                    "subtopics": subtopics
+                    "subtopics": subtopics,
+                    "score": score
                 })
         
-        if not detected_topics:
-            # Fallback: extract potential topics from text
-            words = content.split()
-            potential_topics = []
-            
-            # Look for capitalized words or technical terms
-            for word in words:
-                if len(word) > 4 and (word.istitle() or any(char.isupper() for char in word)):
-                    potential_topics.append(word)
-            
-            if potential_topics:
-                detected_topics.append({
-                    "name": "Course Content",
-                    "subtopics": potential_topics[:3]
+        # Sort by score and remove overlapping topics
+        detected_topics.sort(key=lambda x: x['score'], reverse=True)
+        final_topics = []
+        used_keywords = set()
+        
+        for topic in detected_topics:
+            # Check if this topic overlaps significantly with already selected topics
+            topic_keywords = set(kw.lower() for kw in topic['subtopics'])
+            if len(topic_keywords.intersection(used_keywords)) < len(topic_keywords) * 0.5:
+                final_topics.append({
+                    "name": topic["name"],
+                    "subtopics": topic["subtopics"]
                 })
-            else:
-                detected_topics.append({
-                    "name": "General Topics",
-                    "subtopics": ["Fundamentals", "Applications", "Practice"]
+                used_keywords.update(topic_keywords)
+                
+                if len(final_topics) >= 6:  # Limit to 6 topics
+                    break
+        
+        # If no specific topics found, try to extract from structure
+        if not final_topics:
+            final_topics = self._extract_from_structure(content)
+        
+        return json.dumps(final_topics)
+    
+    def _extract_from_structure(self, content: str) -> List[Dict]:
+        """Extract topics from text structure when pattern matching fails"""
+        import re
+        
+        # Look for structured content
+        lines = content.split('\n')
+        topics = []
+        
+        # Look for lists, bullet points, or numbered items
+        list_items = []
+        for line in lines:
+            line = line.strip()
+            if re.match(r'^[-•*]\s+|^\d+[\.)]\s+|^[a-zA-Z][\.)]\s+', line):
+                item = re.sub(r'^[-•*]\s+|\d+[\.)]\s+|[a-zA-Z][\.)]\s+', '', line).strip()
+                if len(item) > 3:
+                    list_items.append(item)
+        
+        if list_items:
+            # Group related items
+            if len(list_items) >= 3:
+                topics.append({
+                    "name": "Course Topics",
+                    "subtopics": list_items[:5]
                 })
         
-        return json.dumps(detected_topics[:4])  # Return up to 4 topics
+        # Look for technical terms and concepts
+        tech_terms = re.findall(r'\b[A-Z][a-z]*(?:[A-Z][a-z]*)*\b', content)
+        tech_terms = [term for term in tech_terms if len(term) > 3 and term not in ['The', 'This', 'That', 'With', 'From']]
+        
+        if tech_terms and not topics:
+            topics.append({
+                "name": "Technical Concepts",
+                "subtopics": list(set(tech_terms))[:5]
+            })
+        
+        # Fallback
+        if not topics:
+            topics.append({
+                "name": "Course Content",
+                "subtopics": ["Fundamentals", "Applications", "Practice"]
+            })
+        
+        return topics
     
     def _find_missing_topics(self, prompt: str) -> str:
         """Find potentially missing topics using text analysis"""
