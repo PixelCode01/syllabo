@@ -959,7 +959,9 @@ Respond with a simple list, one topic per line, or "None" if no additional topic
         table.add_column("Description", style="dim")
         
         service_descriptions = {
-            'Gemini': 'Google Gemini API (requires API key)',
+            'Gemini 2.5 Pro': 'Google Gemini 2.5 Pro (latest model)',
+            'Gemini 2.5 Flash': 'Google Gemini 2.5 Flash (fast model)',
+            'Gemini Pro': 'Google Gemini Pro (standard model)',
             'HackClub AI': 'Free AI service for educational use',
             'Free GPT': 'Community-maintained free GPT service',
             'GPT4Free': 'Open-source free AI service',

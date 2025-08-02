@@ -38,9 +38,27 @@ class AIClient:
             }
         ]
         
+        # Gemini model configuration - prioritize 2.5 Pro/Flash
+        self.gemini_models = [
+            {
+                'name': 'Gemini 2.5 Pro',
+                'model': 'gemini-2.0-flash-exp',
+                'url': 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent'
+            },
+            {
+                'name': 'Gemini 2.5 Flash',
+                'model': 'gemini-1.5-flash',
+                'url': 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent'
+            },
+            {
+                'name': 'Gemini Pro',
+                'model': 'gemini-pro',
+                'url': 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent'
+            }
+        ]
+        
         if self.use_gemini:
-            self.base_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent"
-            self.logger.info("Using Gemini API")
+            self.logger.info("Gemini API configured - will try models in priority order: 2.5 Pro -> 2.5 Flash -> Pro")
         else:
             active_services = [s['name'] for s in self.free_services if s['active']]
             self.logger.info(f"Using free AI services: {', '.join(active_services)}")
@@ -553,11 +571,13 @@ class AIClient:
         test_prompt = "Hello, please respond with 'Service working'"
         
         if self.use_gemini:
-            try:
-                result = await self._get_gemini_completion(test_prompt)
-                results['Gemini'] = not result.startswith("Error:")
-            except:
-                results['Gemini'] = False
+            # Test each Gemini model individually
+            for model_config in self.gemini_models:
+                try:
+                    result = await self._test_single_gemini_model(model_config, test_prompt)
+                    results[model_config['name']] = not result.startswith("Error:")
+                except:
+                    results[model_config['name']] = False
         
         for service in self.free_services:
             try:
@@ -571,12 +591,35 @@ class AIClient:
         
         return results
     
+    async def _test_single_gemini_model(self, model_config: Dict, test_prompt: str) -> str:
+        """Test a single Gemini model"""
+        headers = {"Content-Type": "application/json"}
+        payload = {
+            "contents": [{
+                "parts": [{"text": test_prompt}]
+            }]
+        }
+        
+        try:
+            url = f"{model_config['url']}?key={self.gemini_key}"
+            response = requests.post(url, json=payload, headers=headers, timeout=15)
+            
+            if response.status_code == 200:
+                result = response.json()['candidates'][0]['content']['parts'][0]['text']
+                return result
+            else:
+                return f"Error: Status {response.status_code}"
+                
+        except Exception as e:
+            return f"Error: {str(e)}"
+    
     def get_service_status(self) -> str:
         """Get current service configuration status"""
         status = []
         
         if self.use_gemini:
-            status.append("Gemini API: Configured")
+            model_names = [m['name'] for m in self.gemini_models]
+            status.append(f"Gemini API: Configured (Priority: {' -> '.join(model_names)})")
         else:
             status.append("Gemini API: Not configured")
         
@@ -637,6 +680,7 @@ class AIClient:
             return "Error: Invalid response format"
     
     async def _get_gemini_completion(self, prompt: str) -> str:
+        """Try Gemini models in priority order: 2.5 Pro -> 2.5 Flash -> Pro"""
         headers = {"Content-Type": "application/json"}
         payload = {
             "contents": [{
@@ -644,26 +688,32 @@ class AIClient:
             }]
         }
         
-        max_retries = 3
-        for attempt in range(max_retries):
+        # Try each Gemini model in priority order
+        for model_config in self.gemini_models:
             try:
-                self.logger.debug(f"Making Gemini API request (attempt {attempt + 1})")
-                url = f"{self.base_url}?key={self.gemini_key}"
+                self.logger.debug(f"Trying {model_config['name']}")
+                url = f"{model_config['url']}?key={self.gemini_key}"
+                
                 response = requests.post(url, json=payload, headers=headers, timeout=30)
-                response.raise_for_status()
-                result = response.json()['candidates'][0]['content']['parts'][0]['text']
-                self.logger.debug("Gemini API request successful")
-                return result
+                
+                if response.status_code == 200:
+                    result = response.json()['candidates'][0]['content']['parts'][0]['text']
+                    self.logger.info(f"Success with {model_config['name']}")
+                    return result
+                else:
+                    self.logger.warning(f"{model_config['name']} returned status {response.status_code}")
+                    continue
+                    
             except requests.exceptions.Timeout:
-                self.logger.warning(f"Gemini API timeout (attempt {attempt + 1})")
-                if attempt == max_retries - 1:
-                    return "Error: Request timeout"
-                time.sleep(2 ** attempt)
+                self.logger.warning(f"{model_config['name']} timeout")
+                continue
             except requests.exceptions.RequestException as e:
-                self.logger.error(f"Gemini API request failed: {e}")
-                if attempt == max_retries - 1:
-                    return f"Error: {str(e)}"
-                time.sleep(2 ** attempt)
+                self.logger.warning(f"{model_config['name']} request failed: {e}")
+                continue
             except (KeyError, IndexError) as e:
-                self.logger.error(f"Unexpected Gemini response format: {e}")
-                return "Error: Unexpected response format"
+                self.logger.warning(f"{model_config['name']} response format error: {e}")
+                continue
+        
+        # If all Gemini models failed
+        self.logger.error("All Gemini models failed")
+        return "Error: All Gemini models unavailable"

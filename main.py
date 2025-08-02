@@ -12,8 +12,6 @@ import asyncio
 import time
 from datetime import datetime
 from typing import List, Dict, Any, Optional
-
-# Third-party imports
 from dotenv import load_dotenv
 from rich.console import Console
 from rich.panel import Panel
@@ -136,8 +134,8 @@ class SyllaboMain:
             ("5", "platforms", "Multi-Platform Search", "Search across learning platforms"),
             ("6", "bookmarks", "Smart Bookmarks", "Manage video bookmarks and notes"),
             ("7", "session", "Study Sessions", "Pomodoro timer and focus sessions"),
-            ("8", "help", "Help & Documentation", "Get help and usage information"),
-            ("9", "exit", "Exit", "Exit the application")
+            ("9", "help", "Help & Documentation", "Get help and usage information"),
+            ("10", "exit", "Exit", "Exit the application")
         ]
         
         menu_table = Table(show_header=True, header_style="bold magenta")
@@ -156,13 +154,13 @@ class SyllaboMain:
     def _get_user_choice(self, menu_options):
         """Get user menu choice with validation"""
         while True:
-            choice = input("Select an option (1-9): ").strip()
+            choice = input("Select an option (1-10): ").strip()
             
             for option, cmd, feature, desc in menu_options:
                 if choice == option:
                     return cmd
             
-            self.console.print(f"[red]Invalid choice '{choice}'. Please select 1-9.[/red]")
+            self.console.print(f"[red]Invalid choice '{choice}'. Please select 1-10.[/red]")
     
     def show_feature_help(self, feature):
         """Show contextual help for features"""
@@ -717,19 +715,6 @@ Track your learning progress with visual analytics.
         elif args.action == 'list':
             if args.topic:
                 bookmarks = self.bookmark_manager.get_bookmarks_by_topic(args.topic)
-            else:
-                bookmarks = list(self.bookmark_manager.bookmarks.values())
-            
-            if not bookmarks:
-                self.console.print("[yellow]No bookmarks found[/yellow]")
-                return
-            
-            table = Table(title="Bookmarks")
-            table.add_column("Video", style="cyan")
-            table.add_column("Timestamp", style="yellow")
-            table.add_column("Note", style="green")
-            table.add_column("Importance", style="red")
-            
             for bookmark in bookmarks:
                 table.add_row(
                     bookmark.video_title[:30],
@@ -919,6 +904,8 @@ def create_parser():
     session_parser.add_argument('--duration', type=int, default=25, help='Planned duration in minutes')
     session_parser.add_argument('--break-type', choices=['short', 'long'], default='short', help='Break type')
     session_parser.add_argument('--notes', help='Session notes')
+    
+    # Leaderboard
     
     return parser
 

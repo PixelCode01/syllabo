@@ -165,36 +165,38 @@ class CLIInputHandler:
         """
         return self.formatter.confirm_action(prompt)
 
-    def get_key_press(self, prompt: str, valid_keys: List[str]) -> str:
-        """Get a single key press from the user
+    def get_key_press(self, prompt: str, valid_keys: List[str], default: Optional[str] = None) -> str:
+        """Get a single key press from the user from a list of valid keys"""
+        if self.interactive_mode:
+            # In interactive mode, we might use a more advanced method
+            # For now, fallback to simple input
+            pass
 
-        Args:
-            prompt: Prompt text to display
-            valid_keys: List of valid key characters
+        prompt_keys = []
+        for k in valid_keys:
+            if k == default:
+                prompt_keys.append(k.upper())
+            else:
+                prompt_keys.append(k.lower())
 
-        Returns:
-            The pressed key
-        """
-        try:
-            # Try to use getch if available for single key press
-            import msvcrt  # Windows
-            self.formatter.print_info(f"{prompt} ({'/'.join(valid_keys)})")
-            while True:
-                key = msvcrt.getch().decode('utf-8').lower()
-                if key in valid_keys:
-                    return key
-        except ImportError:
+        prompt_str = f"{prompt} ({'/'.join(prompt_keys)}): "
+
+        while True:
             try:
-                # Try to use getch in Unix
-                import getch
-                self.formatter.print_info(f"{prompt} ({'/'.join(valid_keys)})")
-                while True:
-                    key = getch.getch().lower()
+                # Fallback to regular input
+                if sys.stdin.isatty():
+                    key = input(prompt_str).strip().lower()
+                    if not key and default:
+                        return default
                     if key in valid_keys:
                         return key
-            except ImportError:
-                # Fallback to regular input
-                while True:
-                    key = input(f"{prompt} ({'/'.join(valid_keys)}): ").strip().lower()
-                    if key and key[0] in valid_keys:
-                        return key[0]
+                    else:
+                        self.formatter.print_error(f"Invalid input. Please enter one of {valid_keys}")
+                else:
+                    # Non-interactive mode, maybe read from a pipe
+                    return default if default else valid_keys[0]  # Or handle differently
+            except (EOFError, KeyboardInterrupt):
+                self.formatter.print_error("\nInput cancelled.")
+                return ""
+
+

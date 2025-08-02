@@ -83,12 +83,17 @@ quiz_results_*.json
 progress_report_*.txt
 bookmarks_export_*.*
 session_data.json
+achievements.json
+leaderboard.json
 
 # Temporary/working files
 *_working.py
 *_new.py
 *_temp.py
 *_old.py
+*_backup.py
+clean_main.py
+test_main.py
 
 # Test batch files
 *.bat

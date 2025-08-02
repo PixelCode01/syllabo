@@ -64,27 +64,40 @@ class SpacedRepetitionEngine:
     
     def add_topic(self, topic_name: str, description: str = "") -> bool:
         """Add a new topic for spaced repetition"""
+        # Check if topic already exists
         if topic_name in self.items:
             return False
         
-        now = datetime.now()
-        next_review = now + timedelta(days=self.INTERVALS[0])
+        # Ensure topic_name is not None or empty
+        if topic_name is None or topic_name.strip() == "":
+            print("Error: Cannot add topic with empty name")
+            return False
         
-        self.items[topic_name] = ReviewItem(
-            topic_name=topic_name,
-            description=description,
-            last_review="",
-            next_review=next_review.isoformat(),
-            interval_index=0,
-            review_count=0,
-            success_streak=0,
-            total_successes=0,
-            total_reviews=0,
-            created_at=now.isoformat()
-        )
-        
-        self.save_data()
-        return True
+        try:
+            now = datetime.now()
+            # Calculate next review date using the first interval
+            next_review = now + timedelta(days=self.INTERVALS[0])
+            
+            # Create the review item
+            self.items[topic_name] = ReviewItem(
+                topic_name=topic_name,
+                description=description if description is not None else "",
+                last_review="",
+                next_review=next_review.isoformat(),
+                interval_index=0,
+                review_count=0,
+                success_streak=0,
+                total_successes=0,
+                total_reviews=0,
+                created_at=now.isoformat()
+            )
+            
+            # Save to file
+            self.save_data()
+            return True
+        except Exception as e:
+            print(f"Error adding topic: {e}")
+            return False
     
     def mark_review(self, topic_name: str, success: bool) -> bool:
         """Mark a topic as reviewed with success/failure"""
@@ -156,11 +169,12 @@ class SpacedRepetitionEngine:
         success_rate = (item.total_successes / item.total_reviews * 100) if item.total_reviews > 0 else 0
         
         next_review = datetime.fromisoformat(item.next_review)
-        days_until_review = (next_review - datetime.now()).days
+        # Calculate days until review and ensure it's an integer
+        time_delta = (next_review - datetime.now())
+        days_until_review = time_delta.days if time_delta.days is not None else 0
         
-        # Ensure days_until_review is never None
-        if days_until_review is None:
-            days_until_review = 0
+        # Ensure days_until_review is never negative
+        days_until_review = max(0, days_until_review)
         
         return {
             'topic_name': item.topic_name,
