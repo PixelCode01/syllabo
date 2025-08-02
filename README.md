@@ -16,7 +16,7 @@ AI-powered learning assistant that analyzes course syllabi and finds educational
 ## Installation
 
 ```bash
-git clone https://github.com/PixelCode01/syllabo
+git clone https://github.com/PixelCode01/syllabo.git
 cd syllabo
 pip install -r requirements.txt
 ```
@@ -74,25 +74,5 @@ python main.py goals create --title "Daily Study" --type daily --target 30 --uni
 - Dependencies listed in `requirements.txt`
 - Optional: API keys for enhanced features
 
-## Project Structure
-
-```
-syllabo/
-├── main.py                 # Main application entry point
-├── src/                    # Core modules
-│   ├── ai_client.py        # AI service integration
-│   ├── database.py         # Data storage
-│   ├── syllabus_parser.py  # Syllabus processing
-│   ├── quiz_generator.py   # Quiz creation
-│   ├── progress_dashboard.py # Progress tracking
-│   └── study_session_manager.py # Session management
-├── docs/                   # Documentation
-├── data/                   # User data and database files
-├── scripts/                # Additional scripts and tools
-├── tests/                  # Test files
-└── requirements.txt        # Dependencies
-```
-
-## License
-
+## Licenses
 MIT License - see LICENSE file for details.
