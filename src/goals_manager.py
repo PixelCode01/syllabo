@@ -26,12 +26,15 @@ class GoalsManager:
     def __init__(self, db: SyllaboDatabase = None):
         self.db = db or SyllaboDatabase()
         self.logger = SyllaboLogger("goals_manager")
-        self.goals_file = "study_goals.json"
+        self.goals_file = "data/study_goals.json"
         self.goals = self._load_goals()
     
     def _load_goals(self) -> Dict[str, StudyGoal]:
         """Load goals from file"""
         try:
+            # Create data directory if it doesn't exist
+            import os
+            os.makedirs(os.path.dirname(self.goals_file), exist_ok=True)
             with open(self.goals_file, 'r') as f:
                 data = json.load(f)
                 return {

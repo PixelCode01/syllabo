@@ -5,7 +5,7 @@ from typing import List, Dict, Optional
 from .logger import SyllaboLogger
 
 class SyllaboDatabase:
-    def __init__(self, db_path: str = "syllabo.db"):
+    def __init__(self, db_path: str = "data/syllabo.db"):
         self.db_path = db_path
         self.logger = SyllaboLogger("database")
         self.init_database()
@@ -13,6 +13,9 @@ class SyllaboDatabase:
     def init_database(self):
         """Initialize database tables"""
         try:
+            # Create data directory if it doesn't exist
+            import os
+            os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.cursor()
                 

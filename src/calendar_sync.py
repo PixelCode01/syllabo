@@ -13,7 +13,7 @@ class CalendarSync:
     def __init__(self, spaced_repetition: SpacedRepetitionEngine = None):
         self.logger = SyllaboLogger("calendar_sync")
         self.spaced_repetition = spaced_repetition or SpacedRepetitionEngine()
-        self.calendar_data_file = "calendar_sync.json"
+        self.calendar_data_file = "data/calendar_sync.json"
         self.calendar_settings = self._load_settings()
         
     def _load_settings(self) -> Dict:

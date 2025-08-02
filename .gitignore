@@ -52,8 +52,8 @@ ehthumbs.db
 Thumbs.db
 
 # Application specific
+data/
 feedback.json
-syllabo.db
 syllabo_results_*.json
 syllabo_results_*.csv
 syllabo_export_*.json
@@ -76,15 +76,11 @@ syllabo_study_guide_*.json
 spaced_repetition.json
 demo_spaced_repetition.json
 
-# New feature data files
-study_goals.json
-bookmarks.json
+# Export and report files
 quiz_results_*.json
 progress_report_*.txt
 bookmarks_export_*.*
 session_data.json
-achievements.json
-leaderboard.json
 
 # Temporary/working files
 *_working.py

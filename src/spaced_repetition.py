@@ -32,7 +32,7 @@ class SpacedRepetitionEngine:
     # Intervals in days - based on cognitive science research
     INTERVALS = [1, 3, 5, 11, 25, 44, 88]
     
-    def __init__(self, data_file: str = "spaced_repetition.json"):
+    def __init__(self, data_file: str = "data/spaced_repetition.json"):
         self.data_file = data_file
         self.items: Dict[str, ReviewItem] = {}
         self.load_data()

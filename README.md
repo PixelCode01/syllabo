@@ -16,7 +16,7 @@ AI-powered learning assistant that analyzes course syllabi and finds educational
 ## Installation
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/PixelCode01/syllabo
 cd syllabo
 pip install -r requirements.txt
 ```
@@ -86,6 +86,10 @@ syllabo/
 │   ├── quiz_generator.py   # Quiz creation
 │   ├── progress_dashboard.py # Progress tracking
 │   └── study_session_manager.py # Session management
+├── docs/                   # Documentation
+├── data/                   # User data and database files
+├── scripts/                # Additional scripts and tools
+├── tests/                  # Test files
 └── requirements.txt        # Dependencies
 ```
 

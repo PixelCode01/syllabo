@@ -35,7 +35,7 @@ class AchievementSystem:
         self.logger = SyllaboLogger("achievement_system")
         self.db = db or SyllaboDatabase()
         self.spaced_repetition = spaced_repetition or SpacedRepetitionEngine()
-        self.data_file = "achievements.json"
+        self.data_file = "data/achievements.json"
         self.achievements = {}
         self.streaks = {}
         self._load_data()

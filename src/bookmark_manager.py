@@ -23,7 +23,7 @@ class BookmarkManager:
     
     def __init__(self):
         self.logger = SyllaboLogger("bookmark_manager")
-        self.bookmarks_file = "bookmarks.json"
+        self.bookmarks_file = "data/bookmarks.json"
         self.bookmarks = self._load_bookmarks()
     
     def _load_bookmarks(self) -> Dict[str, Bookmark]:
