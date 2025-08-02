@@ -196,6 +196,62 @@ class SyllaboDatabase:
             self.logger.error(f"Failed to get recent syllabi: {e}")
             return []
     
+    def get_recent_analyses(self, limit: int = 10) -> List[Dict]:
+        """Get recent analyses with topic counts"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT s.id, s.title, s.created_at, COUNT(t.id) as topic_count
+                    FROM syllabi s
+                    LEFT JOIN topics t ON s.id = t.syllabus_id
+                    GROUP BY s.id, s.title, s.created_at
+                    ORDER BY s.created_at DESC
+                    LIMIT ?
+                ''', (limit,))
+                
+                results = []
+                for row in cursor.fetchall():
+                    results.append({
+                        'id': row[0],
+                        'title': row[1],
+                        'created_at': row[2],
+                        'topic_count': row[3]
+                    })
+                return results
+        except Exception as e:
+            self.logger.error(f"Failed to get recent analyses: {e}")
+            return []
+    
+    def get_analysis_by_id(self, analysis_id: int) -> Optional[Dict]:
+        """Get complete analysis data by ID"""
+        try:
+            syllabus = self.get_syllabus_by_id(analysis_id)
+            if not syllabus:
+                return None
+            
+            topics = self.get_topics_by_syllabus_id(analysis_id)
+            
+            return {
+                'syllabus': syllabus,
+                'topics': topics,
+                'id': analysis_id
+            }
+        except Exception as e:
+            self.logger.error(f"Failed to get analysis by ID: {e}")
+            return None
+    
+    def test_connection(self) -> bool:
+        """Test database connection"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute('SELECT 1')
+                return True
+        except Exception as e:
+            self.logger.error(f"Database connection test failed: {e}")
+            return False
+    
     def get_topic_videos(self, topic_id: int, limit: int = 10) -> List[Dict]:
         """Get videos for a specific topic"""
         try:

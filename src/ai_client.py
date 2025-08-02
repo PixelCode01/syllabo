@@ -717,3 +717,13 @@ class AIClient:
         # If all Gemini models failed
         self.logger.error("All Gemini models failed")
         return "Error: All Gemini models unavailable"
+    
+    async def test_connection(self) -> bool:
+        """Test AI service connection"""
+        try:
+            test_prompt = "Hello, please respond with 'Connection test successful'"
+            result = await self.get_completion(test_prompt)
+            return not result.startswith("Error:")
+        except Exception as e:
+            self.logger.error(f"Connection test failed: {e}")
+            return False

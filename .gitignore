@@ -146,6 +146,5 @@ coverage.xml
 *.cover
 .hypothesis/
 
-# Kiro IDE (keep steering rules but ignore other temp files)
-.kiro/cache/
-.kiro/temp/
+# Kiro IDE
+.kiro/

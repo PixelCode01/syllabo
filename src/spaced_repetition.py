@@ -256,3 +256,10 @@ class SpacedRepetitionEngine:
             'mastered_topics': mastered_topics,
             'average_success_rate': round(average_success_rate, 1)
         }
+    
+    def get_statistics(self, topic_name: Optional[str] = None) -> Dict:
+        """Get statistics for a specific topic or overall statistics"""
+        if topic_name:
+            return self.get_topic_stats(topic_name) or {}
+        else:
+            return self.get_study_summary()

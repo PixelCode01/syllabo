@@ -538,3 +538,12 @@ class YouTubeClient:
             })
         
         return suggestions
+    async def test_connection(self) -> bool:
+        """Test YouTube API connection"""
+        try:
+            # Try a simple search to test the connection
+            test_videos = await self.search_videos("test", 1)
+            return len(test_videos) > 0
+        except Exception as e:
+            self.logger.error(f"YouTube connection test failed: {e}")
+            return False

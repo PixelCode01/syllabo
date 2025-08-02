@@ -577,3 +577,40 @@ class ExportSystem:
             json.dump(export_data, f, indent=2, ensure_ascii=False)
         
         return filename
+    
+    def export_search_results(self, topic: str, videos: List[Dict], format_type: str) -> str:
+        """Export search results to specified format"""
+        return self.export_to_file(videos, topic, format_type)
+    
+    def export_analysis(self, analysis_data: Dict, format_type: str) -> str:
+        """Export analysis data to specified format"""
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"analysis_export_{timestamp}.{format_type}"
+        
+        if format_type == 'json':
+            with open(f"exports/{filename}", 'w') as f:
+                json.dump(analysis_data, f, indent=2)
+        elif format_type == 'csv':
+            # Convert analysis data to CSV format
+            with open(f"exports/{filename}", 'w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(['Type', 'Title', 'Content'])
+                writer.writerow(['Syllabus', analysis_data.get('syllabus', {}).get('title', ''), 
+                               analysis_data.get('syllabus', {}).get('content', '')[:100] + '...'])
+                for topic in analysis_data.get('topics', []):
+                    writer.writerow(['Topic', topic.get('name', ''), topic.get('subtopics', '')])
+        elif format_type == 'markdown':
+            content = f"# Analysis Export\n\n"
+            content += f"## Syllabus: {analysis_data.get('syllabus', {}).get('title', 'Unknown')}\n\n"
+            content += f"### Topics:\n"
+            for topic in analysis_data.get('topics', []):
+                content += f"- **{topic.get('name', 'Unknown')}**\n"
+                if topic.get('subtopics'):
+                    content += f"  - Subtopics: {topic.get('subtopics')}\n"
+            
+            with open(f"exports/{filename}", 'w') as f:
+                f.write(content)
+        else:
+            raise ValueError(f"Unsupported format: {format_type}")
+        
+        return filename
