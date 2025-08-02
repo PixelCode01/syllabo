@@ -28,13 +28,13 @@ class AIClient:
                 'name': 'Free GPT',
                 'url': 'https://api.pawan.krd/cosmosrp/v1/chat/completions',
                 'type': 'openai_format',
-                'active': True
+                'active': False  # Disabled due to status 400 errors
             },
             {
                 'name': 'GPT4Free',
                 'url': 'https://api.g4f.icu/v1/chat/completions',
                 'type': 'openai_format',
-                'active': True
+                'active': False  # Disabled due to status 401 errors
             }
         ]
         
