@@ -244,10 +244,12 @@ class AIClient:
         """Analyze content using contextual understanding and word relationships"""
         import re
         
-        # Common abbreviations and their full forms
+        # Common abbreviations, typos, and their full forms
         abbreviation_map = {
             'oops': 'object oriented programming',
-            'oop': 'object oriented programming', 
+            'opps': 'object oriented programming',  # Common typo
+            'oop': 'object oriented programming',
+            'opp': 'object oriented programming',   # Common typo
             'ml': 'machine learning',
             'ai': 'artificial intelligence',
             'js': 'javascript',
