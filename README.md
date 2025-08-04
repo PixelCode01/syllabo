@@ -1,17 +1,19 @@
 # Syllabo
 
-AI-powered learning assistant that analyzes course syllabi and finds educational resources. Includes quiz generation, progress tracking, study sessions, and spaced repetition learning.
+AI-powered learning assistant that analyzes course syllabi and finds educational resources. Features an interactive terminal interface with rich colors, progress tracking, quiz generation, and comprehensive study management tools.
 
 ## Features
 
+- **Interactive Terminal UI**: Rich, colorful interface with intuitive navigation
 - **Syllabus Analysis**: Extract topics from PDF or text files using AI
 - **Resource Discovery**: Find YouTube videos, courses, and educational content
-- **Interactive Quizzes**: Generate and take AI-powered quizzes from content
-- **Progress Dashboard**: Track learning progress, streaks, and performance
-- **Study Sessions**: Pomodoro timer with focus tracking
+- **Interactive Quizzes**: Generate and take AI-powered quizzes with instant feedback
+- **Progress Dashboard**: Visual progress tracking with charts and statistics
+- **Study Sessions**: Pomodoro timer with focus tracking and break management
 - **Goals Management**: Set and track daily, weekly, and monthly learning goals
 - **Smart Bookmarks**: Save video timestamps with notes and tags
 - **Spaced Repetition**: Scientific review scheduling for better retention
+- **Multi-Platform Search**: Search across educational platforms simultaneously
 
 ## Installation
 
@@ -35,38 +37,57 @@ The application works without API keys using free AI services and web scraping.
 
 ## Usage
 
-### Interactive Mode
+### Interactive Mode (Recommended)
 ```bash
 python main.py
 ```
 
-### Command Line
+The interactive mode provides a user-friendly menu system with:
+- Colorful, intuitive interface
+- Step-by-step guided workflows
+- Real-time progress indicators
+- Enhanced error handling and feedback
+- Smart prompts with validation
+
+### Command Line Interface
 ```bash
-# Analyze syllabus
+# Analyze syllabus with enhanced UI
 python main.py analyze --file syllabus.pdf --search-videos --print-results
 
-# Generate quiz
+# Generate interactive quiz
 python main.py quiz generate --topic "Machine Learning" --num-questions 5
 
-# View progress
+# View visual progress dashboard
 python main.py progress
 
-# Start study session
+# Start focused study session
 python main.py session start --topic "Python" --duration 25
 
-# Manage goals
+# Manage learning goals
 python main.py goals create --title "Daily Study" --type daily --target 30 --unit minutes
+
+# Review topics with spaced repetition
+python main.py review due --notify
 ```
 
 ## Available Commands
 
-- `analyze` - Process syllabus and find learning resources
-- `quiz` - Generate and take interactive quizzes  
-- `progress` - View learning progress and analytics
-- `goals` - Manage study goals and milestones
-- `platforms` - Search across learning platforms
-- `bookmarks` - Manage video bookmarks and notes
-- `session` - Start Pomodoro study sessions
+- `analyze` - Process syllabus and find learning resources with AI
+- `quiz` - Generate and take interactive quizzes with instant feedback
+- `progress` - View visual learning progress and analytics dashboard
+- `goals` - Manage study goals and track milestones
+- `platforms` - Search across multiple learning platforms
+- `bookmarks` - Manage video bookmarks with smart organization
+- `session` - Start Pomodoro study sessions with focus tracking
+- `review` - Spaced repetition system for optimal learning retention
+
+## User Interface Highlights
+
+- **Rich Terminal Experience**: Colorful, modern interface with progress bars and animations
+- **Interactive Prompts**: Smart input validation and helpful suggestions
+- **Visual Progress Tracking**: Charts, graphs, and progress indicators
+- **Error Handling**: Clear, actionable error messages with recovery suggestions
+- **Responsive Design**: Adapts to different terminal sizes and preferences
 
 ## Requirements
 

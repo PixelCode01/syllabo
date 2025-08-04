@@ -8,16 +8,16 @@ def create_parser():
         epilog='''
     Examples:
       # Interactive mode
-      python syllabo.py interactive
+      python main.py interactive
 
       # Analyze a syllabus file
-      python syllabo.py analyze --file course_syllabus.pdf --search-videos
+      python main.py analyze --file course_syllabus.pdf --search-videos
 
       # Search for videos on a specific topic
-      python syllabo.py search --topic "Neural Networks" --max-videos 5
+      python main.py search --topic "Neural Networks" --max-videos 5
 
       # Spaced repetition review
-      python syllabo.py review due
+      python main.py review due
     '''
     )
     subparsers = parser.add_subparsers(dest='command', help='Available commands')
@@ -85,6 +85,21 @@ def create_parser():
         '--preview', 
         action='store_true',
         help='Show a preview of the export before saving'
+    )
+    analyze_parser.add_argument(
+        '--include-podcasts', 
+        action='store_true', 
+        help='Include educational podcasts in search results'
+    )
+    analyze_parser.add_argument(
+        '--include-reading', 
+        action='store_true', 
+        help='Include reading materials and articles'
+    )
+    analyze_parser.add_argument(
+        '--difficulty-filter', 
+        choices=['beginner', 'intermediate', 'advanced'], 
+        help='Filter content by difficulty level'
     )
 
     # Search command
@@ -179,7 +194,7 @@ def create_parser():
         help='Spaced repetition review system',
         description='Manage your spaced repetition review schedule for effective learning.'
     )
-    review_subparsers = review_parser.add_subparsers(dest='review_action', help='Review actions', required=True)
+    review_subparsers = review_parser.add_subparsers(dest='review_action', help='Review actions')
 
     # Add topic subcommand
     add_review_parser = review_subparsers.add_parser(
@@ -286,6 +301,119 @@ def create_parser():
         help='Show detailed help for the review system',
         description='Display detailed help and examples for using the spaced repetition system.'
     )
+
+    # Quiz command
+    quiz_parser = subparsers.add_parser(
+        'quiz', 
+        help='Interactive quiz system',
+        description='Generate and take AI-powered quizzes from your study content.'
+    )
+    quiz_subparsers = quiz_parser.add_subparsers(dest='action', help='Quiz actions')
+    
+    # Generate quiz subcommand
+    generate_quiz_parser = quiz_subparsers.add_parser('generate', help='Generate a new quiz')
+    generate_quiz_parser.add_argument('--topic', required=True, help='Topic for the quiz')
+    generate_quiz_parser.add_argument('--num-questions', type=int, default=5, help='Number of questions')
+    generate_quiz_parser.add_argument('--content-file', help='File with content to base quiz on')
+    
+    # Take quiz subcommand
+    take_quiz_parser = quiz_subparsers.add_parser('take', help='Take an existing quiz')
+    
+    # Quiz history subcommand
+    history_quiz_parser = quiz_subparsers.add_parser('history', help='Show quiz history')
+
+    # Progress command
+    progress_parser = subparsers.add_parser(
+        'progress', 
+        help='Learning progress dashboard',
+        description='Track your learning progress with visual analytics.'
+    )
+    progress_parser.add_argument('--export', action='store_true', help='Export progress report')
+
+    # Goals command
+    goals_parser = subparsers.add_parser(
+        'goals', 
+        help='Study goals management',
+        description='Manage learning goals and milestones.'
+    )
+    goals_subparsers = goals_parser.add_subparsers(dest='action', help='Goals actions')
+    
+    # Create goal subcommand
+    create_goal_parser = goals_subparsers.add_parser('create', help='Create a new goal')
+    create_goal_parser.add_argument('--title', required=True, help='Goal title')
+    create_goal_parser.add_argument('--description', help='Goal description')
+    create_goal_parser.add_argument('--type', required=True, choices=['daily', 'weekly', 'monthly'], help='Goal type')
+    create_goal_parser.add_argument('--target', type=int, required=True, help='Target value')
+    create_goal_parser.add_argument('--unit', required=True, help='Unit (minutes, hours, topics, etc.)')
+    
+    # List goals subcommand
+    list_goals_parser = goals_subparsers.add_parser('list', help='List active goals')
+    
+    # Suggest goals subcommand
+    suggest_goals_parser = goals_subparsers.add_parser('suggest', help='Get goal suggestions')
+
+    # Platforms command
+    platforms_parser = subparsers.add_parser(
+        'platforms', 
+        help='Multi-platform search',
+        description='Search across multiple learning platforms.'
+    )
+    platforms_parser.add_argument('--topic', required=True, help='Topic to search for')
+    platforms_parser.add_argument('--free-only', action='store_true', help='Show only free courses')
+
+    # Bookmarks command
+    bookmarks_parser = subparsers.add_parser(
+        'bookmarks', 
+        help='Smart bookmarks management',
+        description='Manage video bookmarks and notes.'
+    )
+    bookmarks_subparsers = bookmarks_parser.add_subparsers(dest='action', help='Bookmark actions')
+    
+    # Add bookmark subcommand
+    add_bookmark_parser = bookmarks_subparsers.add_parser('add', help='Add a new bookmark')
+    add_bookmark_parser.add_argument('--video-id', required=True, help='Video ID')
+    add_bookmark_parser.add_argument('--video-title', required=True, help='Video title')
+    add_bookmark_parser.add_argument('--timestamp', required=True, help='Timestamp (e.g., 5:30)')
+    add_bookmark_parser.add_argument('--note', required=True, help='Note about this bookmark')
+    add_bookmark_parser.add_argument('--topic', required=True, help='Related topic')
+    add_bookmark_parser.add_argument('--tags', nargs='*', help='Tags for the bookmark')
+    add_bookmark_parser.add_argument('--importance', type=int, choices=[1,2,3,4,5], help='Importance level (1-5)')
+    
+    # List bookmarks subcommand
+    list_bookmarks_parser = bookmarks_subparsers.add_parser('list', help='List bookmarks')
+    list_bookmarks_parser.add_argument('--topic', help='Filter by topic')
+    
+    # Search bookmarks subcommand
+    search_bookmarks_parser = bookmarks_subparsers.add_parser('search', help='Search bookmarks')
+    search_bookmarks_parser.add_argument('--query', required=True, help='Search query')
+    
+    # Export bookmarks subcommand
+    export_bookmarks_parser = bookmarks_subparsers.add_parser('export', help='Export bookmarks')
+    export_bookmarks_parser.add_argument('--format', choices=['json', 'csv'], default='json', help='Export format')
+
+    # Session command
+    session_parser = subparsers.add_parser(
+        'session', 
+        help='Study sessions with Pomodoro timer',
+        description='Manage study sessions with focus tracking.'
+    )
+    session_subparsers = session_parser.add_subparsers(dest='action', help='Session actions')
+    
+    # Start session subcommand
+    start_session_parser = session_subparsers.add_parser('start', help='Start a study session')
+    start_session_parser.add_argument('--topic', required=True, help='Topic to study')
+    start_session_parser.add_argument('--duration', type=int, default=25, help='Session duration in minutes')
+    
+    # Break subcommand
+    break_session_parser = session_subparsers.add_parser('break', help='Take a break')
+    break_session_parser.add_argument('--break-type', choices=['short', 'long'], default='short', help='Break type')
+    
+    # End session subcommand
+    end_session_parser = session_subparsers.add_parser('end', help='End current session')
+    end_session_parser.add_argument('--notes', help='Session notes')
+    
+    # Session stats subcommand
+    stats_session_parser = session_subparsers.add_parser('stats', help='Show session statistics')
 
     # AI Status command
     ai_parser = subparsers.add_parser(

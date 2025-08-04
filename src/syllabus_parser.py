@@ -26,39 +26,98 @@ class SyllabusParser:
         # Use advanced text analysis as primary method for better accuracy
         text_topics = self._advanced_text_extraction(syllabus_text)
         
-        # If we have good text-based results, use them
-        if len(text_topics) >= 3:
-            return text_topics
-        
-        # Otherwise, try AI enhancement
+        # Always try AI enhancement for better accuracy
         try:
-            prompt = f"""Extract main topics from this syllabus as JSON array:
-[{{"name": "Topic Name", "subtopics": ["subtopic1", "subtopic2"]}}]
+            # Enhanced AI prompt for better topic extraction
+            prompt = f"""Analyze this course syllabus and extract the main learning topics. Return a JSON array with this exact format:
+[{{"name": "Topic Name", "subtopics": ["subtopic1", "subtopic2", "subtopic3"]}}]
 
-Syllabus:
-{syllabus_text[:2000]}"""
+Instructions:
+- Extract 4-8 main topics that represent distinct learning areas
+- Each topic should have 2-4 relevant subtopics
+- Focus on concrete skills, concepts, or knowledge areas
+- Avoid generic terms like "Introduction" or "Overview"
+- Make topic names specific and educational
+
+Syllabus content:
+{syllabus_text[:3000]}
+
+Return only the JSON array, no other text."""
             
             response = await ai_client.get_completion(prompt)
+            
+            # Clean the response to extract JSON
+            response = response.strip()
+            if response.startswith('```json'):
+                response = response[7:]
+            if response.endswith('```'):
+                response = response[:-3]
+            response = response.strip()
             
             import json
             ai_topics = json.loads(response)
             
-            # Validate and merge with text-based topics
+            # Validate AI topics
             if isinstance(ai_topics, list) and len(ai_topics) > 0:
-                # Merge unique topics
-                all_topics = text_topics.copy()
-                existing_names = {t['name'].lower() for t in text_topics}
+                validated_topics = []
+                for topic in ai_topics:
+                    if (isinstance(topic, dict) and 
+                        'name' in topic and 
+                        isinstance(topic['name'], str) and 
+                        len(topic['name'].strip()) > 2):
+                        
+                        # Ensure subtopics is a list
+                        if 'subtopics' not in topic or not isinstance(topic['subtopics'], list):
+                            topic['subtopics'] = []
+                        
+                        # Clean subtopics
+                        topic['subtopics'] = [st for st in topic['subtopics'] 
+                                            if isinstance(st, str) and len(st.strip()) > 2][:4]
+                        
+                        validated_topics.append(topic)
                 
-                for ai_topic in ai_topics:
-                    if ai_topic.get('name', '').lower() not in existing_names:
-                        all_topics.append(ai_topic)
+                if validated_topics:
+                    # Merge with text-based topics, prioritizing AI results
+                    all_topics = validated_topics.copy()
+                    existing_names = {t['name'].lower() for t in validated_topics}
+                    
+                    # Add unique text-based topics
+                    for text_topic in text_topics:
+                        if text_topic['name'].lower() not in existing_names:
+                            all_topics.append(text_topic)
+                    
+                    return all_topics[:8]  # Limit to 8 topics
+            
+            # Fallback to text-based extraction
+            return text_topics if text_topics else self._create_fallback_topics(syllabus_text)
                 
-                return all_topics[:8]  # Limit to 8 topics
-            else:
-                return text_topics
-                
-        except Exception:
-            return text_topics
+        except Exception as e:
+            print(f"AI extraction failed: {e}")
+            return text_topics if text_topics else self._create_fallback_topics(syllabus_text)
+    
+    def _create_fallback_topics(self, syllabus_text: str) -> List[Dict]:
+        """Create fallback topics when extraction fails"""
+        # Try to find any meaningful content
+        lines = [line.strip() for line in syllabus_text.split('\n') if line.strip()]
+        
+        if not lines:
+            return [{"name": "Course Content", "subtopics": ["Fundamentals", "Applications", "Practice"]}]
+        
+        # Look for any structured content
+        topics = []
+        for line in lines[:20]:  # Check first 20 lines
+            if len(line) > 10 and len(line) < 100:  # Reasonable topic length
+                # Clean the line
+                clean_line = re.sub(r'^[-•*○]\s*|\d+[\.)]\s*', '', line).strip()
+                if clean_line and not clean_line.lower().startswith(('course', 'syllabus', 'instructor')):
+                    topics.append({
+                        "name": clean_line[:50],  # Limit length
+                        "subtopics": ["Key Concepts", "Applications", "Practice"]
+                    })
+                    if len(topics) >= 4:
+                        break
+        
+        return topics if topics else [{"name": "Course Content", "subtopics": ["Fundamentals", "Applications", "Practice"]}]
     
     def _advanced_text_extraction(self, text: str) -> List[Dict]:
         """Advanced text-based topic extraction using multiple strategies"""
