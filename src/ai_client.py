@@ -220,81 +220,171 @@ class AIClient:
         return str(round(score, 1))
     
     def _extract_topics_from_text(self, prompt: str) -> str:
-        """Extract topics using advanced text analysis and keyword detection"""
-        content = prompt.lower()
+        """Extract topics using advanced text analysis and contextual understanding"""
+        import json
+        import re
+        content = prompt.lower().strip()
         
-        # Enhanced educational topic patterns with more specific detection
-        topic_patterns = {
-            'python programming': ['python', 'programming', 'coding', 'software', 'development', 'script'],
-            'pandas': ['pandas', 'dataframe', 'data manipulation', 'data analysis', 'csv', 'excel'],
-            'numpy': ['numpy', 'numerical', 'arrays', 'scientific computing', 'linear algebra', 'matrix'],
-            'matplotlib': ['matplotlib', 'visualization', 'plotting', 'charts', 'graphs', 'seaborn'],
-            'machine learning': ['machine learning', 'ml', 'ai', 'artificial intelligence', 'algorithms', 'model', 'training', 'supervised', 'unsupervised'],
-            'statistical analysis': ['statistical', 'statistics', 'analysis', 'probability', 'hypothesis', 'regression', 'correlation'],
-            'data visualization': ['visualization', 'plotting', 'charts', 'graphs', 'visual', 'dashboard', 'infographic'],
-            'data science': ['data science', 'data', 'analysis', 'analytics', 'insights', 'big data', 'data mining'],
-            'web development': ['html', 'css', 'web', 'frontend', 'backend', 'react', 'angular', 'vue', 'node'],
-            'database': ['sql', 'database', 'mysql', 'postgresql', 'mongodb', 'data storage', 'nosql'],
-            'javascript': ['javascript', 'js', 'node', 'react', 'angular', 'vue', 'typescript'],
-            'deep learning': ['deep learning', 'neural networks', 'cnn', 'rnn', 'tensorflow', 'pytorch', 'keras'],
-            'algorithms': ['algorithms', 'data structures', 'sorting', 'searching', 'complexity', 'optimization'],
-            'mathematics': ['math', 'calculus', 'algebra', 'geometry', 'linear algebra', 'discrete math'],
-            'computer science': ['computer science', 'cs', 'programming', 'algorithms', 'data structures', 'software engineering']
+        # Handle very short inputs with context analysis
+        if len(content) < 5:
+            return json.dumps([{
+                "name": "Basic Programming",
+                "subtopics": ["Fundamentals", "Syntax", "Practice"]
+            }])
+        
+        # Analyze context and word relationships
+        detected_topics = self._analyze_content_context(content)
+        
+        if not detected_topics:
+            detected_topics = self._extract_from_structure(content)
+        
+        return json.dumps(detected_topics)
+    
+    def _analyze_content_context(self, content: str) -> List[Dict]:
+        """Analyze content using contextual understanding and word relationships"""
+        import re
+        
+        # Common abbreviations and their full forms
+        abbreviation_map = {
+            'oops': 'object oriented programming',
+            'oop': 'object oriented programming', 
+            'ml': 'machine learning',
+            'ai': 'artificial intelligence',
+            'js': 'javascript',
+            'css': 'cascading style sheets',
+            'html': 'hypertext markup language',
+            'sql': 'structured query language',
+            'api': 'application programming interface',
+            'ui': 'user interface',
+            'ux': 'user experience'
+        }
+        
+        # Expand abbreviations in content
+        expanded_content = content
+        for abbr, full_form in abbreviation_map.items():
+            expanded_content = re.sub(r'\b' + abbr + r'\b', full_form, expanded_content)
+        
+        # Technology and concept clusters
+        concept_clusters = {
+            'programming_languages': {
+                'keywords': ['python', 'java', 'javascript', 'c++', 'c#', 'ruby', 'php', 'go', 'rust'],
+                'context_words': ['programming', 'coding', 'development', 'syntax', 'language']
+            },
+            'object_oriented': {
+                'keywords': ['object oriented programming', 'classes', 'objects', 'inheritance', 'polymorphism', 'encapsulation', 'abstraction'],
+                'context_words': ['oop', 'oops', 'class', 'object', 'method', 'attribute']
+            },
+            'web_development': {
+                'keywords': ['html', 'css', 'javascript', 'react', 'angular', 'vue', 'node', 'express'],
+                'context_words': ['web', 'frontend', 'backend', 'website', 'browser', 'server']
+            },
+            'data_science': {
+                'keywords': ['pandas', 'numpy', 'matplotlib', 'seaborn', 'scikit-learn', 'tensorflow', 'pytorch'],
+                'context_words': ['data', 'analysis', 'visualization', 'statistics', 'dataset', 'dataframe']
+            },
+            'machine_learning': {
+                'keywords': ['machine learning', 'deep learning', 'neural networks', 'algorithms', 'model', 'training'],
+                'context_words': ['ai', 'artificial intelligence', 'prediction', 'classification', 'regression']
+            },
+            'database': {
+                'keywords': ['sql', 'mysql', 'postgresql', 'mongodb', 'database', 'nosql'],
+                'context_words': ['data', 'storage', 'query', 'table', 'record', 'schema']
+            }
         }
         
         detected_topics = []
         
-        # First pass: Look for exact matches and multi-word terms
-        for topic_name, keywords in topic_patterns.items():
-            score = 0
+        # Analyze each concept cluster
+        for cluster_name, cluster_data in concept_clusters.items():
+            cluster_score = 0
             matched_keywords = []
             
-            # Check for multi-word exact matches first
-            for keyword in keywords:
-                if len(keyword.split()) > 1 and keyword in content:
-                    score += 3  # Higher weight for exact multi-word matches
-                    matched_keywords.append(keyword)
-                elif keyword in content:
-                    score += 1
+            # Check for direct keyword matches
+            for keyword in cluster_data['keywords']:
+                if keyword in expanded_content:
+                    cluster_score += 3 if len(keyword.split()) > 1 else 2
                     matched_keywords.append(keyword)
             
-            # Lower threshold for more granular topic detection
-            if score >= 2 or (score >= 1 and any(len(kw.split()) > 1 for kw in matched_keywords)):
-                # Generate subtopics based on matched keywords
-                subtopics = []
-                for kw in matched_keywords[:4]:
-                    if kw not in subtopics:
-                        subtopics.append(kw.title())
+            # Check for context words that might indicate this cluster
+            for context_word in cluster_data['context_words']:
+                if context_word in expanded_content:
+                    cluster_score += 1
+            
+            # Special handling for combined concepts (like "python oop")
+            if cluster_name == 'object_oriented':
+                # Check if any programming language is mentioned with OOP concepts
+                prog_langs = ['python', 'java', 'javascript', 'c++', 'c#']
+                for lang in prog_langs:
+                    if lang in content and any(oop_word in expanded_content for oop_word in ['object oriented programming', 'classes', 'objects']):
+                        cluster_score += 5
+                        matched_keywords.append(f"{lang} object oriented programming")
+                        break
+            
+            # If we have a significant score, create a topic
+            if cluster_score >= 2:
+                topic_name = self._generate_topic_name(cluster_name, matched_keywords, content)
+                subtopics = self._generate_subtopics(cluster_name, matched_keywords)
                 
                 detected_topics.append({
-                    "name": topic_name.title(),
+                    "name": topic_name,
                     "subtopics": subtopics,
-                    "score": score
+                    "score": cluster_score
                 })
         
-        # Sort by score and remove overlapping topics
+        # Sort by score and return top topics
         detected_topics.sort(key=lambda x: x['score'], reverse=True)
-        final_topics = []
-        used_keywords = set()
+        return [{"name": t["name"], "subtopics": t["subtopics"]} for t in detected_topics[:6]]
+    
+    def _generate_topic_name(self, cluster_name: str, matched_keywords: List[str], content: str) -> str:
+        """Generate appropriate topic name based on context"""
+        # Special cases for combined concepts
+        if 'python' in content and any('object oriented' in kw for kw in matched_keywords):
+            return "Python Object-Oriented Programming"
+        elif 'java' in content and any('object oriented' in kw for kw in matched_keywords):
+            return "Java Object-Oriented Programming"
         
-        for topic in detected_topics:
-            # Check if this topic overlaps significantly with already selected topics
-            topic_keywords = set(kw.lower() for kw in topic['subtopics'])
-            if len(topic_keywords.intersection(used_keywords)) < len(topic_keywords) * 0.5:
-                final_topics.append({
-                    "name": topic["name"],
-                    "subtopics": topic["subtopics"]
-                })
-                used_keywords.update(topic_keywords)
-                
-                if len(final_topics) >= 6:  # Limit to 6 topics
-                    break
+        # Map cluster names to readable topic names
+        cluster_to_topic = {
+            'programming_languages': self._detect_primary_language(content),
+            'object_oriented': "Object-Oriented Programming",
+            'web_development': "Web Development",
+            'data_science': "Data Science",
+            'machine_learning': "Machine Learning",
+            'database': "Database Management"
+        }
         
-        # If no specific topics found, try to extract from structure
-        if not final_topics:
-            final_topics = self._extract_from_structure(content)
+        return cluster_to_topic.get(cluster_name, cluster_name.replace('_', ' ').title())
+    
+    def _detect_primary_language(self, content: str) -> str:
+        """Detect the primary programming language mentioned"""
+        languages = ['python', 'java', 'javascript', 'c++', 'c#', 'ruby', 'php', 'go', 'rust']
+        for lang in languages:
+            if lang in content:
+                return f"{lang.title()} Programming"
+        return "Programming Fundamentals"
+    
+    def _generate_subtopics(self, cluster_name: str, matched_keywords: List[str]) -> List[str]:
+        """Generate relevant subtopics based on the cluster and matched keywords"""
+        subtopic_templates = {
+            'programming_languages': ["Syntax and Basics", "Data Types", "Control Structures", "Functions"],
+            'object_oriented': ["Classes and Objects", "Inheritance", "Polymorphism", "Encapsulation"],
+            'web_development': ["Frontend Development", "Backend Development", "APIs", "Responsive Design"],
+            'data_science': ["Data Analysis", "Visualization", "Statistical Methods", "Data Cleaning"],
+            'machine_learning': ["Supervised Learning", "Unsupervised Learning", "Model Training", "Evaluation"],
+            'database': ["Database Design", "SQL Queries", "Data Modeling", "Performance Optimization"]
+        }
         
-        return json.dumps(final_topics)
+        base_subtopics = subtopic_templates.get(cluster_name, ["Fundamentals", "Applications", "Best Practices", "Advanced Topics"])
+        
+        # Add specific subtopics based on matched keywords
+        specific_subtopics = []
+        for keyword in matched_keywords[:2]:  # Limit to avoid too many subtopics
+            if keyword not in [st.lower() for st in base_subtopics]:
+                specific_subtopics.append(keyword.title())
+        
+        # Combine and limit to 4 subtopics
+        all_subtopics = specific_subtopics + base_subtopics
+        return all_subtopics[:4]
     
     def _extract_from_structure(self, content: str) -> List[Dict]:
         """Extract topics from text structure when pattern matching fails"""
