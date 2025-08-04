@@ -88,6 +88,7 @@ session_data.json
 *_temp.py
 *_old.py
 *_backup.py
+*_broken.py
 clean_main.py
 test_main.py
 
