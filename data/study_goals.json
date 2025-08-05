@@ -38,16 +38,16 @@
     "completed": false,
     "completed_at": null
   },
-  "goal_20250805_154609": {
-    "id": "goal_20250805_154609",
-    "title": "Weekly Review Sessions",
-    "description": "Complete 3 spaced repetition sessions per week",
+  "goal_20250805_154826": {
+    "id": "goal_20250805_154826",
+    "title": "sad",
+    "description": "sad",
     "goal_type": "weekly",
-    "target_value": 3,
+    "target_value": 21,
     "current_value": 0,
-    "unit": "sessions",
-    "deadline": "2025-09-04T15:46:09.000721",
-    "created_at": "2025-08-05T15:46:09.000729",
+    "unit": "21",
+    "deadline": "2025-08-26T15:48:26.647170",
+    "created_at": "2025-08-05T15:48:26.647183",
     "completed": false,
     "completed_at": null
   }

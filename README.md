@@ -59,9 +59,25 @@ This opens an interactive menu where you can:
 
 You can also use command line options for specific tasks:
 ```bash
+# Analyze a syllabus file
 python main.py analyze --file syllabus.pdf
-python main.py quiz --topic "Python Programming"
-python main.py progress
+
+# Search for educational videos
+python main.py search --topic "Machine Learning" --max-videos 10
+
+# Manage spaced repetition reviews
+python main.py review list
+python main.py review add --topic "Neural Networks" --description "Deep learning concepts"
+python main.py review due
+python main.py review mark --topic "Linear Algebra" --success
+
+# Manage study goals
+python main.py goals list
+python main.py goals create --title "Daily Study" --type daily --target 30 --unit minutes
+python main.py goals suggest
+
+# Interactive mode with full menu
+python main.py interactive
 ```
 
 ## Main Features
@@ -78,7 +94,9 @@ python main.py progress
 
 **Bookmarks**: Save useful video timestamps and add your own notes.
 
-**Spaced Repetition**: Review topics at optimal intervals to improve long-term retention.
+**Spaced Repetition**: Review topics at optimal intervals to improve long-term retention. Fully functional with CLI and interactive modes.
+
+**Goal Management**: Set and track daily, weekly, and milestone-based study goals with progress monitoring.
 
 ## Example Workflow
 
