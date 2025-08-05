@@ -91,7 +91,7 @@ class SyllaboMain:
         
         menu_options = [
             ("1", "analyze", "Analyze Syllabus", "Process syllabus and find learning resources"),
-            ("2", "quiz", "Interactive Quizzes", "Generate and take quizzes from content"),
+            ("2", "quiz", "Interactive Quizzes", "Generate quizzes from topics, syllabus, or text"),
             ("3", "progress", "Progress Dashboard", "View learning progress and analytics"),
             ("4", "goals", "Study Goals", "Manage learning goals and milestones"),
             ("5", "platforms", "Multi-Platform Search", "Search across learning platforms"),
@@ -269,10 +269,26 @@ class SyllaboMain:
         """Interactive quiz generation and taking"""
         self.console.print(Rule("[bold bright_blue]Interactive Quizzes[/bold bright_blue]"))
         
+        # Give user options for quiz generation
+        quiz_source = Prompt.ask(
+            "[bright_yellow]How would you like to generate the quiz?[/bright_yellow]",
+            choices=["topics", "syllabus", "text"],
+            default="topics"
+        )
+        
+        if quiz_source == "topics":
+            await self._quiz_from_topics()
+        elif quiz_source == "syllabus":
+            await self._quiz_from_syllabus()
+        else:  # text
+            await self._quiz_from_text()
+    
+    async def _quiz_from_topics(self):
+        """Generate quiz from existing database topics"""
         # Get available topics from database
         topics = self.db.get_all_topics()
         if not topics:
-            self.console.print("[yellow]No topics found. Please analyze a syllabus first.[/yellow]")
+            self.console.print("[yellow]No topics found. Please analyze a syllabus first or use syllabus/text option.[/yellow]")
             return
         
         # Show available topics
@@ -290,8 +306,11 @@ class SyllaboMain:
             if 1 <= choice <= len(topics):
                 selected_topic = topics[choice - 1]
                 
+                # Ask for number of questions
+                num_questions = int(Prompt.ask("[bright_yellow]Number of questions[/bright_yellow]", default="5"))
+                
                 with self.console.status("[bright_cyan]Generating quiz..."):
-                    quiz_data = await self.quiz_generator.generate_quiz(selected_topic['name'])
+                    quiz_data = await self.quiz_generator.generate_quiz(selected_topic['name'], num_questions)
                 
                 if quiz_data:
                     await self._take_quiz(quiz_data)
@@ -301,6 +320,81 @@ class SyllaboMain:
                 self.console.print("[red]Invalid selection[/red]")
         except ValueError:
             self.console.print("[red]Please enter a valid number[/red]")
+    
+    async def _quiz_from_syllabus(self):
+        """Generate quiz from syllabus file"""
+        file_path = Prompt.ask("[bright_cyan]Enter syllabus file path[/bright_cyan]")
+        if not file_path or not os.path.exists(file_path):
+            self.console.print("[bright_red]File not found. Please check the path.[/bright_red]")
+            return
+        
+        try:
+            # Load syllabus content
+            with self.console.status("[bright_cyan]Loading syllabus..."):
+                content = self.syllabus_parser.load_from_file(file_path)
+                title = os.path.basename(file_path)
+            
+            self.console.print(f"[bright_green]Loaded:[/bright_green] {title}")
+            
+            # Get quiz parameters
+            topic_name = Prompt.ask("[bright_cyan]Quiz topic/subject[/bright_cyan]", default=title)
+            num_questions = int(Prompt.ask("[bright_yellow]Number of questions[/bright_yellow]", default="5"))
+            
+            # Generate quiz from content
+            with self.console.status("[bright_cyan]Generating quiz from syllabus..."):
+                quiz_data = await self.quiz_generator.generate_quiz_from_content(content, topic_name, num_questions)
+            
+            if quiz_data:
+                await self._take_quiz(quiz_data)
+            else:
+                self.console.print("[yellow]Could not generate quiz from this syllabus[/yellow]")
+                
+        except Exception as e:
+            self.console.print(f"[bright_red]Error: {e}[/bright_red]")
+    
+    async def _quiz_from_text(self):
+        """Generate quiz from direct text input"""
+        self.console.print("[bright_cyan]Enter your study content (press Enter twice when done):[/bright_cyan]")
+        
+        lines = []
+        empty_lines = 0
+        
+        while empty_lines < 2:
+            try:
+                line = input()
+                if line.strip() == "":
+                    empty_lines += 1
+                else:
+                    empty_lines = 0
+                lines.append(line)
+            except KeyboardInterrupt:
+                self.console.print("\n[yellow]Input cancelled[/yellow]")
+                return
+        
+        content = "\n".join(lines).strip()
+        
+        if not content:
+            self.console.print("[bright_red]No content provided[/bright_red]")
+            return
+        
+        try:
+            # Get quiz parameters
+            topic_name = Prompt.ask("[bright_cyan]Quiz topic/subject[/bright_cyan]", default="Study Material")
+            num_questions = int(Prompt.ask("[bright_yellow]Number of questions[/bright_yellow]", default="5"))
+            
+            # Generate quiz from content
+            with self.console.status("[bright_cyan]Generating quiz from your content..."):
+                quiz_data = await self.quiz_generator.generate_quiz_from_content(content, topic_name, num_questions)
+            
+            if quiz_data:
+                await self._take_quiz(quiz_data)
+            else:
+                self.console.print("[yellow]Could not generate quiz from this content[/yellow]")
+                
+        except ValueError:
+            self.console.print("[red]Please enter a valid number for questions[/red]")
+        except Exception as e:
+            self.console.print(f"[bright_red]Error: {e}[/bright_red]")
     
     async def _take_quiz(self, quiz_data):
         """Take an interactive quiz"""
@@ -878,7 +972,7 @@ class SyllaboMain:
 • search     - Search for educational videos
 • review     - Spaced repetition system
 • goals      - Study goals management
-• quiz       - Interactive quizzes
+• quiz       - Interactive quizzes from topics, syllabus, or text
 • progress   - Learning progress dashboard
 • session    - Study sessions with Pomodoro timer
 • bookmarks  - Smart bookmarks management

@@ -17,6 +17,10 @@ class QuizGenerator:
     async def generate_quiz_from_content(self, content: str, topic: str, 
                                        num_questions: int = 5) -> Dict:
         """Generate quiz questions from content using intelligent analysis"""
+        if not content or len(content.strip()) < 10:
+            self.logger.warning("Content too short, using template-based generation")
+            return self._generate_template_quiz(topic, num_questions, content)
+        
         # Try AI first, then fallback to template-based generation
         try:
             prompt = f"""Create {num_questions} quiz questions about {topic} based on this content:
@@ -37,20 +41,27 @@ Generate questions in this JSON format:
 }}
 
 Include different question types: multiple choice, true/false, and short answer.
-Make questions test understanding, not just memorization."""
+Make questions test understanding, not just memorization.
+Ensure all questions are directly related to the provided content."""
             
             response = await self.ai_client.get_completion(prompt)
             
             # Try to parse JSON response
-            if response.strip().startswith('{'):
+            if response and response.strip().startswith('{'):
                 quiz_data = json.loads(response)
-                quiz = {
-                    "topic": topic,
-                    "questions": quiz_data.get("questions", []),
-                    "created_at": datetime.now().isoformat(),
-                    "difficulty": self._assess_difficulty(content)
-                }
-                return quiz
+                questions = quiz_data.get("questions", [])
+                
+                if questions and len(questions) > 0:
+                    quiz = {
+                        "title": f"Quiz: {topic}",
+                        "topic": topic,
+                        "questions": questions[:num_questions],  # Limit to requested number
+                        "created_at": datetime.now().isoformat(),
+                        "difficulty": self._assess_difficulty(content)
+                    }
+                    return quiz
+                else:
+                    raise ValueError("No questions generated")
             else:
                 raise ValueError("Invalid JSON response")
                 
@@ -185,6 +196,7 @@ Make questions test understanding, not just memorization."""
             selected_questions = selected_questions[:num_questions]
         
         quiz = {
+            "title": f"Quiz: {topic}",
             "topic": topic,
             "questions": selected_questions,
             "created_at": datetime.now().isoformat(),
