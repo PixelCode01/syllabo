@@ -48,13 +48,13 @@ class SyllabusParser:
         # Always try AI enhancement for better accuracy
         try:
             # Enhanced AI prompt for better topic extraction with fallback handling
-            prompt = f"""Return a JSON array of learning topics from this content:
+            prompt = f"""Extract learning topics from this syllabus content and return ONLY a JSON array.
 
-{syllabus_text[:1000]}
+Content: {syllabus_text[:800]}
 
-Format: [{{"name": "Topic Name", "subtopics": ["subtopic1", "subtopic2"]}}]
+Return exactly this format: [{{"name": "Topic Name", "subtopics": ["subtopic1", "subtopic2"]}}]
 
-Extract 3-5 topics, each with 2-3 subtopics. Return only the JSON array."""
+Extract 3-5 main topics, each with 2-3 subtopics. No explanations, just the JSON array."""
             
             response = await ai_client.get_completion(prompt)
             
@@ -63,13 +63,21 @@ Extract 3-5 topics, each with 2-3 subtopics. Return only the JSON array."""
                 print("AI response was empty, using text-based extraction")
                 return text_topics if text_topics else self._create_fallback_topics(syllabus_text)
             
-            # Log the response for debugging
-            print(f"AI Response received: {response[:100]}...")
-            
-            # Clean the response to extract JSON
+            # Clean the response to extract JSON - handle thinking tags
             response = response.strip()
+            
+            # Remove thinking tags if present
+            if '<think>' in response:
+                # Extract content after </think> tag
+                think_end = response.find('</think>')
+                if think_end != -1:
+                    response = response[think_end + 8:].strip()
+            
+            # Remove code block markers
             if response.startswith('```json'):
                 response = response[7:]
+            elif response.startswith('```'):
+                response = response[3:]
             if response.endswith('```'):
                 response = response[:-3]
             response = response.strip()
@@ -79,28 +87,24 @@ Extract 3-5 topics, each with 2-3 subtopics. Return only the JSON array."""
                 print("AI response was empty after cleaning, using text-based extraction")
                 return text_topics if text_topics else self._create_fallback_topics(syllabus_text)
             
-            print(f"Cleaned AI Response: {response[:200]}...")
-            
             import json
             
             # Try to parse JSON with better error handling
             try:
                 ai_topics = json.loads(response)
             except json.JSONDecodeError as e:
-                print(f"JSON parsing failed: {e}")
-                print(f"Response was: {response}")
                 # Try to extract JSON from response if it's embedded in text
                 import re
-                json_match = re.search(r'\[.*\]', response, re.DOTALL)
+                # Look for JSON array pattern
+                json_match = re.search(r'\[[\s\S]*?\]', response)
                 if json_match:
                     try:
                         ai_topics = json.loads(json_match.group())
-                        print("Successfully extracted JSON from response")
                     except:
-                        print("Failed to extract JSON from response")
+                        # If still fails, use text-based extraction
                         return text_topics if text_topics else self._create_fallback_topics(syllabus_text)
                 else:
-                    print("No JSON array found in response")
+                    # No JSON found, use text-based extraction
                     return text_topics if text_topics else self._create_fallback_topics(syllabus_text)
             
             # Validate AI topics
@@ -161,16 +165,32 @@ Extract 3-5 topics, each with 2-3 subtopics. Return only the JSON array."""
         
         # For very short inputs, create a more specific topic
         text_lower = syllabus_text.lower().strip()
-        if len(text_lower) < 20:
-            if 'python' in text_lower and 'oop' in text_lower:
+        if len(text_lower) < 30:
+            # Handle common abbreviations and typos
+            if any(term in text_lower for term in ['oop', 'oops', 'opps']) and 'py' in text_lower:
                 return [{
                     "name": "Python Object-Oriented Programming",
+                    "subtopics": ["Classes and Objects", "Inheritance", "Polymorphism", "Encapsulation"]
+                }]
+            elif 'python' in text_lower and any(term in text_lower for term in ['oop', 'oops', 'opps']):
+                return [{
+                    "name": "Python Object-Oriented Programming", 
                     "subtopics": ["Classes and Objects", "Inheritance", "Polymorphism", "Encapsulation"]
                 }]
             elif 'python' in text_lower:
                 return [{
                     "name": "Python Programming",
-                    "subtopics": ["Syntax", "Data Types", "Functions", "Modules"]
+                    "subtopics": ["Syntax and Basics", "Data Types", "Functions", "Control Structures"]
+                }]
+            elif any(term in text_lower for term in ['ml', 'machine learning']):
+                return [{
+                    "name": "Machine Learning",
+                    "subtopics": ["Supervised Learning", "Unsupervised Learning", "Model Training", "Evaluation"]
+                }]
+            elif 'data science' in text_lower:
+                return [{
+                    "name": "Data Science",
+                    "subtopics": ["Data Analysis", "Visualization", "Statistical Methods", "Python Libraries"]
                 }]
         
         # Look for any structured content
@@ -321,7 +341,9 @@ Extract 3-5 topics, each with 2-3 subtopics. Return only the JSON array."""
         
         # Enhanced educational topic keywords with more specific detection
         topic_keywords = {
-            'Python Programming': ['python', 'programming', 'coding', 'script', 'interpreter'],
+            'Python Object-Oriented Programming': ['python oop', 'python oops', 'python opps', 'python object oriented', 'oop in python', 'oops in python', 'opps in python'],
+            'Python Programming': ['python', 'programming', 'coding', 'script', 'interpreter', 'py'],
+            'Object-Oriented Programming': ['oop', 'oops', 'opps', 'object oriented', 'classes', 'objects', 'inheritance', 'polymorphism', 'encapsulation'],
             'Pandas': ['pandas', 'dataframe', 'data manipulation', 'csv', 'excel'],
             'NumPy': ['numpy', 'arrays', 'numerical', 'scientific computing', 'matrix'],
             'Matplotlib': ['matplotlib', 'visualization', 'plotting', 'charts', 'graphs'],
