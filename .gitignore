@@ -90,13 +90,10 @@ session_data.json
 *_backup.py
 *_broken.py
 clean_main.py
-test_main.py
+fix_main.py
 
-# Test batch files
-*.bat
-
-# Simple test files
-simple_test.py
+# Test files
+test_*.py
 
 # Documentation files (keep only essential docs)
 CODING_STYLE_COMPLIANCE.md
@@ -104,6 +101,9 @@ VIDEO_LINKS_FIX.md
 PROJECT_STRUCTURE.md
 OPTIMAL_LEARNING_GUIDE.md
 USAGE_GUIDE.md
+CONTEXT_ANALYSIS_IMPROVEMENTS.md
+FEATURES_FIXED_SUMMARY.md
+UI_IMPROVEMENTS_SUMMARY.md
 
 # Sample/demo files that are not core functionality
 sample_syllabus.txt
@@ -115,14 +115,13 @@ interactive_scraper.py
 run_syllabo.py
 forgetmenot.py
 
-test_*.py
-
 # Legacy/unused components and duplicate files
 src/mock_data.py
 src/app.py
 src/terminal_display.py
 src/styles.css
 syllabo_final.py
+main_simple.py
 
 # Temporary files
 *.tmp
