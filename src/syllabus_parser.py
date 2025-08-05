@@ -47,21 +47,14 @@ class SyllabusParser:
         
         # Always try AI enhancement for better accuracy
         try:
-            # Enhanced AI prompt for better topic extraction
-            prompt = f"""Analyze this course syllabus and extract the main learning topics. Return a JSON array with this exact format:
-[{{"name": "Topic Name", "subtopics": ["subtopic1", "subtopic2", "subtopic3"]}}]
+            # Enhanced AI prompt for better topic extraction with fallback handling
+            prompt = f"""Return a JSON array of learning topics from this content:
 
-Instructions:
-- Extract 4-8 main topics that represent distinct learning areas
-- Each topic should have 2-4 relevant subtopics
-- Focus on concrete skills, concepts, or knowledge areas
-- Avoid generic terms like "Introduction" or "Overview"
-- Make topic names specific and educational
+{syllabus_text[:1000]}
 
-Syllabus content:
-{syllabus_text[:3000]}
+Format: [{{"name": "Topic Name", "subtopics": ["subtopic1", "subtopic2"]}}]
 
-Return only the JSON array, no other text."""
+Extract 3-5 topics, each with 2-3 subtopics. Return only the JSON array."""
             
             response = await ai_client.get_completion(prompt)
             
@@ -69,6 +62,9 @@ Return only the JSON array, no other text."""
             if not response or response.strip() == "":
                 print("AI response was empty, using text-based extraction")
                 return text_topics if text_topics else self._create_fallback_topics(syllabus_text)
+            
+            # Log the response for debugging
+            print(f"AI Response received: {response[:100]}...")
             
             # Clean the response to extract JSON
             response = response.strip()
@@ -83,8 +79,29 @@ Return only the JSON array, no other text."""
                 print("AI response was empty after cleaning, using text-based extraction")
                 return text_topics if text_topics else self._create_fallback_topics(syllabus_text)
             
+            print(f"Cleaned AI Response: {response[:200]}...")
+            
             import json
-            ai_topics = json.loads(response)
+            
+            # Try to parse JSON with better error handling
+            try:
+                ai_topics = json.loads(response)
+            except json.JSONDecodeError as e:
+                print(f"JSON parsing failed: {e}")
+                print(f"Response was: {response}")
+                # Try to extract JSON from response if it's embedded in text
+                import re
+                json_match = re.search(r'\[.*\]', response, re.DOTALL)
+                if json_match:
+                    try:
+                        ai_topics = json.loads(json_match.group())
+                        print("Successfully extracted JSON from response")
+                    except:
+                        print("Failed to extract JSON from response")
+                        return text_topics if text_topics else self._create_fallback_topics(syllabus_text)
+                else:
+                    print("No JSON array found in response")
+                    return text_topics if text_topics else self._create_fallback_topics(syllabus_text)
             
             # Validate AI topics
             if isinstance(ai_topics, list) and len(ai_topics) > 0:
@@ -106,16 +123,22 @@ Return only the JSON array, no other text."""
                         validated_topics.append(topic)
                 
                 if validated_topics:
-                    # Merge with text-based topics, prioritizing AI results
+                    # If AI extraction was successful, prioritize it and limit text-based additions
                     all_topics = validated_topics.copy()
                     existing_names = {t['name'].lower() for t in validated_topics}
                     
-                    # Add unique text-based topics
+                    # Only add high-quality text-based topics that are significantly different
                     for text_topic in text_topics:
-                        if text_topic['name'].lower() not in existing_names:
+                        topic_name_lower = text_topic['name'].lower()
+                        # Skip if too similar to existing topics or too generic
+                        if (topic_name_lower not in existing_names and 
+                            len(topic_name_lower) > 5 and
+                            not any(existing in topic_name_lower or topic_name_lower in existing 
+                                   for existing in existing_names) and
+                            len(all_topics) < 6):  # Limit total topics
                             all_topics.append(text_topic)
                     
-                    return all_topics[:8]  # Limit to 8 topics
+                    return all_topics[:6]  # Limit to 6 topics for better quality
             
             # Fallback to text-based extraction
             return text_topics if text_topics else self._create_fallback_topics(syllabus_text)
