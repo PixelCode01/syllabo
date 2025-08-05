@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  syllabo:
+    build: .
+    container_name: syllabo-app
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./.env:/app/.env:ro
+    environment:
+      - PYTHONPATH=/app/src
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    networks:
+      - syllabo-network
+    profiles:
+      - app
+
+  # Development service for running specific commands
+  syllabo-dev:
+    build: .
+    container_name: syllabo-dev
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./.env:/app/.env:ro
+      - .:/app
+    environment:
+      - PYTHONPATH=/app/src
+    stdin_open: true
+    tty: true
+    networks:
+      - syllabo-network
+    profiles:
+      - dev
+    command: /bin/bash
+
+networks:
+  syllabo-network:
+    driver: bridge

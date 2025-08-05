@@ -52,8 +52,8 @@ ehthumbs.db
 Thumbs.db
 
 # Application specific
-data/*.db
-data/*.log
+data/
+!data/.gitkeep
 feedback.json
 syllabo_results_*.json
 syllabo_results_*.csv
@@ -115,6 +115,8 @@ syllabo_enhanced_fixed.py
 interactive_scraper.py
 run_syllabo.py
 forgetmenot.py
+scripts/syllabo_enhanced_fixed.py
+scripts/demo_ui.py
 
 # Legacy/unused components and duplicate files
 src/mock_data.py
@@ -149,3 +151,9 @@ coverage.xml
 
 # Kiro IDE
 .kiro/
+
+# IDE files
+.idea/
+
+# Setup files (keep setup.py but ignore if it's not needed)
+setup.py

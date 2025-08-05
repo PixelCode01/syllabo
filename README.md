@@ -28,6 +28,36 @@ Syllabo takes your course syllabus and breaks it down into manageable topics, th
 
 ## Getting Started
 
+### Option 1: Docker (Recommended)
+
+The easiest way to run Syllabo is using Docker. This ensures consistent behavior across different systems.
+
+1. Clone the repository:
+```bash
+git clone https://github.com/PixelCode01/syllabo.git
+cd syllabo
+```
+
+2. Run the setup script:
+```bash
+# On Linux/Mac
+./docker-setup.sh
+
+# On Windows
+docker-setup.bat
+```
+
+3. Start using Syllabo:
+```bash
+# Interactive mode
+docker-compose run --rm syllabo
+
+# Or use the Makefile
+make run
+```
+
+### Option 2: Local Installation
+
 1. Clone the repository:
 ```bash
 git clone https://github.com/PixelCode01/syllabo.git
@@ -44,9 +74,15 @@ Copy `.env.example` to `.env` and add your API keys if you have them. The app wo
 
 ## How to Use
 
+### Docker Usage
+
 Run the main program:
 ```bash
-python main.py
+# Interactive mode with full menu
+docker-compose run --rm syllabo
+
+# Or using make
+make interactive
 ```
 
 This opens an interactive menu where you can:
@@ -57,8 +93,41 @@ This opens an interactive menu where you can:
 - Start timed study sessions
 - Manage bookmarks and notes
 
-You can also use command line options for specific tasks:
+### Docker Commands
+
 ```bash
+# Interactive mode with full menu
+docker-compose run --rm syllabo
+# or
+make run
+
+# Analyze a syllabus file
+docker-compose run --rm syllabo python main.py analyze --file syllabus.pdf
+
+# Search for educational videos
+docker-compose run --rm syllabo python main.py search --topic "Machine Learning" --max-videos 10
+
+# Manage spaced repetition reviews
+docker-compose run --rm syllabo python main.py review list
+docker-compose run --rm syllabo python main.py review add --topic "Neural Networks" --description "Deep learning concepts"
+
+# Manage study goals
+docker-compose run --rm syllabo python main.py goals list
+docker-compose run --rm syllabo python main.py goals create --title "Daily Study" --type daily --target 30 --unit minutes
+
+# View logs
+make logs
+
+# Open shell for debugging
+make shell
+```
+
+### Local Installation Commands
+
+```bash
+# Interactive mode with full menu
+python main.py interactive
+
 # Analyze a syllabus file
 python main.py analyze --file syllabus.pdf
 
@@ -75,9 +144,6 @@ python main.py review mark --topic "Linear Algebra" --success
 python main.py goals list
 python main.py goals create --title "Daily Study" --type daily --target 30 --unit minutes
 python main.py goals suggest
-
-# Interactive mode with full menu
-python main.py interactive
 ```
 
 ## Main Features
@@ -107,8 +173,35 @@ python main.py interactive
 5. Track your progress over time
 6. Use spaced repetition to review difficult topics
 
+## Docker Quick Start
+
+If you have Docker installed, you can get started in just a few commands:
+
+```bash
+git clone https://github.com/PixelCode01/syllabo.git
+cd syllabo
+./docker-setup.sh  # or docker-setup.bat on Windows
+make run
+```
+
+## Docker Commands Reference
+
+```bash
+make build      # Build the Docker image
+make run        # Run interactively
+make stop       # Stop containers
+make logs       # View logs
+make shell      # Open shell in container
+make clean      # Remove everything
+```
+
 ## Requirements
 
+### For Docker (Recommended)
+- Docker and Docker Compose
+- Internet connection for finding resources
+
+### For Local Installation
 - Python 3.7 or higher
 - Internet connection for finding resources
 - Optional: API keys for enhanced features (see .env.example)
