@@ -47,22 +47,41 @@ Ensure all questions are directly related to the provided content."""
             response = await self.ai_client.get_completion(prompt)
             
             # Try to parse JSON response
-            if response and response.strip().startswith('{'):
-                quiz_data = json.loads(response)
-                questions = quiz_data.get("questions", [])
+            if response and response.strip():
+                # Clean up the response - sometimes AI adds extra text
+                response = response.strip()
                 
-                if questions and len(questions) > 0:
-                    quiz = {
-                        "title": f"Quiz: {topic}",
-                        "topic": topic,
-                        "questions": questions[:num_questions],  # Limit to requested number
-                        "created_at": datetime.now().isoformat(),
-                        "difficulty": self._assess_difficulty(content)
-                    }
-                    return quiz
-                else:
-                    raise ValueError("No questions generated")
-            else:
+                # Find JSON content
+                start_idx = response.find('{')
+                end_idx = response.rfind('}') + 1
+                
+                if start_idx != -1 and end_idx > start_idx:
+                    json_content = response[start_idx:end_idx]
+                    
+                    try:
+                        quiz_data = json.loads(json_content)
+                        questions = quiz_data.get("questions", [])
+                        
+                        if questions and len(questions) > 0:
+                            # Validate and clean questions
+                            valid_questions = []
+                            for q in questions[:num_questions]:
+                                if self._validate_question(q):
+                                    valid_questions.append(q)
+                            
+                            if valid_questions:
+                                quiz = {
+                                    "title": f"Quiz: {topic}",
+                                    "topic": topic,
+                                    "questions": valid_questions,
+                                    "created_at": datetime.now().isoformat(),
+                                    "difficulty": self._assess_difficulty(content)
+                                }
+                                return quiz
+                        
+                    except json.JSONDecodeError as je:
+                        self.logger.error(f"JSON parsing error: {je}")
+                
                 raise ValueError("Invalid JSON response")
                 
         except Exception as e:
@@ -127,6 +146,19 @@ Ensure all questions are directly related to the provided content."""
                     "type": "short_answer",
                     "correct_answer": "decision tree random forest svm logistic regression",
                     "explanation": "Common classification algorithms include decision trees, random forests, SVM, and logistic regression."
+                },
+                {
+                    "question": "Which type of learning uses rewards and punishments?",
+                    "type": "multiple_choice",
+                    "options": ["Supervised learning", "Unsupervised learning", "Reinforcement learning", "Semi-supervised learning"],
+                    "correct_answer": 2,
+                    "explanation": "Reinforcement learning uses rewards and punishments to learn optimal actions."
+                },
+                {
+                    "question": "Feature engineering is important in machine learning.",
+                    "type": "true_false",
+                    "correct_answer": True,
+                    "explanation": "Feature engineering helps improve model performance by creating better input features."
                 }
             ],
             'data science': [
@@ -185,9 +217,18 @@ Ensure all questions are directly related to the provided content."""
             if template_topic in topic_lower or any(word in topic_lower for word in template_topic.split()):
                 selected_questions.extend(questions)
         
-        # If no specific match, use general programming questions
+        # If no specific match, try broader matches
         if not selected_questions:
-            selected_questions = quiz_templates.get('python programming', [])
+            # Try broader keyword matching
+            for template_topic, questions in quiz_templates.items():
+                topic_keywords = template_topic.split()
+                if any(keyword in topic_lower for keyword in topic_keywords):
+                    selected_questions.extend(questions)
+                    break
+        
+        # If still no match, use machine learning as default (most common topic)
+        if not selected_questions:
+            selected_questions = quiz_templates.get('machine learning', quiz_templates.get('python programming', []))
         
         # Select random questions up to the requested number
         if len(selected_questions) > num_questions:
@@ -292,6 +333,39 @@ Ensure all questions are directly related to the provided content."""
             return "intermediate"
         else:
             return "advanced"
+    
+    def _validate_question(self, question: Dict) -> bool:
+        """Validate that a question has all required fields"""
+        required_fields = ['question', 'type']
+        
+        for field in required_fields:
+            if field not in question or not question[field]:
+                return False
+        
+        question_type = question.get('type', '')
+        
+        if question_type == 'multiple_choice':
+            options = question.get('options', [])
+            correct_answer = question.get('correct_answer')
+            
+            if not options or len(options) < 2:
+                return False
+            if correct_answer is None or correct_answer < 0 or correct_answer >= len(options):
+                return False
+                
+        elif question_type == 'true_false':
+            correct_answer = question.get('correct_answer')
+            if correct_answer is None or not isinstance(correct_answer, bool):
+                return False
+                
+        elif question_type == 'short_answer':
+            correct_answer = question.get('correct_answer')
+            if not correct_answer or not isinstance(correct_answer, str):
+                return False
+        else:
+            return False
+        
+        return True
     
     def _check_short_answer(self, user_answer: str, correct_answer: str) -> bool:
         """Check if short answer is approximately correct"""

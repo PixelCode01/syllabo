@@ -412,28 +412,80 @@ class SyllaboMain:
             self.console.print(f"\n[bold bright_cyan]Question {i}/{total}:[/bold bright_cyan]")
             self.console.print(question.get('question', ''))
             
-            options = question.get('options', [])
-            if options:
-                for j, option in enumerate(options, 1):
-                    self.console.print(f"  {j}. {option}")
-                
-                try:
-                    answer = int(Prompt.ask("[bright_yellow]Your answer[/bright_yellow]"))
-                    correct = question.get('correct_answer', 1)
+            question_type = question.get('type', 'multiple_choice')
+            is_correct = False
+            
+            if question_type == 'multiple_choice':
+                options = question.get('options', [])
+                if options:
+                    for j, option in enumerate(options, 1):
+                        self.console.print(f"  {j}. {option}")
                     
-                    if answer == correct:
-                        self.console.print("[bright_green]Correct![/bright_green]")
-                        score += 1
-                    else:
-                        self.console.print(f"[bright_red]Incorrect. The correct answer was {correct}[/bright_red]")
+                    try:
+                        answer = int(Prompt.ask("[bright_yellow]Your answer[/bright_yellow]"))
+                        correct_index = question.get('correct_answer', 0)  # 0-based index
+                        correct_display = correct_index + 1  # Convert to 1-based for display
                         
-                except ValueError:
-                    self.console.print("[red]Invalid answer[/red]")
+                        if answer == correct_display:
+                            self.console.print("[bright_green]Correct![/bright_green]")
+                            is_correct = True
+                        else:
+                            correct_option = options[correct_index] if correct_index < len(options) else "Unknown"
+                            self.console.print(f"[bright_red]Incorrect. The correct answer was {correct_display}: {correct_option}[/bright_red]")
+                            
+                    except ValueError:
+                        self.console.print("[red]Invalid answer[/red]")
+                        
+            elif question_type == 'true_false':
+                answer = Prompt.ask("[bright_yellow]True or False (T/F)[/bright_yellow]").upper().strip()
+                correct_answer = question.get('correct_answer', True)
+                
+                if (answer == 'T' and correct_answer) or (answer == 'F' and not correct_answer):
+                    self.console.print("[bright_green]Correct![/bright_green]")
+                    is_correct = True
+                else:
+                    correct_text = "True" if correct_answer else "False"
+                    self.console.print(f"[bright_red]Incorrect. The correct answer was {correct_text}[/bright_red]")
+                    
+            elif question_type == 'short_answer':
+                answer = Prompt.ask("[bright_yellow]Your answer[/bright_yellow]").strip()
+                correct_answer = question.get('correct_answer', '')
+                
+                # Simple keyword matching for short answers
+                if self._check_short_answer_match(answer, correct_answer):
+                    self.console.print("[bright_green]Correct![/bright_green]")
+                    is_correct = True
+                else:
+                    self.console.print(f"[bright_red]Incorrect. Expected: {correct_answer}[/bright_red]")
+            
+            # Show explanation if available
+            explanation = question.get('explanation', '')
+            if explanation:
+                self.console.print(f"[dim]{explanation}[/dim]")
+            
+            if is_correct:
+                score += 1
         
         # Show final score
         percentage = (score / total) * 100
         self.console.print(f"\n[bold bright_green]Quiz Complete![/bold bright_green]")
         self.console.print(f"Score: {score}/{total} ({percentage:.1f}%)")
+    
+    def _check_short_answer_match(self, user_answer: str, correct_answer: str) -> bool:
+        """Check if short answer matches expected answer"""
+        user_words = set(user_answer.lower().split())
+        correct_words = set(correct_answer.lower().split())
+        
+        # Check for exact match first
+        if user_answer.lower().strip() == correct_answer.lower().strip():
+            return True
+        
+        # Check for keyword overlap (60% threshold)
+        if correct_words:
+            overlap = len(user_words.intersection(correct_words))
+            return overlap >= len(correct_words) * 0.6
+        
+        return False
     
     async def _interactive_progress(self):
         """Interactive progress dashboard"""
@@ -946,7 +998,55 @@ class SyllaboMain:
     
     async def _handle_quiz_command(self, args):
         """Handle quiz command from CLI"""
-        await self._interactive_quiz()
+        # If specific arguments provided, use them directly
+        if hasattr(args, 'topic') and args.topic:
+            # Generate quiz for specific topic
+            num_questions = getattr(args, 'num_questions', 5)
+            
+            with self.console.status("[bright_cyan]Generating quiz..."):
+                quiz_data = await self.quiz_generator.generate_quiz(args.topic, num_questions)
+            
+            if quiz_data:
+                await self._take_quiz(quiz_data)
+            else:
+                self.console.print("[yellow]Could not generate quiz for this topic[/yellow]")
+        
+        elif hasattr(args, 'content_file') and args.content_file:
+            # Generate quiz from content file
+            if not os.path.exists(args.content_file):
+                self.console.print(f"[bright_red]File not found: {args.content_file}[/bright_red]")
+                return
+            
+            try:
+                with self.console.status("[bright_cyan]Loading content..."):
+                    content = self.syllabus_parser.load_from_file(args.content_file)
+                    topic_name = os.path.basename(args.content_file)
+                
+                num_questions = getattr(args, 'num_questions', 5)
+                
+                with self.console.status("[bright_cyan]Generating quiz from file..."):
+                    quiz_data = await self.quiz_generator.generate_quiz_from_content(content, topic_name, num_questions)
+                
+                if quiz_data:
+                    await self._take_quiz(quiz_data)
+                else:
+                    self.console.print("[yellow]Could not generate quiz from this file[/yellow]")
+                    
+            except Exception as e:
+                self.console.print(f"[bright_red]Error: {e}[/bright_red]")
+        
+        elif hasattr(args, 'source') and args.source:
+            # Use specified source
+            if args.source == "topics":
+                await self._quiz_from_topics()
+            elif args.source == "syllabus":
+                await self._quiz_from_syllabus()
+            else:  # text
+                await self._quiz_from_text()
+        
+        else:
+            # Default to interactive mode
+            await self._interactive_quiz()
     
     async def _handle_progress_command(self, args):
         """Handle progress command from CLI"""

@@ -12,8 +12,10 @@ The main application with all features including quizzes, progress tracking, mul
 python main.py analyze --file syllabus.pdf --search-videos --include-podcasts --include-reading --add-to-review --difficulty-filter intermediate
 
 # Interactive quiz system
-python main.py quiz generate --topic "Machine Learning" --num-questions 10
-python main.py quiz take
+python main.py quiz --topic "Machine Learning" --num-questions 10
+python main.py quiz --content-file syllabus.pdf --num-questions 5
+python main.py quiz --source topics
+python main.py quiz  # Interactive mode - prompts for topic/syllabus/text
 
 # Progress tracking and analytics
 python main.py progress --export
@@ -61,17 +63,22 @@ python syllabo.py export --syllabus-id 1 --format html
 ## New Features Guide
 
 ### Interactive Quiz System
-Generate and take quizzes from your study content:
+Generate and take quizzes from topics, syllabus files, or text content:
 
 ```bash
+# Generate quiz from specific topic
+python main.py quiz --topic "Machine Learning" --num-questions 10
+
 # Generate quiz from content file
-python main.py quiz generate --topic "Machine Learning" --content-file notes.txt --num-questions 10
+python main.py quiz --content-file notes.txt --num-questions 5
 
-# Take a quiz interactively
-python main.py quiz take
+# Interactive mode - choose from topics/syllabus/text
+python main.py quiz
 
-# View quiz history
-python main.py quiz history
+# Use specific source
+python main.py quiz --source topics     # From database topics
+python main.py quiz --source syllabus   # From syllabus file
+python main.py quiz --source text       # From direct text input
 ```
 
 ### Progress Tracking Dashboard
@@ -175,7 +182,7 @@ These are the building blocks used by the main applications:
 
 2. **For interactive quiz and study sessions:**
    ```bash
-   python main.py quiz generate --topic "Your Topic" --num-questions 5
+   python main.py quiz --topic "Your Topic" --num-questions 5
    python main.py session start --topic "Your Topic" --duration 25
    ```
 

@@ -306,21 +306,27 @@ def create_parser():
     quiz_parser = subparsers.add_parser(
         'quiz', 
         help='Interactive quiz system',
-        description='Generate and take AI-powered quizzes from your study content.'
+        description='Generate and take AI-powered quizzes from topics, syllabus files, or text content.'
     )
-    quiz_subparsers = quiz_parser.add_subparsers(dest='action', help='Quiz actions')
-    
-    # Generate quiz subcommand
-    generate_quiz_parser = quiz_subparsers.add_parser('generate', help='Generate a new quiz')
-    generate_quiz_parser.add_argument('--topic', required=True, help='Topic for the quiz')
-    generate_quiz_parser.add_argument('--num-questions', type=int, default=5, help='Number of questions')
-    generate_quiz_parser.add_argument('--content-file', help='File with content to base quiz on')
-    
-    # Take quiz subcommand
-    take_quiz_parser = quiz_subparsers.add_parser('take', help='Take an existing quiz')
-    
-    # Quiz history subcommand
-    history_quiz_parser = quiz_subparsers.add_parser('history', help='Show quiz history')
+    quiz_parser.add_argument(
+        '--topic', 
+        help='Specific topic for the quiz (optional - will prompt if not provided)'
+    )
+    quiz_parser.add_argument(
+        '--num-questions', 
+        type=int, 
+        default=5, 
+        help='Number of questions to generate (default: 5)'
+    )
+    quiz_parser.add_argument(
+        '--content-file', 
+        help='File with content to base quiz on (supports PDF, DOC, DOCX, or plain text)'
+    )
+    quiz_parser.add_argument(
+        '--source', 
+        choices=['topics', 'syllabus', 'text'], 
+        help='Quiz source: topics (from database), syllabus (from file), or text (direct input)'
+    )
 
     # Progress command
     progress_parser = subparsers.add_parser(

@@ -111,6 +111,11 @@ docker-compose run --rm syllabo python main.py search --topic "Machine Learning"
 docker-compose run --rm syllabo python main.py review list
 docker-compose run --rm syllabo python main.py review add --topic "Neural Networks" --description "Deep learning concepts"
 
+# Generate and take quizzes
+docker-compose run --rm syllabo python main.py quiz --topic "Machine Learning" --num-questions 5
+docker-compose run --rm syllabo python main.py quiz --content-file syllabus.pdf
+docker-compose run --rm syllabo python main.py quiz --source topics
+
 # Manage study goals
 docker-compose run --rm syllabo python main.py goals list
 docker-compose run --rm syllabo python main.py goals create --title "Daily Study" --type daily --target 30 --unit minutes
@@ -140,6 +145,12 @@ python main.py review add --topic "Neural Networks" --description "Deep learning
 python main.py review due
 python main.py review mark --topic "Linear Algebra" --success
 
+# Generate and take quizzes
+python main.py quiz --topic "Machine Learning" --num-questions 5
+python main.py quiz --content-file syllabus.pdf
+python main.py quiz --source topics
+python main.py quiz  # Interactive mode
+
 # Manage study goals
 python main.py goals list
 python main.py goals create --title "Daily Study" --type daily --target 30 --unit minutes
@@ -152,7 +163,7 @@ python main.py goals suggest
 
 **Resource Discovery**: Find relevant YouTube videos, online courses, and study materials for each topic.
 
-**Quiz Generation**: Create practice questions based on your course content.
+**Quiz Generation**: Create practice questions from topics, syllabus files, or text content. Supports multiple question types and interactive testing.
 
 **Progress Tracking**: See visual charts of your study progress and time spent on different topics.
 
