@@ -97,6 +97,15 @@ python main.py review due --notify
 - `resources` - Find books, courses, and learning materials with preference filtering
 - `notes` - Generate study notes and questions from educational content
 
+### Integrated Analysis Workflow
+The `analyze` command now includes a comprehensive learning workflow that integrates all new features:
+- **Automatic Topic Processing**: After extracting topics from your syllabus, the system offers to create a complete learning plan
+- **Video Analysis Integration**: Find and analyze educational videos for each topic with AI-powered coverage assessment
+- **Resource Discovery Integration**: Automatically find books, courses, and learning materials for all topics
+- **Notes Generation Integration**: Generate study notes and questions from recommended video content
+- **Spaced Repetition Integration**: Automatically add topics to the spaced repetition system for optimal retention
+- **Personalized Preferences**: Customize the analysis based on your learning style and resource preferences
+
 ## New Features Guide
 
 ### Smart Video Analysis
@@ -126,6 +135,36 @@ Full implementation of the Leitner system:
 - Comprehensive learning analytics and progress tracking
 - Review history and retention rate analysis
 - Export/import functionality for data backup
+
+## Usage Examples
+
+### Comprehensive Syllabus Analysis (Integrated Workflow)
+```bash
+python main.py
+# Select option 1 (Analyze Syllabus)
+# Choose file or text input
+# The system will automatically offer to:
+# - Find and analyze educational videos for each topic
+# - Discover books, courses, and learning materials
+# - Generate study notes and questions from video content
+# - Add topics to spaced repetition system
+# - Create a personalized learning plan
+```
+
+### Individual Feature Usage
+```bash
+# Smart video analysis only
+python main.py
+# Select option 9 (Smart Video Analysis)
+
+# Resource discovery only  
+python main.py
+# Select option 10 (Resource Finder)
+
+# Notes generation only
+python main.py
+# Select option 11 (Generate Study Notes)
+```
 
 ## User Interface Highlights
 

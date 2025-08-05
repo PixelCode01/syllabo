@@ -7,6 +7,7 @@ Main entry point for all features
 import os
 import sys
 import asyncio
+from typing import Dict, List
 from dotenv import load_dotenv
 from rich.console import Console
 from rich.panel import Panel
@@ -234,6 +235,9 @@ class SyllaboMain:
                     self.db.save_topics(syllabus_id, topics)
                     self.console.print("[bright_green]Saved to database[/bright_green]")
                     
+                    # Enhanced analysis workflow - integrate new features
+                    await self._comprehensive_analysis_workflow(topics)
+                    
                 else:
                     self.console.print("[bright_yellow]No topics found[/bright_yellow]")
                     
@@ -252,6 +256,9 @@ class SyllaboMain:
                 
                 if topics:
                     self.console.print(f"[bright_green]Found {len(topics)} topics[/bright_green]")
+                    
+                    # Enhanced analysis workflow for text input
+                    await self._comprehensive_analysis_workflow(topics)
                 else:
                     self.console.print("[bright_yellow]No topics found[/bright_yellow]")
                     
@@ -584,6 +591,295 @@ class SyllaboMain:
         
         self.console.print(f"\n[bright_green]Review session complete![/bright_green]")
         self.console.print("[dim]Great job! Keep up the consistent practice.[/dim]")
+    
+    async def _comprehensive_analysis_workflow(self, topics: List[Dict]):
+        """Comprehensive analysis workflow integrating videos, resources, and notes generation"""
+        self.console.print(Rule("[bold bright_magenta]Comprehensive Learning Analysis[/bold bright_magenta]"))
+        
+        # Ask user what they want to do with the extracted topics
+        self.console.print(f"\n[bright_green]Great! I found {len(topics)} topics from your syllabus.[/bright_green]")
+        self.console.print("[bright_white]Let me help you create a complete learning plan with:[/bright_white]")
+        self.console.print("• Educational videos and playlists")
+        self.console.print("• Books, courses, and learning resources")
+        self.console.print("• Study notes and questions")
+        self.console.print("• Spaced repetition schedule")
+        
+        proceed = Prompt.ask(
+            "\n[bright_yellow]Would you like me to create a comprehensive learning plan? (y/n)[/bright_yellow]",
+            default="y"
+        ).lower() == 'y'
+        
+        if not proceed:
+            self.console.print("[dim]You can always run individual features later from the main menu.[/dim]")
+            return
+        
+        # Get user preferences for the analysis
+        preferences = await self._get_analysis_preferences()
+        
+        # Process each topic
+        topic_names = [topic.get('name', '') for topic in topics[:5]]  # Limit to first 5 topics
+        
+        self.console.print(f"\n[bright_cyan]Processing {len(topic_names)} topics...[/bright_cyan]")
+        
+        for i, topic_name in enumerate(topic_names, 1):
+            self.console.print(f"\n{'-'*60}")
+            self.console.print(f"[bold bright_blue]Topic {i}/{len(topic_names)}: {topic_name}[/bold bright_blue]")
+            self.console.print(f"{'-'*60}")
+            
+            # 1. Find and analyze videos if requested
+            if preferences.get('include_videos', True):
+                await self._analyze_topic_videos(topic_name, preferences)
+            
+            # 2. Find learning resources if requested
+            if preferences.get('include_resources', True):
+                await self._find_topic_resources(topic_name, preferences)
+            
+            # 3. Add to spaced repetition if requested
+            if preferences.get('add_to_spaced_repetition', True):
+                self._add_topic_to_spaced_repetition(topic_name, topics[i-1])
+            
+            # Small delay between topics for better UX
+            if i < len(topic_names):
+                self.console.print("[dim]Moving to next topic...[/dim]")
+                await asyncio.sleep(1)
+        
+        # Final summary and recommendations
+        await self._display_analysis_summary(topic_names, preferences)
+    
+    async def _get_analysis_preferences(self) -> Dict:
+        """Get user preferences for comprehensive analysis"""
+        self.console.print("\n[bold bright_yellow]Analysis Preferences[/bold bright_yellow]")
+        
+        preferences = {}
+        
+        # Video analysis preferences
+        preferences['include_videos'] = Prompt.ask(
+            "[bright_cyan]Find and analyze educational videos? (y/n)[/bright_cyan]",
+            default="y"
+        ).lower() == 'y'
+        
+        if preferences['include_videos']:
+            print("\nVideo learning preferences:")
+            print("1. One comprehensive video per topic")
+            print("2. Multiple focused videos per topic")
+            print("3. Playlists and course series")
+            print("4. Let AI decide based on available content")
+            
+            video_pref = Prompt.ask(
+                "[bright_cyan]Choose video preference (1-4)[/bright_cyan]",
+                choices=["1", "2", "3", "4"],
+                default="4"
+            )
+            
+            pref_map = {
+                "1": "single_comprehensive",
+                "2": "multiple_focused", 
+                "3": "playlist_series",
+                "4": "auto_decide"
+            }
+            preferences['video_preference'] = pref_map[video_pref]
+            
+            # Notes generation preferences
+            preferences['generate_notes'] = Prompt.ask(
+                "[bright_cyan]Generate study notes and questions from videos? (y/n)[/bright_cyan]",
+                default="y"
+            ).lower() == 'y'
+        
+        # Resource finder preferences
+        preferences['include_resources'] = Prompt.ask(
+            "[bright_cyan]Find books, courses, and learning materials? (y/n)[/bright_cyan]",
+            default="y"
+        ).lower() == 'y'
+        
+        if preferences['include_resources']:
+            print("\nResource preferences:")
+            print("1. Free resources only")
+            print("2. Paid resources only")
+            print("3. Both free and paid resources")
+            
+            resource_pref = Prompt.ask(
+                "[bright_cyan]Choose resource preference (1-3)[/bright_cyan]",
+                choices=["1", "2", "3"],
+                default="3"
+            )
+            
+            pref_map = {"1": "free", "2": "paid", "3": "both"}
+            preferences['resource_preference'] = pref_map[resource_pref]
+        
+        # Spaced repetition preferences
+        preferences['add_to_spaced_repetition'] = Prompt.ask(
+            "[bright_cyan]Add topics to spaced repetition system? (y/n)[/bright_cyan]",
+            default="y"
+        ).lower() == 'y'
+        
+        return preferences
+    
+    async def _analyze_topic_videos(self, topic_name: str, preferences: Dict):
+        """Analyze videos for a specific topic"""
+        self.console.print(f"[bright_cyan]🎥 Finding videos for: {topic_name}[/bright_cyan]")
+        
+        try:
+            with self.console.status(f"Searching for {topic_name} videos..."):
+                # Search for videos and playlists
+                videos = await self.youtube_client.search_videos(topic_name, 8)
+                playlists = await self.youtube_client.search_playlists(topic_name, 3)
+                
+                if not videos and not playlists:
+                    self.console.print(f"[yellow]No videos found for {topic_name}[/yellow]")
+                    return
+                
+                # Analyze content
+                analysis = await self.video_analyzer.analyze_videos_and_playlists(videos, playlists, topic_name)
+                
+                # Display concise results
+                self._display_topic_video_summary(analysis, topic_name)
+                
+                # Generate notes if requested
+                if preferences.get('generate_notes', False) and analysis.get('primary_resource'):
+                    await self._generate_topic_notes(analysis['primary_resource'], topic_name)
+                
+        except Exception as e:
+            self.console.print(f"[red]Error analyzing videos for {topic_name}: {e}[/red]")
+    
+    def _display_topic_video_summary(self, analysis: Dict, topic_name: str):
+        """Display concise video analysis summary"""
+        primary = analysis.get('primary_resource')
+        if primary:
+            content_type = "Video" if primary.get('type') != 'playlist' else "Playlist"
+            self.console.print(f"[bright_green]✓ Best {content_type}:[/bright_green] {primary['title']}")
+            self.console.print(f"  Channel: {primary['channel']} | Score: {primary.get('composite_score', 0):.1f}/10")
+            
+            # Show topic coverage if available
+            coverage = analysis.get('topic_coverage_details', {})
+            if coverage:
+                completeness = coverage.get('learning_completeness', 0)
+                self.console.print(f"  Coverage: {completeness:.0f}% of expected topics")
+                
+                missing = coverage.get('missing_subtopics', [])
+                if missing and len(missing) <= 3:
+                    self.console.print(f"  [yellow]Missing: {', '.join(missing)}[/yellow]")
+        
+        # Show supplementary content count
+        supp_videos = len(analysis.get('supplementary_videos', []))
+        supp_playlists = len(analysis.get('supplementary_playlists', []))
+        if supp_videos or supp_playlists:
+            self.console.print(f"  [dim]+ {supp_videos} supplementary videos, {supp_playlists} playlists[/dim]")
+    
+    async def _generate_topic_notes(self, content: Dict, topic_name: str):
+        """Generate notes for a topic's primary content"""
+        try:
+            with self.console.status("Generating study materials..."):
+                # Set preferences for automatic generation
+                self.notes_generator.set_user_preferences({
+                    'generate_notes': True,
+                    'generate_questions': True,
+                    'notes_style': 'concise'
+                })
+                
+                notes_data = await self.notes_generator.generate_study_notes(topic_name, content, None)
+                
+                # Display concise summary
+                notes_count = len(notes_data.get('notes', []))
+                questions_count = len(notes_data.get('questions', []))
+                concepts_count = len(notes_data.get('key_concepts', []))
+                
+                self.console.print(f"[bright_green]✓ Generated:[/bright_green] {notes_count} notes, {questions_count} questions, {concepts_count} key concepts")
+                
+        except Exception as e:
+            self.console.print(f"[red]Error generating notes: {e}[/red]")
+    
+    async def _find_topic_resources(self, topic_name: str, preferences: Dict):
+        """Find learning resources for a specific topic"""
+        self.console.print(f"[bright_cyan]📚 Finding resources for: {topic_name}[/bright_cyan]")
+        
+        try:
+            with self.console.status(f"Searching for {topic_name} resources..."):
+                resource_pref = preferences.get('resource_preference', 'both')
+                topic_resources = await self.resource_finder._find_topic_resources(topic_name, resource_pref)
+                
+                # Display concise summary
+                books_count = len(topic_resources.get('books', []))
+                courses_count = len(topic_resources.get('courses', []))
+                other_count = len(topic_resources.get('resources', []))
+                
+                if books_count or courses_count or other_count:
+                    self.console.print(f"[bright_green]✓ Found:[/bright_green] {books_count} books, {courses_count} courses, {other_count} other resources")
+                    
+                    # Show top resource
+                    all_resources = topic_resources.get('books', []) + topic_resources.get('courses', [])
+                    if all_resources:
+                        top_resource = all_resources[0]
+                        resource_type = "Book" if 'author' in top_resource else "Course"
+                        price_tag = "Free" if top_resource.get('type') == 'free' else "Paid"
+                        self.console.print(f"  [bright_white]Top {resource_type}:[/bright_white] {top_resource['title']} ({price_tag})")
+                else:
+                    self.console.print(f"[yellow]Limited resources found for {topic_name}[/yellow]")
+                    
+        except Exception as e:
+            self.console.print(f"[red]Error finding resources for {topic_name}: {e}[/red]")
+    
+    def _add_topic_to_spaced_repetition(self, topic_name: str, topic_data: Dict):
+        """Add topic to spaced repetition system"""
+        try:
+            description = topic_data.get('description', f'Study topic: {topic_name}')
+            success = self.spaced_repetition.add_topic(topic_name, description)
+            
+            if success:
+                self.console.print(f"[bright_green]✓ Added to spaced repetition:[/bright_green] {topic_name}")
+            else:
+                self.console.print(f"[dim]Already in spaced repetition: {topic_name}[/dim]")
+                
+        except Exception as e:
+            self.console.print(f"[red]Error adding to spaced repetition: {e}[/red]")
+    
+    async def _display_analysis_summary(self, topic_names: List[str], preferences: Dict):
+        """Display final analysis summary and next steps"""
+        self.console.print(f"\n{'='*60}")
+        self.console.print("[bold bright_green]COMPREHENSIVE ANALYSIS COMPLETE[/bold bright_green]")
+        self.console.print(f"{'='*60}")
+        
+        self.console.print(f"\n[bright_cyan]Processed {len(topic_names)} topics:[/bright_cyan]")
+        for topic in topic_names:
+            self.console.print(f"• {topic}")
+        
+        # Show what was included
+        included_features = []
+        if preferences.get('include_videos'):
+            included_features.append("Video analysis and recommendations")
+        if preferences.get('generate_notes'):
+            included_features.append("Study notes and questions generation")
+        if preferences.get('include_resources'):
+            included_features.append("Books and courses discovery")
+        if preferences.get('add_to_spaced_repetition'):
+            included_features.append("Spaced repetition scheduling")
+        
+        if included_features:
+            self.console.print(f"\n[bright_yellow]Features included:[/bright_yellow]")
+            for feature in included_features:
+                self.console.print(f"✓ {feature}")
+        
+        # Next steps recommendations
+        self.console.print(f"\n[bold bright_magenta]Recommended Next Steps:[/bold bright_magenta]")
+        
+        if preferences.get('add_to_spaced_repetition'):
+            due_count = len(self.spaced_repetition.get_due_topics())
+            if due_count > 0:
+                self.console.print(f"• Review {due_count} topics due for spaced repetition (Menu option 8)")
+            else:
+                self.console.print("• Start reviewing topics tomorrow using spaced repetition (Menu option 8)")
+        
+        if preferences.get('include_videos'):
+            self.console.print("• Watch recommended videos and take notes")
+            self.console.print("• Use generated study questions for self-assessment")
+        
+        if preferences.get('include_resources'):
+            self.console.print("• Explore recommended books and courses for deeper learning")
+        
+        self.console.print("• Set learning goals to track your progress (Menu option 4)")
+        self.console.print("• Start focused study sessions with Pomodoro timer (Menu option 7)")
+        
+        self.console.print(f"\n[bright_green]Your learning journey is ready to begin![/bright_green]")
+        self.console.print("[dim]All data has been saved and is accessible from the main menu.[/dim]")
     
     async def _interactive_videos(self):
         """Interactive video search and analysis"""
