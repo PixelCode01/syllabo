@@ -218,3 +218,7 @@ class BookmarkManager:
         
         # In a real implementation, would track last access time
         return important_bookmarks[:5]
+    
+    def get_all_bookmarks(self) -> List[Bookmark]:
+        """Get all bookmarks"""
+        return list(self.bookmarks.values())

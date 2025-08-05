@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 Syllabo - AI-Powered Learning Assistant
 Main entry point for all features
@@ -24,6 +24,13 @@ from src.database import SyllaboDatabase
 from src.logger import SyllaboLogger
 from src.ai_client import AIClient
 from src.syllabus_parser import SyllabusParser
+from src.quiz_generator import QuizGenerator
+from src.progress_dashboard import ProgressDashboard
+from src.goals_manager import GoalsManager
+from src.platform_integrator import PlatformIntegrator
+from src.bookmark_manager import BookmarkManager
+from src.study_session_manager import StudySessionManager
+from src.spaced_repetition import SpacedRepetitionEngine
 
 class SyllaboMain:
     """Main application class with all features"""
@@ -36,6 +43,15 @@ class SyllaboMain:
         self.db = SyllaboDatabase()
         self.ai_client = AIClient()
         self.syllabus_parser = SyllabusParser()
+        
+        # Initialize feature modules
+        self.spaced_repetition = SpacedRepetitionEngine()
+        self.quiz_generator = QuizGenerator(self.ai_client, self.db)
+        self.progress_dashboard = ProgressDashboard(self.db, self.spaced_repetition)
+        self.goals_manager = GoalsManager(self.db)
+        self.platform_integrator = PlatformIntegrator()
+        self.bookmark_manager = BookmarkManager()
+        self.study_session_manager = StudySessionManager(self.spaced_repetition)
     
     def print_banner(self):
         """Print enhanced application banner"""
@@ -125,9 +141,22 @@ class SyllaboMain:
         try:
             if command == 'analyze':
                 await self._interactive_analyze()
+            elif command == 'quiz':
+                await self._interactive_quiz()
+            elif command == 'progress':
+                await self._interactive_progress()
+            elif command == 'goals':
+                await self._interactive_goals()
+            elif command == 'platforms':
+                await self._interactive_platforms()
+            elif command == 'bookmarks':
+                await self._interactive_bookmarks()
+            elif command == 'session':
+                await self._interactive_session()
+            elif command == 'review':
+                await self._interactive_review()
             else:
-                self.console.print(f"[yellow]Feature '{command}' coming soon![/yellow]")
-                self.console.print("[dim]This feature is being developed and will be available soon.[/dim]")
+                self.console.print(f"[yellow]Unknown command: {command}[/yellow]")
                 
         except Exception as e:
             self.console.print(f"[red]Error executing command: {e}[/red]")
@@ -209,6 +238,333 @@ class SyllaboMain:
                     
             except Exception as e:
                 self.console.print(f"[bright_red]Error: {e}[/bright_red]")
+    
+    async def _interactive_quiz(self):
+        """Interactive quiz generation and taking"""
+        self.console.print(Rule("[bold bright_blue]Interactive Quizzes[/bold bright_blue]"))
+        
+        # Get available topics from database
+        topics = self.db.get_all_topics()
+        if not topics:
+            self.console.print("[yellow]No topics found. Please analyze a syllabus first.[/yellow]")
+            return
+        
+        # Show available topics
+        topics_table = Table(title="Available Topics", border_style="bright_green")
+        topics_table.add_column("ID", style="bright_cyan", width=5)
+        topics_table.add_column("Topic", style="bright_white")
+        
+        for i, topic in enumerate(topics[:10], 1):
+            topics_table.add_row(str(i), topic.get('name', 'Unknown'))
+        
+        self.console.print(topics_table)
+        
+        try:
+            choice = int(Prompt.ask("[bright_yellow]Select topic number[/bright_yellow]", default="1"))
+            if 1 <= choice <= len(topics):
+                selected_topic = topics[choice - 1]
+                
+                with self.console.status("[bright_cyan]Generating quiz..."):
+                    quiz_data = await self.quiz_generator.generate_quiz(selected_topic['name'])
+                
+                if quiz_data:
+                    await self._take_quiz(quiz_data)
+                else:
+                    self.console.print("[yellow]Could not generate quiz for this topic[/yellow]")
+            else:
+                self.console.print("[red]Invalid selection[/red]")
+        except ValueError:
+            self.console.print("[red]Please enter a valid number[/red]")
+    
+    async def _take_quiz(self, quiz_data):
+        """Take an interactive quiz"""
+        self.console.print(f"\n[bold bright_green]Quiz: {quiz_data.get('title', 'Topic Quiz')}[/bold bright_green]")
+        
+        questions = quiz_data.get('questions', [])
+        if not questions:
+            self.console.print("[yellow]No questions available[/yellow]")
+            return
+        
+        score = 0
+        total = len(questions)
+        
+        for i, question in enumerate(questions, 1):
+            self.console.print(f"\n[bold bright_cyan]Question {i}/{total}:[/bold bright_cyan]")
+            self.console.print(question.get('question', ''))
+            
+            options = question.get('options', [])
+            if options:
+                for j, option in enumerate(options, 1):
+                    self.console.print(f"  {j}. {option}")
+                
+                try:
+                    answer = int(Prompt.ask("[bright_yellow]Your answer[/bright_yellow]"))
+                    correct = question.get('correct_answer', 1)
+                    
+                    if answer == correct:
+                        self.console.print("[bright_green]Correct![/bright_green]")
+                        score += 1
+                    else:
+                        self.console.print(f"[bright_red]Incorrect. The correct answer was {correct}[/bright_red]")
+                        
+                except ValueError:
+                    self.console.print("[red]Invalid answer[/red]")
+        
+        # Show final score
+        percentage = (score / total) * 100
+        self.console.print(f"\n[bold bright_green]Quiz Complete![/bold bright_green]")
+        self.console.print(f"Score: {score}/{total} ({percentage:.1f}%)")
+    
+    async def _interactive_progress(self):
+        """Interactive progress dashboard"""
+        self.console.print(Rule("[bold bright_blue]Progress Dashboard[/bold bright_blue]"))
+        
+        try:
+            progress_data = self.progress_dashboard.get_progress_summary()
+            
+            # Display progress summary
+            progress_table = Table(title="Learning Progress", border_style="bright_green")
+            progress_table.add_column("Metric", style="bright_cyan")
+            progress_table.add_column("Value", style="bright_white")
+            
+            progress_table.add_row("Topics Studied", str(progress_data.get('topics_studied', 0)))
+            progress_table.add_row("Quizzes Taken", str(progress_data.get('quizzes_taken', 0)))
+            progress_table.add_row("Study Sessions", str(progress_data.get('study_sessions', 0)))
+            progress_table.add_row("Average Score", f"{progress_data.get('average_score', 0):.1f}%")
+            
+            self.console.print(progress_table)
+            
+            # Show recent activity
+            recent_activity = progress_data.get('recent_activity', [])
+            if recent_activity:
+                activity_table = Table(title="Recent Activity", border_style="bright_blue")
+                activity_table.add_column("Date", style="bright_cyan")
+                activity_table.add_column("Activity", style="bright_white")
+                
+                for activity in recent_activity[:5]:
+                    activity_table.add_row(
+                        activity.get('date', 'Unknown'),
+                        activity.get('description', 'No description')
+                    )
+                
+                self.console.print(activity_table)
+            
+        except Exception as e:
+            self.console.print(f"[red]Error loading progress: {e}[/red]")
+    
+    async def _interactive_goals(self):
+        """Interactive goals management"""
+        self.console.print(Rule("[bold bright_blue]Study Goals[/bold bright_blue]"))
+        
+        action = Prompt.ask(
+            "[bright_yellow]What would you like to do?[/bright_yellow]",
+            choices=["view", "add", "update", "delete"],
+            default="view"
+        )
+        
+        if action == "view":
+            goals = self.goals_manager.get_all_goals()
+            if goals:
+                goals_table = Table(title="Your Study Goals", border_style="bright_green")
+                goals_table.add_column("Goal", style="bright_cyan")
+                goals_table.add_column("Target", style="bright_white")
+                goals_table.add_column("Progress", style="bright_yellow")
+                goals_table.add_column("Status", style="bright_green")
+                
+                for goal in goals:
+                    status = "✓ Complete" if goal.get('completed') else "In Progress"
+                    goals_table.add_row(
+                        goal.get('title', 'Unknown'),
+                        goal.get('target_date', 'No deadline'),
+                        f"{goal.get('progress', 0)}%",
+                        status
+                    )
+                
+                self.console.print(goals_table)
+            else:
+                self.console.print("[yellow]No goals set yet[/yellow]")
+        
+        elif action == "add":
+            title = Prompt.ask("[bright_cyan]Goal title[/bright_cyan]")
+            description = Prompt.ask("[bright_cyan]Goal description[/bright_cyan]")
+            goal_type = Prompt.ask("[bright_cyan]Goal type[/bright_cyan]", choices=["daily", "weekly", "monthly", "milestone"], default="weekly")
+            target_value = int(Prompt.ask("[bright_cyan]Target value[/bright_cyan]", default="1"))
+            unit = Prompt.ask("[bright_cyan]Unit (minutes/topics/quizzes)[/bright_cyan]", default="topics")
+            days_to_complete = int(Prompt.ask("[bright_cyan]Days to complete[/bright_cyan]", default="30"))
+            
+            goal_id = self.goals_manager.create_goal(title, description, goal_type, target_value, unit, days_to_complete)
+            self.console.print(f"[bright_green]Goal created with ID: {goal_id}[/bright_green]")
+    
+    async def _interactive_platforms(self):
+        """Interactive multi-platform search"""
+        self.console.print(Rule("[bold bright_blue]Multi-Platform Search[/bold bright_blue]"))
+        
+        query = Prompt.ask("[bright_cyan]Enter search query[/bright_cyan]")
+        if not query:
+            self.console.print("[red]No query provided[/red]")
+            return
+        
+        platform = Prompt.ask(
+            "[bright_yellow]Select platform[/bright_yellow]",
+            choices=["youtube", "coursera", "udemy", "all"],
+            default="all"
+        )
+        
+        with self.console.status(f"[bright_cyan]Searching {platform}..."):
+            try:
+                if platform == "all":
+                    platform_results = await self.platform_integrator.search_all_platforms(query)
+                    # Flatten results from all platforms
+                    results = []
+                    for platform_name, platform_courses in platform_results.items():
+                        for course in platform_courses:
+                            course['platform'] = platform_name
+                            results.append(course)
+                else:
+                    results = await self.platform_integrator.search_platform(platform, query)
+                    # Add platform name to each result
+                    for result in results:
+                        result['platform'] = platform
+                
+                if results:
+                    results_table = Table(title=f"Search Results for '{query}'", border_style="bright_green")
+                    results_table.add_column("Platform", style="bright_cyan")
+                    results_table.add_column("Title", style="bright_white")
+                    results_table.add_column("URL", style="bright_blue")
+                    
+                    for result in results[:10]:
+                        results_table.add_row(
+                            result.get('platform', 'Unknown'),
+                            result.get('title', 'No title')[:50],
+                            result.get('url', 'No URL')[:50]
+                        )
+                    
+                    self.console.print(results_table)
+                else:
+                    self.console.print("[yellow]No results found[/yellow]")
+                    
+            except Exception as e:
+                self.console.print(f"[red]Search error: {e}[/red]")
+    
+    async def _interactive_bookmarks(self):
+        """Interactive bookmark management"""
+        self.console.print(Rule("[bold bright_blue]Smart Bookmarks[/bold bright_blue]"))
+        
+        action = Prompt.ask(
+            "[bright_yellow]What would you like to do?[/bright_yellow]",
+            choices=["view", "add", "delete"],
+            default="view"
+        )
+        
+        if action == "view":
+            bookmarks = self.bookmark_manager.get_all_bookmarks()
+            if bookmarks:
+                bookmarks_table = Table(title="Your Bookmarks", border_style="bright_green")
+                bookmarks_table.add_column("Title", style="bright_cyan")
+                bookmarks_table.add_column("URL", style="bright_white")
+                bookmarks_table.add_column("Notes", style="bright_yellow")
+                
+                for bookmark in bookmarks[:10]:
+                    notes = bookmark.get('notes', 'No notes')
+                    if len(notes) > 30:
+                        notes = notes[:30] + "..."
+                    
+                    bookmarks_table.add_row(
+                        bookmark.get('title', 'Unknown'),
+                        bookmark.get('url', 'No URL')[:40],
+                        notes
+                    )
+                
+                self.console.print(bookmarks_table)
+            else:
+                self.console.print("[yellow]No bookmarks saved yet[/yellow]")
+        
+        elif action == "add":
+            title = Prompt.ask("[bright_cyan]Bookmark title[/bright_cyan]")
+            url = Prompt.ask("[bright_cyan]URL[/bright_cyan]")
+            notes = Prompt.ask("[bright_cyan]Notes (optional)[/bright_cyan]", default="")
+            topic = Prompt.ask("[bright_cyan]Topic[/bright_cyan]", default="General")
+            
+            # For bookmark manager, we need video_id, video_title, timestamp, note, topic
+            bookmark_id = self.bookmark_manager.add_bookmark(
+                video_id=url,  # Using URL as video_id for general bookmarks
+                video_title=title,
+                timestamp="0:00",  # Default timestamp
+                note=notes,
+                topic=topic
+            )
+            self.console.print(f"[bright_green]Bookmark saved with ID: {bookmark_id}[/bright_green]")
+    
+    async def _interactive_session(self):
+        """Interactive study session with Pomodoro timer"""
+        self.console.print(Rule("[bold bright_blue]Study Sessions[/bold bright_blue]"))
+        
+        topic = Prompt.ask("[bright_cyan]Study topic[/bright_cyan]")
+        duration = int(Prompt.ask("[bright_yellow]Session duration (minutes)[/bright_yellow]", default="25"))
+        
+        session = self.study_session_manager.start_study_session(topic, duration)
+        
+        self.console.print(f"[bright_green]Starting {duration}-minute study session for: {topic}[/bright_green]")
+        self.console.print("[dim]Press Ctrl+C to end session early[/dim]")
+        
+        try:
+            import time
+            start_time = time.time()
+            end_time = start_time + (duration * 60)
+            
+            while time.time() < end_time:
+                remaining = int(end_time - time.time())
+                mins, secs = divmod(remaining, 60)
+                
+                self.console.print(f"\r[bright_yellow]Time remaining: {mins:02d}:{secs:02d}[/bright_yellow]", end="")
+                time.sleep(1)
+            
+            self.console.print(f"\n[bright_green]Session complete![/bright_green]")
+            self.study_session_manager.end_session("completed")
+            
+        except KeyboardInterrupt:
+            self.console.print(f"\n[yellow]Session ended early[/yellow]")
+            self.study_session_manager.end_session("interrupted")
+    
+    async def _interactive_review(self):
+        """Interactive spaced repetition review"""
+        self.console.print(Rule("[bold bright_blue]Spaced Repetition Review[/bold bright_blue]"))
+        
+        # Get items due for review
+        review_items = self.spaced_repetition.get_due_topics()
+        
+        if not review_items:
+            self.console.print("[yellow]No items due for review today![/yellow]")
+            self.console.print("[dim]Check back tomorrow or add new topics to review.[/dim]")
+            return
+        
+        self.console.print(f"[bright_green]You have {len(review_items)} items to review[/bright_green]")
+        
+        for i, item in enumerate(review_items, 1):
+            self.console.print(f"\n[bold bright_cyan]Review {i}/{len(review_items)}:[/bold bright_cyan]")
+            self.console.print(f"Topic: {item.get('topic_name', 'Unknown')}")
+            
+            # Show the question or prompt
+            self.console.print(f"Question: {item.get('question', 'Review this topic')}")
+            
+            Prompt.ask("[dim]Press Enter when ready to see the answer[/dim]", default="")
+            
+            # Show the answer
+            self.console.print(f"Answer: {item.get('answer', 'No answer available')}")
+            
+            # Get user feedback
+            difficulty = Prompt.ask(
+                "[bright_yellow]How difficult was this? (1=Easy, 2=Medium, 3=Hard)[/bright_yellow]",
+                choices=["1", "2", "3"],
+                default="2"
+            )
+            
+            # Update the spaced repetition schedule
+            success = int(difficulty) <= 2  # Easy and Medium are considered success
+            self.spaced_repetition.mark_review(item.topic_name, success)
+        
+        self.console.print(f"\n[bright_green]Review session complete![/bright_green]")
+        self.console.print("[dim]Great job! Keep up the consistent practice.[/dim]")
 
 async def main():
     """Main application entry point"""

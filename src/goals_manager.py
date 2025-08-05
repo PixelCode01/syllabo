@@ -177,3 +177,7 @@ class GoalsManager:
                 datetime.fromisoformat(goal.completed_at) > datetime.now() - timedelta(days=7)
             ]
         }
+    
+    def get_all_goals(self) -> List[StudyGoal]:
+        """Get all goals (active and completed)"""
+        return list(self.goals.values())

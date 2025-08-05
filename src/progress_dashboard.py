@@ -177,3 +177,38 @@ TOP PERFORMING TOPICS
             report += f"{i}. {topic['topic']} - {topic['mastery']:.1%} mastery\n"
         
         return report
+    
+    def get_progress_summary(self) -> Dict:
+        """Get a summary of learning progress"""
+        try:
+            streak_data = self._get_study_streak()
+            weekly_stats = self._get_weekly_stats()
+            topic_progress = self._get_topic_progress()
+            upcoming_reviews = self._get_upcoming_reviews()
+            
+            # Calculate overall progress
+            total_topics = len(topic_progress)
+            mastered_topics = len([t for t in topic_progress if t['mastery'] >= 0.8])
+            average_mastery = sum(t['mastery'] for t in topic_progress) / total_topics if total_topics > 0 else 0
+            
+            return {
+                'study_streak': streak_data,
+                'weekly_stats': weekly_stats,
+                'topic_summary': {
+                    'total_topics': total_topics,
+                    'mastered_topics': mastered_topics,
+                    'average_mastery': average_mastery,
+                    'mastery_percentage': (mastered_topics / total_topics * 100) if total_topics > 0 else 0
+                },
+                'upcoming_reviews': len(upcoming_reviews),
+                'top_topics': sorted(topic_progress, key=lambda x: x['mastery'], reverse=True)[:3]
+            }
+        except Exception as e:
+            self.logger.error(f"Failed to get progress summary: {e}")
+            return {
+                'study_streak': {'current_streak': 0, 'longest_streak': 0},
+                'weekly_stats': {'total_study_time': 0, 'sessions_completed': 0, 'topics_reviewed': 0},
+                'topic_summary': {'total_topics': 0, 'mastered_topics': 0, 'average_mastery': 0, 'mastery_percentage': 0},
+                'upcoming_reviews': 0,
+                'top_topics': []
+            }

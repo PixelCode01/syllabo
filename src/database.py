@@ -271,3 +271,32 @@ class SyllaboDatabase:
         except Exception as e:
             self.logger.error(f"Failed to get topic videos: {e}")
             return []
+    
+    def get_all_topics(self) -> List[Dict]:
+        """Get all topics from the database"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT t.id, t.name, t.subtopics, t.created_at, s.title as syllabus_title
+                    FROM topics t
+                    LEFT JOIN syllabi s ON t.syllabus_id = s.id
+                    ORDER BY t.created_at DESC
+                ''')
+                
+                topics = []
+                for row in cursor.fetchall():
+                    topic_id, name, subtopics_json, created_at, syllabus_title = row
+                    subtopics = json.loads(subtopics_json) if subtopics_json else []
+                    topics.append({
+                        'id': topic_id,
+                        'name': name,
+                        'subtopics': subtopics,
+                        'created_at': created_at,
+                        'syllabus_title': syllabus_title or 'Unknown'
+                    })
+                
+                return topics
+        except Exception as e:
+            self.logger.error(f"Failed to get all topics: {e}")
+            return []
