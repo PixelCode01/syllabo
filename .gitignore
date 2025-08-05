@@ -108,6 +108,7 @@ UI_IMPROVEMENTS_SUMMARY.md
 
 # Sample/demo files that are not core functionality
 sample_syllabus.txt
+test_quiz_demo.py
 
 # Redundant/old script files
 syllabo_enhanced.py
