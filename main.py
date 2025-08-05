@@ -568,15 +568,12 @@ class SyllaboMain:
         
         for i, item in enumerate(review_items, 1):
             self.console.print(f"\n[bold bright_cyan]Review {i}/{len(review_items)}:[/bold bright_cyan]")
-            self.console.print(f"Topic: {item.get('topic_name', 'Unknown')}")
+            self.console.print(f"Topic: {item.topic_name}")
             
-            # Show the question or prompt
-            self.console.print(f"Question: {item.get('question', 'Review this topic')}")
+            if item.description:
+                self.console.print(f"Description: {item.description}")
             
-            Prompt.ask("[dim]Press Enter when ready to see the answer[/dim]", default="")
-            
-            # Show the answer
-            self.console.print(f"Answer: {item.get('answer', 'No answer available')}")
+            Prompt.ask("[dim]Press Enter when ready to mark your review[/dim]", default="")
             
             # Get user feedback
             difficulty = Prompt.ask(
@@ -591,6 +588,323 @@ class SyllaboMain:
         
         self.console.print(f"\n[bright_green]Review session complete![/bright_green]")
         self.console.print("[dim]Great job! Keep up the consistent practice.[/dim]")
+    
+    async def _handle_analyze_command(self, args):
+        """Handle analyze command from CLI"""
+        await self._interactive_analyze()
+    
+    async def _handle_search_command(self, args):
+        """Handle search command from CLI"""
+        if not args.topic:
+            self.console.print("[red]Error: Topic is required for search[/red]")
+            return
+        
+        self.console.print(f"[bright_cyan]Searching for videos on: {args.topic}[/bright_cyan]")
+        
+        try:
+            # Use the video analyzer to find relevant videos
+            videos = await self.video_analyzer.find_videos(args.topic, max_results=args.max_videos)
+            
+            if videos:
+                self.console.print(f"[bright_green]Found {len(videos)} videos[/bright_green]")
+                
+                # Display results in a table
+                videos_table = Table(title=f"Search Results for '{args.topic}'", border_style="bright_green")
+                videos_table.add_column("Title", style="bright_cyan", width=40)
+                videos_table.add_column("Channel", style="bright_white", width=20)
+                videos_table.add_column("Duration", style="bright_yellow", width=10)
+                videos_table.add_column("Views", style="bright_blue", width=10)
+                
+                for video in videos:
+                    videos_table.add_row(
+                        video.get('title', 'Unknown')[:37] + "..." if len(video.get('title', '')) > 40 else video.get('title', 'Unknown'),
+                        video.get('channel', 'Unknown')[:17] + "..." if len(video.get('channel', '')) > 20 else video.get('channel', 'Unknown'),
+                        video.get('duration', 'Unknown'),
+                        video.get('view_count', 'Unknown')
+                    )
+                
+                self.console.print(videos_table)
+                
+                if args.save:
+                    # Save results to file
+                    import json
+                    import os
+                    os.makedirs('exports', exist_ok=True)
+                    filename = f"exports/search_{args.topic.replace(' ', '_')}.{args.export_format}"
+                    
+                    if args.export_format == 'json':
+                        with open(filename, 'w') as f:
+                            json.dump(videos, f, indent=2)
+                    
+                    self.console.print(f"[bright_green]Results saved to {filename}[/bright_green]")
+            else:
+                self.console.print("[yellow]No videos found for this topic[/yellow]")
+                
+        except Exception as e:
+            self.console.print(f"[red]Search error: {e}[/red]")
+    
+    async def _handle_review_command(self, args):
+        """Handle review command from CLI"""
+        if not args.review_action:
+            self.console.print("[red]Error: Review action is required[/red]")
+            return
+        
+        if args.review_action == 'add':
+            if not args.topic:
+                self.console.print("[red]Error: Topic is required for adding to review[/red]")
+                return
+            
+            success = self.spaced_repetition.add_topic(args.topic, args.description or "")
+            if success:
+                self.console.print(f"[bright_green]Added '{args.topic}' to review schedule[/bright_green]")
+            else:
+                self.console.print(f"[yellow]Topic '{args.topic}' is already in your review schedule[/yellow]")
+        
+        elif args.review_action == 'list':
+            topics = self.spaced_repetition.get_all_topics()
+            if not topics:
+                self.console.print("[yellow]No topics in your review schedule[/yellow]")
+                return
+            
+            topics_table = Table(title="Your Review Schedule", border_style="bright_green")
+            topics_table.add_column("Topic", style="bright_cyan", width=30)
+            topics_table.add_column("Mastery", style="bright_white", width=12)
+            topics_table.add_column("Success Rate", style="bright_yellow", width=12)
+            topics_table.add_column("Next Review", style="bright_blue", width=12)
+            
+            for topic in topics:
+                mastery_color = {
+                    'Learning': 'red', 'Beginner': 'yellow', 'Intermediate': 'blue', 
+                    'Advanced': 'green', 'Mastered': 'bright_green'
+                }.get(topic['mastery_level'], 'white')
+                
+                next_review_text = "Due now" if topic['days_until_review'] <= 0 else f"{topic['days_until_review']} days"
+                
+                topics_table.add_row(
+                    topic['topic_name'][:27] + "..." if len(topic['topic_name']) > 30 else topic['topic_name'],
+                    f"[{mastery_color}]{topic['mastery_level']}[/{mastery_color}]",
+                    f"{topic['success_rate']}%",
+                    next_review_text
+                )
+            
+            self.console.print(topics_table)
+            
+            summary = self.spaced_repetition.get_study_summary()
+            self.console.print(f"[bright_green]Summary: {summary['total_topics']} topics, {summary['due_now']} due now, {summary['mastered_topics']} mastered[/bright_green]")
+        
+        elif args.review_action == 'due':
+            due_topics = self.spaced_repetition.get_due_topics()
+            if not due_topics:
+                self.console.print("[bright_green]No topics are due for review right now[/bright_green]")
+                return
+            
+            self.console.print(f"[bright_yellow]You have {len(due_topics)} topic{'s' if len(due_topics) != 1 else ''} due for review[/bright_yellow]")
+            
+            due_table = Table(title="Topics Due for Review", border_style="bright_red")
+            due_table.add_column("No.", style="dim", width=4)
+            due_table.add_column("Topic", style="bright_cyan")
+            due_table.add_column("Description", style="bright_white")
+            
+            for i, item in enumerate(due_topics, 1):
+                due_table.add_row(
+                    str(i),
+                    item.topic_name,
+                    item.description or "No description"
+                )
+            
+            self.console.print(due_table)
+        
+        elif args.review_action == 'mark':
+            if not args.topic:
+                self.console.print("[red]Error: Topic is required for marking review[/red]")
+                return
+            
+            success = self.spaced_repetition.mark_review(args.topic, args.success)
+            if success:
+                result_text = "successful" if args.success else "failed"
+                self.console.print(f"[bright_green]Marked '{args.topic}' as {result_text} review[/bright_green]")
+            else:
+                self.console.print(f"[yellow]Topic '{args.topic}' not found in review schedule[/yellow]")
+        
+        elif args.review_action == 'stats':
+            if args.topic:
+                stats = self.spaced_repetition.get_topic_stats(args.topic)
+                if not stats:
+                    self.console.print(f"[yellow]Topic '{args.topic}' not found[/yellow]")
+                    return
+                
+                stats_panel = Panel(
+                    f"Mastery Level: {stats['mastery_level']}\n"
+                    f"Success Rate: {stats['success_rate']}%\n"
+                    f"Total Reviews: {stats['total_reviews']}\n"
+                    f"Success Streak: {stats['success_streak']}\n"
+                    f"Next Review: {stats['next_review_date']}\n"
+                    f"Current Interval: {stats['current_interval']} days",
+                    title=f"Stats for {stats['topic_name']}",
+                    border_style="bright_blue"
+                )
+                self.console.print(stats_panel)
+            else:
+                summary = self.spaced_repetition.get_study_summary()
+                analytics = self.spaced_repetition.get_learning_analytics()
+                
+                stats_table = Table(title="Review Statistics", border_style="bright_blue")
+                stats_table.add_column("Metric", style="bright_cyan")
+                stats_table.add_column("Value", style="bright_white")
+                
+                stats_table.add_row("Total Topics", str(summary['total_topics']))
+                stats_table.add_row("Due Now", str(summary['due_now']))
+                stats_table.add_row("Due Today", str(summary['due_today']))
+                stats_table.add_row("Mastered Topics", str(summary['mastered_topics']))
+                stats_table.add_row("Average Success Rate", f"{summary['average_success_rate']}%")
+                stats_table.add_row("Total Reviews", str(analytics['total_reviews']))
+                stats_table.add_row("Retention Rate", f"{analytics['retention_rate']}%")
+                
+                self.console.print(stats_table)
+        
+        elif args.review_action == 'remove':
+            if not args.topic:
+                self.console.print("[red]Error: Topic is required for removal[/red]")
+                return
+            
+            success = self.spaced_repetition.remove_topic(args.topic)
+            if success:
+                self.console.print(f"[bright_green]Removed '{args.topic}' from review schedule[/bright_green]")
+            else:
+                self.console.print(f"[yellow]Topic '{args.topic}' not found in review schedule[/yellow]")
+    
+    async def _handle_goals_command(self, args):
+        """Handle goals command from CLI"""
+        if not args.action:
+            self.console.print("[red]Error: Goals action is required[/red]")
+            return
+        
+        if args.action == 'create':
+            if not all([args.title, args.type, args.target, args.unit]):
+                self.console.print("[red]Error: Title, type, target, and unit are required for creating goals[/red]")
+                return
+            
+            goal_id = self.goals_manager.create_goal(
+                title=args.title,
+                description=args.description or "",
+                goal_type=args.type,
+                target_value=args.target,
+                unit=args.unit
+            )
+            self.console.print(f"[bright_green]Goal created with ID: {goal_id}[/bright_green]")
+        
+        elif args.action == 'list':
+            goals = self.goals_manager.get_all_goals()
+            if not goals:
+                self.console.print("[yellow]No goals set yet[/yellow]")
+                return
+            
+            goals_table = Table(title="Your Study Goals", border_style="bright_green")
+            goals_table.add_column("Goal", style="bright_cyan", width=25)
+            goals_table.add_column("Type", style="bright_white", width=10)
+            goals_table.add_column("Progress", style="bright_yellow", width=15)
+            goals_table.add_column("Status", style="bright_blue", width=12)
+            goals_table.add_column("Deadline", style="bright_magenta", width=12)
+            
+            for goal in goals:
+                progress_percent = (goal.current_value / goal.target_value * 100) if goal.target_value > 0 else 0
+                status = "✓ Complete" if goal.completed else "In Progress"
+                status_color = "bright_green" if goal.completed else "bright_yellow"
+                
+                from datetime import datetime
+                try:
+                    deadline = datetime.fromisoformat(goal.deadline).strftime('%Y-%m-%d')
+                except:
+                    deadline = "No deadline"
+                
+                goals_table.add_row(
+                    goal.title[:22] + "..." if len(goal.title) > 25 else goal.title,
+                    goal.goal_type.capitalize(),
+                    f"{goal.current_value}/{goal.target_value} {goal.unit} ({progress_percent:.1f}%)",
+                    f"[{status_color}]{status}[/{status_color}]",
+                    deadline
+                )
+            
+            self.console.print(goals_table)
+            
+            summary = self.goals_manager.get_goal_summary()
+            self.console.print(f"[bright_green]Summary: {summary['total_goals']} total, {summary['active_goals']} active, {summary['completed_goals']} completed[/bright_green]")
+        
+        elif args.action == 'suggest':
+            suggestions = self.goals_manager.suggest_goals("beginner")  # Default to beginner
+            
+            suggestions_table = Table(title="Goal Suggestions", border_style="bright_blue")
+            suggestions_table.add_column("Title", style="bright_cyan")
+            suggestions_table.add_column("Type", style="bright_white")
+            suggestions_table.add_column("Target", style="bright_yellow")
+            
+            for suggestion in suggestions:
+                suggestions_table.add_row(
+                    suggestion['title'],
+                    suggestion['type'].capitalize(),
+                    f"{suggestion['target']} {suggestion['unit']}"
+                )
+            
+            self.console.print(suggestions_table)
+            self.console.print("[dim]Use 'goals create' command to add any of these goals[/dim]")
+    
+    async def _handle_quiz_command(self, args):
+        """Handle quiz command from CLI"""
+        await self._interactive_quiz()
+    
+    async def _handle_progress_command(self, args):
+        """Handle progress command from CLI"""
+        await self._interactive_progress()
+    
+    async def _handle_session_command(self, args):
+        """Handle session command from CLI"""
+        await self._interactive_session()
+    
+    async def _handle_bookmarks_command(self, args):
+        """Handle bookmarks command from CLI"""
+        await self._interactive_bookmarks()
+    
+    async def _handle_platforms_command(self, args):
+        """Handle platforms command from CLI"""
+        await self._interactive_platforms()
+    
+    def _show_help(self):
+        """Show comprehensive help information"""
+        help_text = """
+[bold bright_cyan]Syllabo - AI-Powered Learning Assistant[/bold bright_cyan]
+
+[bright_white]Available Commands:[/bright_white]
+• analyze    - Analyze syllabus and extract topics
+• search     - Search for educational videos
+• review     - Spaced repetition system
+• goals      - Study goals management
+• quiz       - Interactive quizzes
+• progress   - Learning progress dashboard
+• session    - Study sessions with Pomodoro timer
+• bookmarks  - Smart bookmarks management
+• platforms  - Multi-platform search
+
+[bright_white]Examples:[/bright_white]
+  python main.py analyze --file syllabus.pdf
+  python main.py search --topic "Machine Learning"
+  python main.py review add --topic "Neural Networks"
+  python main.py goals create --title "Daily Study" --type daily --target 30 --unit minutes
+
+[bright_white]Interactive Mode:[/bright_white]
+  python main.py interactive
+
+For detailed help on any command, use:
+  python main.py [command] --help
+        """
+        
+        help_panel = Panel(
+            help_text,
+            title="[bold bright_blue]Help & Documentation[/bold bright_blue]",
+            border_style="bright_blue",
+            padding=(1, 2)
+        )
+        
+        self.console.print(help_panel)
     
     async def _comprehensive_analysis_workflow(self, topics: List[Dict]):
         """Comprehensive analysis workflow integrating videos, resources, and notes generation"""
@@ -1165,7 +1479,43 @@ async def main():
     try:
         # Handle different commands
         if args.command == 'analyze':
-            await app._interactive_analyze()
+            await app._handle_analyze_command(args)
+        elif args.command == 'search':
+            await app._handle_search_command(args)
+        elif args.command == 'review':
+            await app._handle_review_command(args)
+        elif args.command == 'goals':
+            await app._handle_goals_command(args)
+        elif args.command == 'quiz':
+            await app._handle_quiz_command(args)
+        elif args.command == 'progress':
+            await app._handle_progress_command(args)
+        elif args.command == 'session':
+            await app._handle_session_command(args)
+        elif args.command == 'bookmarks':
+            await app._handle_bookmarks_command(args)
+        elif args.command == 'platforms':
+            await app._handle_platforms_command(args)
+        elif args.command == 'interactive':
+            # Interactive mode
+            while True:
+                try:
+                    app.print_banner()
+                    command = app.show_interactive_menu()
+                    
+                    if command == 'exit':
+                        app.console.print("[bright_green]Thanks for using Syllabo![/bright_green]")
+                        break
+                    elif command == 'help':
+                        app._show_help()
+                        Prompt.ask("\n[dim]Press Enter to continue[/dim]", default="")
+                    else:
+                        await app._handle_interactive_command(command)
+                        Prompt.ask("\n[dim]Press Enter to continue[/dim]", default="")
+                        app.console.clear()
+                except KeyboardInterrupt:
+                    app.console.print("\n[bright_green]Thanks for using Syllabo![/bright_green]")
+                    break
         else:
             parser.print_help()
     

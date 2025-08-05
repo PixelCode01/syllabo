@@ -52,7 +52,8 @@ ehthumbs.db
 Thumbs.db
 
 # Application specific
-data/
+data/*.db
+data/*.log
 feedback.json
 syllabo_results_*.json
 syllabo_results_*.csv
