@@ -768,22 +768,22 @@ class SyllaboMain:
     async def _generate_topic_notes(self, content: Dict, topic_name: str):
         """Generate notes for a topic's primary content"""
         try:
-            with self.console.status("Generating study materials..."):
-                # Set preferences for automatic generation
-                self.notes_generator.set_user_preferences({
-                    'generate_notes': True,
-                    'generate_questions': True,
-                    'notes_style': 'concise'
-                })
-                
-                notes_data = await self.notes_generator.generate_study_notes(topic_name, content, None)
-                
-                # Display concise summary
-                notes_count = len(notes_data.get('notes', []))
-                questions_count = len(notes_data.get('questions', []))
-                concepts_count = len(notes_data.get('key_concepts', []))
-                
-                self.console.print(f"[bright_green]✓ Generated:[/bright_green] {notes_count} notes, {questions_count} questions, {concepts_count} key concepts")
+            # Set preferences for automatic generation
+            self.notes_generator.set_user_preferences({
+                'generate_notes': True,
+                'generate_questions': True,
+                'notes_style': 'concise'
+            })
+            
+            # Generate notes without status display to avoid conflicts
+            notes_data = await self.notes_generator.generate_study_notes(topic_name, content, None)
+            
+            # Display concise summary
+            notes_count = len(notes_data.get('notes', []))
+            questions_count = len(notes_data.get('questions', []))
+            concepts_count = len(notes_data.get('key_concepts', []))
+            
+            self.console.print(f"[bright_green]✓ Generated:[/bright_green] {notes_count} notes, {questions_count} questions, {concepts_count} key concepts")
                 
         except Exception as e:
             self.console.print(f"[red]Error generating notes: {e}[/red]")
@@ -793,27 +793,26 @@ class SyllaboMain:
         self.console.print(f"[bright_cyan]📚 Finding resources for: {topic_name}[/bright_cyan]")
         
         try:
-            with self.console.status(f"Searching for {topic_name} resources..."):
-                resource_pref = preferences.get('resource_preference', 'both')
-                topic_resources = await self.resource_finder._find_topic_resources(topic_name, resource_pref)
+            resource_pref = preferences.get('resource_preference', 'both')
+            topic_resources = await self.resource_finder._find_topic_resources(topic_name, resource_pref)
+            
+            # Display concise summary
+            books_count = len(topic_resources.get('books', []))
+            courses_count = len(topic_resources.get('courses', []))
+            other_count = len(topic_resources.get('resources', []))
+            
+            if books_count or courses_count or other_count:
+                self.console.print(f"[bright_green]✓ Found:[/bright_green] {books_count} books, {courses_count} courses, {other_count} other resources")
                 
-                # Display concise summary
-                books_count = len(topic_resources.get('books', []))
-                courses_count = len(topic_resources.get('courses', []))
-                other_count = len(topic_resources.get('resources', []))
-                
-                if books_count or courses_count or other_count:
-                    self.console.print(f"[bright_green]✓ Found:[/bright_green] {books_count} books, {courses_count} courses, {other_count} other resources")
-                    
-                    # Show top resource
-                    all_resources = topic_resources.get('books', []) + topic_resources.get('courses', [])
-                    if all_resources:
-                        top_resource = all_resources[0]
-                        resource_type = "Book" if 'author' in top_resource else "Course"
-                        price_tag = "Free" if top_resource.get('type') == 'free' else "Paid"
-                        self.console.print(f"  [bright_white]Top {resource_type}:[/bright_white] {top_resource['title']} ({price_tag})")
-                else:
-                    self.console.print(f"[yellow]Limited resources found for {topic_name}[/yellow]")
+                # Show top resource
+                all_resources = topic_resources.get('books', []) + topic_resources.get('courses', [])
+                if all_resources:
+                    top_resource = all_resources[0]
+                    resource_type = "Book" if 'author' in top_resource else "Course"
+                    price_tag = "Free" if top_resource.get('type') == 'free' else "Paid"
+                    self.console.print(f"  [bright_white]Top {resource_type}:[/bright_white] {top_resource['title']} ({price_tag})")
+            else:
+                self.console.print(f"[yellow]Limited resources found for {topic_name}[/yellow]")
                     
         except Exception as e:
             self.console.print(f"[red]Error finding resources for {topic_name}: {e}[/red]")
