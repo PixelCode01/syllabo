@@ -492,11 +492,13 @@ class SyllaboMain:
                 goals_table.add_column("Status", style="bright_green")
                 
                 for goal in goals:
-                    status = "✓ Complete" if goal.get('completed') else "In Progress"
+                    status = "✓ Complete" if goal.completed else "In Progress"
+                    deadline = goal.deadline if hasattr(goal, 'deadline') else 'No deadline'
+                    progress = int((goal.current_value / goal.target_value) * 100) if goal.target_value > 0 else 0
                     goals_table.add_row(
-                        goal.get('title', 'Unknown'),
-                        goal.get('target_date', 'No deadline'),
-                        f"{goal.get('progress', 0)}%",
+                        goal.title,
+                        deadline,
+                        f"{progress}%",
                         status
                     )
                 

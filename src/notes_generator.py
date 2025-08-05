@@ -81,7 +81,7 @@ class NotesGenerator:
     async def generate_study_notes(self, topic: str, video_data: Dict, transcript: Optional[str] = None) -> Dict:
         """Generate comprehensive study notes for a topic and video"""
         
-        # Create content summary for AI
+        # Create content summary for processing
         content_parts = [
             f"Topic: {topic}",
             f"Video Title: {video_data.get('title', '')}",
@@ -207,7 +207,7 @@ Format as questions, one per line."""
             return self._generate_template_questions(topic)
     
     def _generate_template_notes(self, content: str, topic: str) -> List[str]:
-        """Generate notes using templates when AI is unavailable"""
+        """Generate notes using templates when service is unavailable"""
         content_lower = content.lower()
         notes = []
         
@@ -265,7 +265,7 @@ Format as questions, one per line."""
         return notes[:6]
     
     def _generate_template_questions(self, topic: str) -> List[str]:
-        """Generate questions using templates when AI is unavailable"""
+        """Generate questions using templates when service is unavailable"""
         topic_lower = topic.lower()
         questions = []
         
