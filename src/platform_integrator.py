@@ -3,9 +3,8 @@ import requests
 from bs4 import BeautifulSoup
 import asyncio
 from .logger import SyllaboLogger
-
 class PlatformIntegrator:
-    """Integrate with multiple learning platforms"""
+    """Integrat with multiple learning platforms"""
     
     def __init__(self):
         self.logger = SyllaboLogger("platform_integrator")
@@ -216,6 +215,23 @@ class PlatformIntegrator:
             'khan_academy': results[1] if not isinstance(results[1], Exception) else [],
             'edx': results[2] if not isinstance(results[2], Exception) else []
         }
+    
+    async def search_platform(self, platform: str, topic: str, max_results: int = 5) -> List[Dict]:
+        """Search a specific platform"""
+        if platform == "coursera":
+            return await self.search_coursera(topic, max_results)
+        elif platform == "khan_academy":
+            return await self.search_khan_academy(topic, max_results)
+        elif platform == "edx":
+            return await self.search_edx(topic, max_results)
+        elif platform == "youtube":
+            # For YouTube, we'd need to implement YouTube search
+            return []
+        elif platform == "udemy":
+            # For Udemy, we'd need to implement Udemy search
+            return []
+        else:
+            return []
     
     def filter_by_preference(self, courses: List[Dict], 
                            free_only: bool = False, 

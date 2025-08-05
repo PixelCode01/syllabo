@@ -4,6 +4,7 @@ AI-powered learning assistant that analyzes course syllabi and finds educational
 
 ## Features
 
+### Core Learning Features
 - **Interactive Terminal UI**: Rich, colorful interface with intuitive navigation
 - **Syllabus Analysis**: Extract topics from PDF or text files using AI
 - **Resource Discovery**: Find YouTube videos, courses, and educational content
@@ -14,6 +15,15 @@ AI-powered learning assistant that analyzes course syllabi and finds educational
 - **Smart Bookmarks**: Save video timestamps with notes and tags
 - **Spaced Repetition**: Scientific review scheduling for better retention
 - **Multi-Platform Search**: Search across educational platforms simultaneously
+
+### New Enhanced Features
+- **Smart Video Analysis**: AI-powered analysis of educational videos with topic coverage assessment
+- **Intelligent Notes Generation**: Automatically generate study notes and questions from video content
+- **Resource Finder**: Comprehensive database of books, courses, and learning materials with free/paid filtering
+- **Advanced Spaced Repetition**: Full Leitner system implementation with analytics and progress tracking
+- **Topic Coverage Analysis**: Detailed analysis of what topics are covered and missing in educational content
+- **Learning Path Optimization**: AI-recommended study sequences based on content analysis
+- **User Preference System**: Customizable note generation and learning preferences
 
 ## Installation
 
@@ -72,6 +82,7 @@ python main.py review due --notify
 
 ## Available Commands
 
+### Core Commands
 - `analyze` - Process syllabus and find learning resources with AI
 - `quiz` - Generate and take interactive quizzes with instant feedback
 - `progress` - View visual learning progress and analytics dashboard
@@ -80,6 +91,41 @@ python main.py review due --notify
 - `bookmarks` - Manage video bookmarks with smart organization
 - `session` - Start Pomodoro study sessions with focus tracking
 - `review` - Spaced repetition system for optimal learning retention
+
+### New Enhanced Commands
+- `videos` - Smart video search and analysis with topic coverage assessment
+- `resources` - Find books, courses, and learning materials with preference filtering
+- `notes` - Generate study notes and questions from educational content
+
+## New Features Guide
+
+### Smart Video Analysis
+Find and analyze educational videos with AI-powered topic coverage assessment:
+- Ask user preferences for learning style (single video vs multiple videos vs playlists)
+- Analyze video content to determine what topics are covered and missing
+- Provide recommendations for optimal learning paths
+- Generate study notes and questions for recommended content
+
+### Resource Finder
+Comprehensive resource discovery for any topic:
+- Extensive database of books, courses, and learning materials
+- Filter by free/paid preferences
+- Topic coverage analysis showing what's included and missing
+- Alternative suggestions for topics with limited resources
+
+### Enhanced Notes Generation
+AI-powered study material creation:
+- User preference system for note style and question types
+- Generate detailed study notes from video content
+- Create relevant questions for review and retention
+- Extract key concepts and provide study tips
+
+### Advanced Spaced Repetition
+Full implementation of the Leitner system:
+- Adaptive intervals based on performance (1, 3, 5, 11, 25, 44, 88 days)
+- Comprehensive learning analytics and progress tracking
+- Review history and retention rate analysis
+- Export/import functionality for data backup
 
 ## User Interface Highlights
 

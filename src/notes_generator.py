@@ -5,6 +5,12 @@ from .ai_client import AIClient
 class NotesGenerator:
     def __init__(self, ai_client: AIClient):
         self.ai_client = ai_client
+        self.user_preferences = {
+            'generate_notes': True,
+            'generate_questions': True,
+            'notes_style': 'detailed',  # detailed, concise, bullet_points
+            'question_types': ['recall', 'application', 'analysis']
+        }
     
     async def generate_optimal_study_materials(self, learning_path: Dict) -> Dict:
         """Generate study materials using the optimal learning path"""
@@ -40,6 +46,38 @@ class NotesGenerator:
             'coverage_analysis': learning_path['coverage_analysis']
         }
     
+    def set_user_preferences(self, preferences: Dict):
+        """Set user preferences for note and question generation"""
+        self.user_preferences.update(preferences)
+    
+    def ask_user_preferences(self) -> Dict:
+        """Ask user about their preferences for notes and questions"""
+        print("\nWould you like to generate study notes and questions for the videos you watch?")
+        
+        generate_notes = input("Generate study notes? (y/n, default: y): ").lower().strip()
+        generate_notes = generate_notes != 'n'
+        
+        generate_questions = input("Generate study questions? (y/n, default: y): ").lower().strip()
+        generate_questions = generate_questions != 'n'
+        
+        preferences = {
+            'generate_notes': generate_notes,
+            'generate_questions': generate_questions
+        }
+        
+        if generate_notes:
+            print("\nNote style options:")
+            print("1. Detailed - Comprehensive explanations")
+            print("2. Concise - Key points only")
+            print("3. Bullet points - Quick reference format")
+            
+            style_choice = input("Choose note style (1-3, default: 1): ").strip()
+            style_map = {'1': 'detailed', '2': 'concise', '3': 'bullet_points'}
+            preferences['notes_style'] = style_map.get(style_choice, 'detailed')
+        
+        self.set_user_preferences(preferences)
+        return preferences
+    
     async def generate_study_notes(self, topic: str, video_data: Dict, transcript: Optional[str] = None) -> Dict:
         """Generate comprehensive study notes for a topic and video"""
         
@@ -60,14 +98,28 @@ class NotesGenerator:
         
         content = "\n".join(content_parts)
         
-        # Generate notes and questions concurrently
-        notes_task = self._generate_notes(content, topic)
-        questions_task = self._generate_questions(content, topic)
-        key_concepts_task = self._extract_key_concepts(content, topic)
+        # Generate materials based on user preferences
+        tasks = []
+        results = {}
         
-        notes, questions, key_concepts = await asyncio.gather(
-            notes_task, questions_task, key_concepts_task
-        )
+        if self.user_preferences.get('generate_notes', True):
+            tasks.append(('notes', self._generate_notes(content, topic)))
+        
+        if self.user_preferences.get('generate_questions', True):
+            tasks.append(('questions', self._generate_questions(content, topic)))
+        
+        tasks.append(('key_concepts', self._extract_key_concepts(content, topic)))
+        
+        # Execute tasks concurrently
+        task_results = await asyncio.gather(*[task[1] for task in tasks])
+        
+        # Map results back to their names
+        for i, (name, _) in enumerate(tasks):
+            results[name] = task_results[i]
+        
+        notes = results.get('notes', [])
+        questions = results.get('questions', [])
+        key_concepts = results.get('key_concepts', [])
         
         return {
             'topic': topic,
@@ -257,18 +309,6 @@ Format as questions, one per line."""
             ]
         
         return questions[:8]
-                f"What are the key benefits of understanding {topic}?",
-                "Can you explain the main points in your own words?"
-            ]
-            
-        except Exception as e:
-            return [
-                f"What are the main concepts covered in this {topic} video?",
-                f"How does this relate to other {topic} concepts you've learned?",
-                "What are the practical applications of this knowledge?",
-                "Can you summarize the key points in your own words?",
-                "What questions do you still have about this topic?"
-            ]
     
     async def _extract_key_concepts(self, content: str, topic: str) -> List[str]:
         """Extract key concepts and terminology"""
@@ -405,8 +445,9 @@ Keep it concise and focused on learning outcomes."""
                     "Progress to intermediate concepts",
                     "Practice with advanced examples"
                 ]
-            }  
-  async def _create_comprehensive_guide(self, topic: str, primary_materials: Dict, 
+            }
+    
+    async def _create_comprehensive_guide(self, topic: str, primary_materials: Dict, 
                                         supplementary_materials: List[Dict], learning_path: Dict) -> Dict:
         """Create a comprehensive study guide combining all materials"""
         

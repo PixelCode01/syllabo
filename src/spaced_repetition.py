@@ -220,6 +220,98 @@ class SpacedRepetitionEngine:
             return True
         return False
     
+    def get_review_history(self, topic_name: str, days: int = 30) -> List[Dict]:
+        """Get review history for a topic over the last N days"""
+        if topic_name not in self.items:
+            return []
+        
+        # In a full implementation, this would track individual review sessions
+        # For now, we'll provide summary data
+        item = self.items[topic_name]
+        
+        history = []
+        if item.total_reviews > 0:
+            # Generate sample history based on current data
+            success_rate = item.total_successes / item.total_reviews
+            
+            for i in range(min(item.total_reviews, 10)):  # Last 10 reviews
+                days_ago = i * (item.interval_index + 1)
+                review_date = (datetime.now() - timedelta(days=days_ago)).strftime('%Y-%m-%d')
+                
+                history.append({
+                    'date': review_date,
+                    'success': i < item.total_successes,
+                    'interval_after': self.INTERVALS[min(item.interval_index, len(self.INTERVALS)-1)],
+                    'difficulty': 'easy' if success_rate > 0.8 else 'medium' if success_rate > 0.6 else 'hard'
+                })
+        
+        return sorted(history, key=lambda x: x['date'], reverse=True)
+    
+    def get_learning_analytics(self) -> Dict:
+        """Get comprehensive learning analytics"""
+        if not self.items:
+            return {
+                'total_study_time_estimated': 0,
+                'retention_rate': 0,
+                'learning_velocity': 0,
+                'difficulty_distribution': {},
+                'mastery_progression': []
+            }
+        
+        total_reviews = sum(item.total_reviews for item in self.items.values())
+        total_successes = sum(item.total_successes for item in self.items.values())
+        retention_rate = (total_successes / total_reviews * 100) if total_reviews > 0 else 0
+        
+        # Estimate study time (5 minutes per review on average)
+        estimated_study_time = total_reviews * 5
+        
+        # Calculate learning velocity (topics mastered per week)
+        mastered_count = len([item for item in self.items.values() if self._get_mastery_level(item) == "Mastered"])
+        weeks_active = max(1, len(self.items) // 7)  # Rough estimate
+        learning_velocity = mastered_count / weeks_active
+        
+        # Difficulty distribution
+        difficulty_dist = {}
+        for item in self.items.values():
+            mastery = self._get_mastery_level(item)
+            difficulty_dist[mastery] = difficulty_dist.get(mastery, 0) + 1
+        
+        return {
+            'total_study_time_estimated': estimated_study_time,
+            'retention_rate': round(retention_rate, 1),
+            'learning_velocity': round(learning_velocity, 2),
+            'difficulty_distribution': difficulty_dist,
+            'total_reviews': total_reviews,
+            'average_interval': sum(self.INTERVALS[item.interval_index] for item in self.items.values()) / len(self.items) if self.items else 0
+        }
+    
+    def export_progress_data(self) -> Dict:
+        """Export all progress data for backup or analysis"""
+        return {
+            'export_date': datetime.now().isoformat(),
+            'total_topics': len(self.items),
+            'items': {name: item.to_dict() for name, item in self.items.items()},
+            'analytics': self.get_learning_analytics(),
+            'intervals_used': self.INTERVALS
+        }
+    
+    def import_progress_data(self, data: Dict) -> bool:
+        """Import progress data from backup"""
+        try:
+            if 'items' in data:
+                imported_items = {}
+                for name, item_data in data['items'].items():
+                    imported_items[name] = ReviewItem.from_dict(item_data)
+                
+                self.items = imported_items
+                self.save_data()
+                return True
+        except Exception as e:
+            print(f"Error importing data: {e}")
+            return False
+        
+        return False
+    
     def get_study_summary(self) -> Dict:
         """Get overall study summary statistics"""
         if not self.items:

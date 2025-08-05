@@ -31,6 +31,10 @@ from src.platform_integrator import PlatformIntegrator
 from src.bookmark_manager import BookmarkManager
 from src.study_session_manager import StudySessionManager
 from src.spaced_repetition import SpacedRepetitionEngine
+from src.notes_generator import NotesGenerator
+from src.video_analyzer import VideoAnalyzer
+from src.resource_finder import ResourceFinder
+from src.youtube_client import YouTubeClient
 
 class SyllaboMain:
     """Main application class with all features"""
@@ -52,6 +56,12 @@ class SyllaboMain:
         self.platform_integrator = PlatformIntegrator()
         self.bookmark_manager = BookmarkManager()
         self.study_session_manager = StudySessionManager(self.spaced_repetition)
+        
+        # Initialize new enhanced modules
+        self.notes_generator = NotesGenerator(self.ai_client)
+        self.youtube_client = YouTubeClient()
+        self.video_analyzer = VideoAnalyzer(self.ai_client)
+        self.resource_finder = ResourceFinder(self.ai_client)
     
     def print_banner(self):
         """Print enhanced application banner"""
@@ -87,7 +97,10 @@ class SyllaboMain:
             ("6", "bookmarks", "Smart Bookmarks", "Manage video bookmarks and notes"),
             ("7", "session", "Study Sessions", "Pomodoro timer and focus sessions"),
             ("8", "review", "Spaced Repetition", "Review topics using spaced repetition"),
-            ("9", "help", "Help & Documentation", "Get help and usage information"),
+            ("9", "videos", "Smart Video Analysis", "Find and analyze educational videos"),
+            ("10", "resources", "Resource Finder", "Find books, courses, and learning materials"),
+            ("11", "notes", "Generate Study Notes", "Create notes and questions from content"),
+            ("12", "help", "Help & Documentation", "Get help and usage information"),
             ("0", "exit", "Exit", "Exit the application")
         ]
         
@@ -155,6 +168,12 @@ class SyllaboMain:
                 await self._interactive_session()
             elif command == 'review':
                 await self._interactive_review()
+            elif command == 'videos':
+                await self._interactive_videos()
+            elif command == 'resources':
+                await self._interactive_resources()
+            elif command == 'notes':
+                await self._interactive_notes()
             else:
                 self.console.print(f"[yellow]Unknown command: {command}[/yellow]")
                 
@@ -565,6 +584,250 @@ class SyllaboMain:
         
         self.console.print(f"\n[bright_green]Review session complete![/bright_green]")
         self.console.print("[dim]Great job! Keep up the consistent practice.[/dim]")
+    
+    async def _interactive_videos(self):
+        """Interactive video search and analysis"""
+        self.console.print(Rule("[bold bright_blue]Smart Video Analysis[/bold bright_blue]"))
+        
+        topic = Prompt.ask("[bright_cyan]Enter topic to search for videos[/bright_cyan]")
+        if not topic:
+            self.console.print("[red]No topic provided[/red]")
+            return
+        
+        # Ask user preference
+        preference = self.video_analyzer.ask_user_video_preference(topic)
+        
+        with self.console.status(f"[bright_cyan]Searching for {topic} videos..."):
+            try:
+                # Search for videos and playlists
+                videos = await self.youtube_client.search_videos(topic, 10)
+                playlists = await self.youtube_client.search_playlists(topic, 5)
+                
+                if not videos and not playlists:
+                    self.console.print("[yellow]No videos or playlists found[/yellow]")
+                    return
+                
+                # Analyze content
+                analysis = await self.video_analyzer.analyze_videos_and_playlists(videos, playlists, topic)
+                
+                # Display results
+                self._display_video_analysis(analysis, topic)
+                
+                # Ask if user wants notes and questions
+                if analysis.get('primary_resource'):
+                    generate_notes = Prompt.ask(
+                        "[bright_yellow]Generate study notes and questions for the recommended content? (y/n)[/bright_yellow]",
+                        default="y"
+                    ).lower() == 'y'
+                    
+                    if generate_notes:
+                        await self._generate_content_notes(analysis['primary_resource'], topic)
+                
+            except Exception as e:
+                self.console.print(f"[red]Video search error: {e}[/red]")
+    
+    def _display_video_analysis(self, analysis: Dict, topic: str):
+        """Display video analysis results"""
+        self.console.print(f"\n[bold bright_green]Video Analysis Results for '{topic}'[/bold bright_green]")
+        
+        primary = analysis.get('primary_resource')
+        if primary:
+            self.console.print(f"\n[bold bright_cyan]Recommended Primary Content:[/bold bright_cyan]")
+            content_type = "📺 Video" if primary.get('type') != 'playlist' else "📚 Playlist"
+            self.console.print(f"{content_type} {primary['title']}")
+            self.console.print(f"Channel: {primary['channel']}")
+            self.console.print(f"Score: {primary.get('composite_score', 0):.1f}/10")
+            
+            if primary.get('type') == 'playlist':
+                self.console.print(f"Videos: {primary.get('video_count', 0)}")
+            else:
+                self.console.print(f"Duration: {primary.get('duration', 'Unknown')}")
+        
+        # Display topic coverage
+        coverage = analysis.get('topic_coverage_details', {})
+        if coverage:
+            self.console.print(f"\n[bold bright_yellow]Topic Coverage Analysis:[/bold bright_yellow]")
+            self.console.print(f"Coverage: {coverage.get('learning_completeness', 0):.0f}%")
+            
+            covered = coverage.get('covered_subtopics', [])
+            if covered:
+                self.console.print(f"Covered topics: {', '.join(covered[:5])}")
+            
+            missing = coverage.get('missing_subtopics', [])
+            if missing:
+                self.console.print(f"[yellow]Missing topics: {', '.join(missing[:3])}[/yellow]")
+            
+            recommendations = coverage.get('content_recommendations', [])
+            if recommendations:
+                self.console.print(f"\n[bold bright_magenta]Recommendations:[/bold bright_magenta]")
+                for rec in recommendations:
+                    self.console.print(f"• {rec}")
+        
+        # Display supplementary content
+        supplementary_videos = analysis.get('supplementary_videos', [])
+        supplementary_playlists = analysis.get('supplementary_playlists', [])
+        
+        if supplementary_videos or supplementary_playlists:
+            self.console.print(f"\n[bold bright_cyan]Additional Resources:[/bold bright_cyan]")
+            
+            for video in supplementary_videos[:3]:
+                self.console.print(f"📺 {video['title']} ({video.get('duration', 'Unknown')})")
+            
+            for playlist in supplementary_playlists[:2]:
+                self.console.print(f"📚 {playlist['title']} ({playlist.get('video_count', 0)} videos)")
+    
+    async def _generate_content_notes(self, content: Dict, topic: str):
+        """Generate notes and questions for content"""
+        with self.console.status("[bright_cyan]Generating study notes and questions..."):
+            try:
+                # Ask user preferences first
+                preferences = self.notes_generator.ask_user_preferences()
+                
+                # Generate notes (transcript would be fetched in real implementation)
+                notes_data = await self.notes_generator.generate_study_notes(topic, content, None)
+                
+                # Display generated materials
+                self.console.print(f"\n[bold bright_green]Generated Study Materials[/bold bright_green]")
+                
+                if notes_data.get('notes') and preferences.get('generate_notes'):
+                    self.console.print(f"\n[bold bright_cyan]Study Notes:[/bold bright_cyan]")
+                    for i, note in enumerate(notes_data['notes'], 1):
+                        self.console.print(f"{i}. {note}")
+                
+                if notes_data.get('questions') and preferences.get('generate_questions'):
+                    self.console.print(f"\n[bold bright_yellow]Study Questions:[/bold bright_yellow]")
+                    for i, question in enumerate(notes_data['questions'], 1):
+                        self.console.print(f"{i}. {question}")
+                
+                if notes_data.get('key_concepts'):
+                    self.console.print(f"\n[bold bright_magenta]Key Concepts:[/bold bright_magenta]")
+                    for concept in notes_data['key_concepts']:
+                        self.console.print(f"• {concept}")
+                
+            except Exception as e:
+                self.console.print(f"[red]Error generating notes: {e}[/red]")
+    
+    async def _interactive_resources(self):
+        """Interactive resource finder"""
+        self.console.print(Rule("[bold bright_blue]Resource Finder[/bold bright_blue]"))
+        
+        # Get topics from database or user input
+        topics = self.db.get_all_topics()
+        
+        if topics:
+            self.console.print("[bright_green]Found topics from your syllabus:[/bright_green]")
+            for i, topic in enumerate(topics[:10], 1):
+                self.console.print(f"{i}. {topic.get('name', 'Unknown')}")
+            
+            use_existing = Prompt.ask(
+                "[bright_yellow]Use existing topics? (y/n)[/bright_yellow]",
+                default="y"
+            ).lower() == 'y'
+            
+            if use_existing:
+                topic_names = [topic.get('name', '') for topic in topics[:10]]
+            else:
+                topic_input = Prompt.ask("[bright_cyan]Enter topics (comma-separated)[/bright_cyan]")
+                topic_names = [t.strip() for t in topic_input.split(',') if t.strip()]
+        else:
+            topic_input = Prompt.ask("[bright_cyan]Enter topics to find resources for (comma-separated)[/bright_cyan]")
+            topic_names = [t.strip() for t in topic_input.split(',') if t.strip()]
+        
+        if not topic_names:
+            self.console.print("[red]No topics provided[/red]")
+            return
+        
+        # Ask for resource preference
+        preference = self.resource_finder._ask_user_preference()
+        
+        with self.console.status(f"[bright_cyan]Finding resources for {len(topic_names)} topics..."):
+            try:
+                resources = await self.resource_finder.find_resources_for_syllabus(topic_names, preference)
+                
+                # Display results using the built-in display method
+                self.resource_finder.display_resources(resources)
+                
+            except Exception as e:
+                self.console.print(f"[red]Resource search error: {e}[/red]")
+    
+    async def _interactive_notes(self):
+        """Interactive notes generation"""
+        self.console.print(Rule("[bold bright_blue]Generate Study Notes[/bold bright_blue]"))
+        
+        # Get user preferences
+        preferences = self.notes_generator.ask_user_preferences()
+        
+        if not preferences.get('generate_notes') and not preferences.get('generate_questions'):
+            self.console.print("[yellow]No content generation selected[/yellow]")
+            return
+        
+        # Get topic and content
+        topic = Prompt.ask("[bright_cyan]Enter topic for note generation[/bright_cyan]")
+        if not topic:
+            self.console.print("[red]No topic provided[/red]")
+            return
+        
+        content_source = Prompt.ask(
+            "[bright_yellow]Content source[/bright_yellow]",
+            choices=["video_search", "manual_input"],
+            default="video_search"
+        )
+        
+        if content_source == "video_search":
+            # Search for a video and generate notes
+            with self.console.status(f"[bright_cyan]Searching for {topic} content..."):
+                try:
+                    videos = await self.youtube_client.search_videos(topic, 3)
+                    if videos:
+                        # Use the first video
+                        video = videos[0]
+                        self.console.print(f"[bright_green]Using video: {video['title']}[/bright_green]")
+                        
+                        notes_data = await self.notes_generator.generate_study_notes(topic, video, None)
+                        self._display_generated_notes(notes_data, preferences)
+                    else:
+                        self.console.print("[yellow]No videos found for the topic[/yellow]")
+                except Exception as e:
+                    self.console.print(f"[red]Error: {e}[/red]")
+        
+        else:
+            # Manual content input
+            content_text = Prompt.ask("[bright_cyan]Enter content text or description[/bright_cyan]")
+            if content_text:
+                # Create a mock video object
+                mock_video = {
+                    'title': f"Manual content for {topic}",
+                    'description': content_text,
+                    'id': 'manual_input',
+                    'channel': 'User Input'
+                }
+                
+                notes_data = await self.notes_generator.generate_study_notes(topic, mock_video, content_text)
+                self._display_generated_notes(notes_data, preferences)
+    
+    def _display_generated_notes(self, notes_data: Dict, preferences: Dict):
+        """Display generated notes and questions"""
+        self.console.print(f"\n[bold bright_green]Generated Study Materials for '{notes_data['topic']}'[/bold bright_green]")
+        
+        if notes_data.get('notes') and preferences.get('generate_notes'):
+            self.console.print(f"\n[bold bright_cyan]Study Notes:[/bold bright_cyan]")
+            for i, note in enumerate(notes_data['notes'], 1):
+                self.console.print(f"{i}. {note}")
+        
+        if notes_data.get('questions') and preferences.get('generate_questions'):
+            self.console.print(f"\n[bold bright_yellow]Study Questions:[/bold bright_yellow]")
+            for i, question in enumerate(notes_data['questions'], 1):
+                self.console.print(f"{i}. {question}")
+        
+        if notes_data.get('key_concepts'):
+            self.console.print(f"\n[bold bright_magenta]Key Concepts:[/bold bright_magenta]")
+            for concept in notes_data['key_concepts']:
+                self.console.print(f"• {concept}")
+        
+        if notes_data.get('study_tips'):
+            self.console.print(f"\n[bold bright_blue]Study Tips:[/bold bright_blue]")
+            for tip in notes_data['study_tips']:
+                self.console.print(f"• {tip}")
 
 async def main():
     """Main application entry point"""

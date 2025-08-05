@@ -12,6 +12,23 @@ class VideoAnalyzer:
         self.feedback_system = FeedbackSystem()
         self.logger = SyllaboLogger("video_analyzer")
     
+    def ask_user_video_preference(self, topic: str) -> str:
+        """Ask user about their video learning preference"""
+        print(f"\nHow would you like to learn about '{topic}'?")
+        print("1. One comprehensive video covering all aspects")
+        print("2. Multiple focused videos for different subtopics")
+        print("3. A complete playlist/course series")
+        print("4. Let me decide based on available content")
+        
+        choice = input("Choose your preference (1-4, default: 4): ").strip()
+        preference_map = {
+            '1': 'single_comprehensive',
+            '2': 'multiple_focused', 
+            '3': 'playlist_series',
+            '4': 'auto_decide'
+        }
+        return preference_map.get(choice, 'auto_decide')
+    
     async def analyze_videos_and_playlists(self, videos: List[Dict], playlists: List[Dict], topic: str) -> Dict:
         """Analyze both videos and playlists for a topic"""
         self.logger.info(f"Analyzing {len(videos)} videos and {len(playlists)} playlists for topic: {topic}")
@@ -49,8 +66,15 @@ class VideoAnalyzer:
         self.logger.info(f"Analysis complete. Top video: {analyzed_videos[0]['title'] if analyzed_videos else 'None'}")
         self.logger.info(f"Top playlist: {analyzed_playlists[0]['title'] if analyzed_playlists else 'None'}")
         
-        # Create comprehensive learning path
-        return self._create_comprehensive_learning_path(analyzed_videos, analyzed_playlists, topic)
+        # Create comprehensive learning path with topic coverage analysis
+        learning_path = self._create_comprehensive_learning_path(analyzed_videos, analyzed_playlists, topic)
+        
+        # Add detailed topic coverage information
+        learning_path['topic_coverage_details'] = await self._analyze_detailed_topic_coverage(
+            analyzed_videos, analyzed_playlists, topic
+        )
+        
+        return learning_path
     
     async def analyze_videos(self, videos: List[Dict], topic: str) -> Dict:
         """Legacy method for backward compatibility"""
@@ -692,6 +716,225 @@ Respond with only a number between 1 and 10."""
             })
         
         return coverage
+    
+    async def _analyze_detailed_topic_coverage(self, videos: List[Dict], 
+                                             playlists: List[Dict], topic: str) -> Dict:
+        """Provide detailed analysis of what topics are covered in videos"""
+        all_content = videos + playlists
+        
+        if not all_content:
+            return {
+                'coverage_summary': f'No content found for {topic}',
+                'covered_subtopics': [],
+                'missing_subtopics': self._get_expected_subtopics(topic),
+                'content_recommendations': []
+            }
+        
+        # Analyze what subtopics are covered
+        covered_subtopics = set()
+        content_analysis = []
+        
+        for content in all_content[:5]:  # Analyze top 5 pieces of content
+            analysis = await self._analyze_content_topics(content, topic)
+            content_analysis.append(analysis)
+            covered_subtopics.update(analysis['subtopics'])
+        
+        # Determine missing subtopics
+        expected_subtopics = self._get_expected_subtopics(topic)
+        missing_subtopics = [st for st in expected_subtopics if st not in covered_subtopics]
+        
+        # Generate recommendations
+        recommendations = self._generate_content_recommendations(
+            content_analysis, covered_subtopics, missing_subtopics, topic
+        )
+        
+        return {
+            'coverage_summary': f'Found {len(covered_subtopics)} subtopics covered out of {len(expected_subtopics)} expected',
+            'covered_subtopics': list(covered_subtopics),
+            'missing_subtopics': missing_subtopics,
+            'content_analysis': content_analysis,
+            'content_recommendations': recommendations,
+            'learning_completeness': len(covered_subtopics) / len(expected_subtopics) * 100 if expected_subtopics else 0
+        }
+    
+    async def _analyze_content_topics(self, content: Dict, main_topic: str) -> Dict:
+        """Analyze what specific subtopics a piece of content covers"""
+        title = content.get('title', '')
+        description = content.get('description', '')
+        content_type = content.get('type', 'video')
+        
+        # Use AI to analyze topic coverage
+        try:
+            prompt = f"""Analyze what specific subtopics this {content_type} covers for the main topic "{main_topic}".
+
+Title: {title}
+Description: {description[:300]}
+
+List the specific subtopics covered. Be precise and focus on educational content.
+Format as a simple list of subtopics."""
+
+            response = await self.ai_client.get_completion(prompt)
+            
+            # Parse subtopics from response
+            subtopics = []
+            for line in response.split('\n'):
+                line = line.strip()
+                if line and not line.startswith('#'):
+                    clean_topic = line.lstrip('•-*123456789. ').strip()
+                    if clean_topic and len(clean_topic) > 3:
+                        subtopics.append(clean_topic.lower())
+            
+            return {
+                'content_title': title,
+                'content_type': content_type,
+                'subtopics': subtopics[:8],  # Limit to 8 subtopics
+                'coverage_quality': self._assess_coverage_quality(title, description, main_topic)
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Content topic analysis failed: {e}")
+            # Fallback to keyword-based analysis
+            return self._fallback_topic_analysis(content, main_topic)
+    
+    def _fallback_topic_analysis(self, content: Dict, main_topic: str) -> Dict:
+        """Fallback topic analysis using keyword matching"""
+        title = content.get('title', '').lower()
+        description = content.get('description', '').lower()
+        text = f"{title} {description}"
+        
+        # Topic-specific keyword mapping
+        keyword_mapping = {
+            'python': ['syntax', 'variables', 'functions', 'classes', 'modules', 'data_types', 'loops', 'conditionals'],
+            'machine_learning': ['supervised', 'unsupervised', 'algorithms', 'training', 'models', 'features', 'classification', 'regression'],
+            'data_science': ['analysis', 'visualization', 'statistics', 'pandas', 'numpy', 'cleaning', 'exploration'],
+            'javascript': ['variables', 'functions', 'objects', 'arrays', 'dom', 'events', 'async', 'promises']
+        }
+        
+        # Find relevant keywords
+        topic_key = main_topic.lower().replace(' ', '_')
+        relevant_keywords = []
+        
+        for key, keywords in keyword_mapping.items():
+            if key in topic_key or topic_key in key:
+                relevant_keywords = keywords
+                break
+        
+        # Find matching subtopics
+        found_subtopics = []
+        for keyword in relevant_keywords:
+            if keyword in text:
+                found_subtopics.append(keyword)
+        
+        return {
+            'content_title': content.get('title', ''),
+            'content_type': content.get('type', 'video'),
+            'subtopics': found_subtopics,
+            'coverage_quality': 'estimated'
+        }
+    
+    def _get_expected_subtopics(self, topic: str) -> List[str]:
+        """Get expected subtopics for a given main topic"""
+        topic_lower = topic.lower()
+        
+        expected_topics = {
+            'python': [
+                'basic syntax', 'variables and data types', 'control structures', 
+                'functions', 'classes and objects', 'modules and packages',
+                'error handling', 'file operations', 'libraries'
+            ],
+            'machine learning': [
+                'supervised learning', 'unsupervised learning', 'data preprocessing',
+                'feature selection', 'model evaluation', 'algorithms comparison',
+                'overfitting and underfitting', 'cross validation'
+            ],
+            'data science': [
+                'data collection', 'data cleaning', 'exploratory analysis',
+                'statistical analysis', 'data visualization', 'hypothesis testing',
+                'predictive modeling', 'result interpretation'
+            ],
+            'javascript': [
+                'syntax and basics', 'variables and scope', 'functions',
+                'objects and arrays', 'dom manipulation', 'event handling',
+                'asynchronous programming', 'error handling'
+            ]
+        }
+        
+        # Find matching expected topics
+        for key, topics in expected_topics.items():
+            if key in topic_lower or any(word in key for word in topic_lower.split()):
+                return topics
+        
+        # Generic fallback
+        return [
+            'fundamentals', 'basic concepts', 'practical applications',
+            'advanced topics', 'best practices', 'real-world examples'
+        ]
+    
+    def _assess_coverage_quality(self, title: str, description: str, topic: str) -> str:
+        """Assess the quality of topic coverage"""
+        text = f"{title} {description}".lower()
+        
+        # Quality indicators
+        comprehensive_indicators = ['complete', 'full', 'comprehensive', 'entire', 'all']
+        beginner_indicators = ['beginner', 'intro', 'basics', 'fundamentals', 'start']
+        advanced_indicators = ['advanced', 'expert', 'deep', 'detailed', 'master']
+        practical_indicators = ['practical', 'hands-on', 'project', 'example', 'tutorial']
+        
+        quality_score = 0
+        quality_type = []
+        
+        if any(indicator in text for indicator in comprehensive_indicators):
+            quality_score += 3
+            quality_type.append('comprehensive')
+        
+        if any(indicator in text for indicator in beginner_indicators):
+            quality_score += 1
+            quality_type.append('beginner-friendly')
+        
+        if any(indicator in text for indicator in advanced_indicators):
+            quality_score += 2
+            quality_type.append('advanced')
+        
+        if any(indicator in text for indicator in practical_indicators):
+            quality_score += 2
+            quality_type.append('practical')
+        
+        if quality_score >= 4:
+            return 'excellent'
+        elif quality_score >= 2:
+            return 'good'
+        else:
+            return 'basic'
+    
+    def _generate_content_recommendations(self, content_analysis: List[Dict], 
+                                        covered_subtopics: set, missing_subtopics: List[str], 
+                                        topic: str) -> List[str]:
+        """Generate recommendations based on content analysis"""
+        recommendations = []
+        
+        # Analyze content quality distribution
+        excellent_content = [c for c in content_analysis if c['coverage_quality'] == 'excellent']
+        good_content = [c for c in content_analysis if c['coverage_quality'] == 'good']
+        
+        if excellent_content:
+            recommendations.append(f"Start with '{excellent_content[0]['content_title']}' for comprehensive coverage")
+        elif good_content:
+            recommendations.append(f"Begin with '{good_content[0]['content_title']}' for solid foundation")
+        
+        # Recommendations for missing topics
+        if missing_subtopics:
+            recommendations.append(f"Look for additional content covering: {', '.join(missing_subtopics[:3])}")
+        
+        # Learning path recommendations
+        if len(content_analysis) > 1:
+            recommendations.append("Watch multiple videos to get different perspectives on the topic")
+        
+        # Completeness recommendations
+        coverage_percentage = len(covered_subtopics) / (len(covered_subtopics) + len(missing_subtopics)) * 100
+        if coverage_percentage < 70:
+            recommendations.append("Consider supplementing with additional resources for complete understanding")
+        
+        return recommendations[:4]  # Limit to 4 recommendations
     
     def _extract_coverage_keywords(self, video: Dict, topic: str) -> List[str]:
         """Extract what specific aspects this video covers"""
