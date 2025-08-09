@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -114,7 +115,7 @@
 
         .btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
         }
 
         .features {
@@ -174,7 +175,7 @@
             background: white;
             padding: 2rem;
             border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
 
         .install-card h3 {
@@ -230,11 +231,11 @@
             .hero h1 {
                 font-size: 2.5rem;
             }
-            
+
             .nav-links {
                 display: none;
             }
-            
+
             .cta-buttons {
                 flex-direction: column;
                 align-items: center;
@@ -242,6 +243,7 @@
         }
     </style>
 </head>
+
 <body>
     <header>
         <nav class="container">
@@ -261,8 +263,8 @@
             <p>AI-Powered Learning Assistant for Students</p>
             <p>Analyze syllabi, generate quizzes, track progress, and discover educational resources</p>
             <div class="cta-buttons">
-                <a href="#download" class="btn btn-primary">Download Now</a>
-                <a href="https://github.com/PixelCode01/syllabo" class="btn btn-secondary">View on GitHub</a>
+                <a href="https://github.com/PixelCode01/syllabo" class="btn btn-primary">View on GitHub</a>
+                <a href="#installation" class="btn btn-secondary">Get Started</a>
             </div>
         </div>
     </section>
@@ -328,62 +330,62 @@
                     <h3>🐳 Docker (Recommended)</h3>
                     <p>The easiest way to run Syllabo with consistent behavior across systems.</p>
                     <div class="code-block">
-git clone https://github.com/PixelCode01/syllabo.git
-cd syllabo
-./docker-setup.sh  # or docker-setup.bat on Windows
-make run
+                        git clone https://github.com/PixelCode01/syllabo.git
+                        cd syllabo
+                        ./docker-setup.sh # or docker-setup.bat on Windows
+                        make run
                     </div>
                 </div>
-                
+
                 <div class="install-card">
                     <h3>📦 Standalone Executable</h3>
-                    <p>Download pre-built executables for your operating system.</p>
+                    <p>Pre-built executables will be available in future releases.</p>
                     <div class="code-block">
-# Download from releases
-# Extract and run installer
-./install.sh  # or install.bat on Windows
-syllabo interactive
+                        # Coming soon - standalone executables
+                        # Will be available for Windows, Linux, and macOS
+                        # No installation required - just download and run
                     </div>
                 </div>
-                
+
                 <div class="install-card">
                     <h3>🐍 Python Installation</h3>
                     <p>Install from source for development or customization.</p>
                     <div class="code-block">
-git clone https://github.com/PixelCode01/syllabo.git
-cd syllabo
-pip install -r requirements.txt
-python main.py interactive
+                        git clone https://github.com/PixelCode01/syllabo.git
+                        cd syllabo
+                        pip install -r requirements.txt
+                        python main.py interactive
                     </div>
                 </div>
-                
+
                 <div class="install-card">
                     <h3>🚢 Docker Hub</h3>
                     <p>Pull the official Docker image from the registry.</p>
                     <div class="code-block">
-docker pull ghcr.io/pixelcode01/syllabo:latest
-docker run -it --rm ghcr.io/pixelcode01/syllabo:latest
+                        docker pull ghcr.io/pixelcode01/syllabo:latest
+                        docker run -it --rm ghcr.io/pixelcode01/syllabo:latest
                     </div>
                 </div>
             </div>
 
             <div class="download-section" id="download">
-                <h3>Download Latest Release</h3>
-                <p>Choose your platform and download the standalone executable:</p>
+                <h3>Get Started</h3>
+                <p>Choose your preferred installation method:</p>
                 <div class="download-buttons">
-                    <a href="https://github.com/PixelCode01/syllabo/releases/latest/download/syllabo-Windows.exe" class="download-btn">
-                        🪟 Windows
+                    <a href="https://github.com/PixelCode01/syllabo" class="download-btn">
+                        View on GitHub
                     </a>
-                    <a href="https://github.com/PixelCode01/syllabo/releases/latest/download/syllabo-Linux" class="download-btn">
-                        🐧 Linux
+                    <a href="#installation" class="download-btn">
+                        Installation Guide
                     </a>
-                    <a href="https://github.com/PixelCode01/syllabo/releases/latest/download/syllabo-macOS" class="download-btn">
-                        🍎 macOS
-                    </a>
-                    <a href="https://github.com/PixelCode01/syllabo/releases/latest" class="download-btn">
-                        📋 All Releases
+                    <a href="https://github.com/PixelCode01/syllabo/releases" class="download-btn">
+                        Releases
                     </a>
                 </div>
+                <p style="margin-top: 1rem; color: #666;">
+                    Standalone executables will be available in future releases. Currently available via Docker and
+                    Python source.
+                </p>
             </div>
         </div>
     </section>
@@ -392,14 +394,17 @@ docker run -it --rm ghcr.io/pixelcode01/syllabo:latest
         <div class="container">
             <p>&copy; 2024 Syllabo. Open source learning assistant built with ❤️</p>
             <p>
-                <a href="https://github.com/PixelCode01/syllabo" style="color: #667eea;">GitHub</a> | 
-                <a href="https://github.com/PixelCode01/syllabo/issues" style="color: #667eea;">Issues</a> | 
-                <a href="https://github.com/PixelCode01/syllabo/blob/main/README.md" style="color: #667eea;">Documentation</a>
+                <a href="https://github.com/PixelCode01/syllabo" style="color: #667eea;">GitHub</a> |
+                <a href="https://github.com/PixelCode01/syllabo/issues" style="color: #667eea;">Issues</a> |
+                <a href="https://github.com/PixelCode01/syllabo/blob/main/README.md"
+                    style="color: #667eea;">Documentation</a>
             </p>
         </div>
     </footer>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
 </body>
+
 </html>

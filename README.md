@@ -50,9 +50,9 @@ docker pull ghcr.io/pixelcode01/syllabo:latest
 docker run -it --rm ghcr.io/pixelcode01/syllabo:latest
 ```
 
-### Standalone Executables
+### Standalone Executables (Coming Soon)
 
-Pre-built executables will be available in future releases. Currently, use Docker or Python source installation.
+Pre-built executables for Windows, Linux, and macOS will be available in future releases. Currently, please use Docker or Python source installation.
 
 ### Python Source Installation
 
@@ -198,9 +198,9 @@ Set and track study objectives with support for daily, weekly, and milestone-bas
 
 Syllabo is available in multiple distribution formats:
 
-- **Standalone Executables**: Pre-built binaries requiring no installation - [Download from Releases](https://github.com/PixelCode01/syllabo/releases/latest)
 - **Docker Images**: Container images available at `ghcr.io/pixelcode01/syllabo:latest`
 - **Python Source**: Install directly from source code for development and customization
+- **Standalone Executables**: Pre-built binaries (coming in future releases)
 - **Documentation**: Comprehensive guides available at [GitHub Pages](https://pixelcode01.github.io/syllabo)
 
 ## Development
