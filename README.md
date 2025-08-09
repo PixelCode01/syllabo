@@ -47,19 +47,9 @@ docker pull ghcr.io/pixelcode01/syllabo:latest
 docker run -it --rm ghcr.io/pixelcode01/syllabo:latest
 ```
 
-### Docker Hub
-
-Docker images will be available after the first GitHub release is created:
-
-```bash
-# Will be available after release
-docker pull ghcr.io/pixelcode01/syllabo:latest
-docker run -it --rm ghcr.io/pixelcode01/syllabo:latest
-```
-
 ### Standalone Executables (Coming Soon)
 
-Pre-built executables for Windows, Linux, and macOS will be available in future releases. Currently, please use Docker or Python source installation.
+Pre-built executables for Linux and macOS will be available in future releases. Currently, please use Docker or Python source installation.
 
 ### Python Source Installation
 

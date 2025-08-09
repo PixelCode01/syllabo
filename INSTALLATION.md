@@ -36,9 +36,9 @@ Download pre-built executables for your operating system:
 3. Run the installer script included in the package
 4. Start using: `syllabo interactive`
 
-### 🚢 Docker Hub
+### Docker Container Registry
 
-Pull the official Docker image:
+Pull the official Docker image (available after GitHub release):
 
 ```bash
 # Pull the latest image
