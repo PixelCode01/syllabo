@@ -35,12 +35,14 @@ ENV/
 .env.test.local
 .env.production.local
 
-# IDE
+# IDE and Editor files
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+.vs/
+*.code-workspace
 
 # OS
 .DS_Store
@@ -153,8 +155,94 @@ coverage.xml
 # Kiro IDE
 .kiro/
 
-# IDE files
-.idea/
+# Build and distribution files
+build/
+dist/
+release/
+*.spec.bak
+*.exe
+*.dmg
+*.pkg
+*.deb
+*.rpm
 
-# Setup files (keep setup.py but ignore if it's not needed)
+# PyInstaller specific
+*.manifest
+*.spec.bak
+
+# Docker build context (keep Dockerfile and docker-compose.yml)
+.dockerignore.bak
+
+# Release artifacts
+syllabo-*
+*.tar.gz
+*.zip
+
+# Setup files
 setup.py
+setup.cfg
+
+# Node.js (if any frontend tools are added)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Database files (keep structure, ignore data)
+*.db
+*.sqlite
+*.sqlite3
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# GitHub Actions artifacts (local)
+artifacts/
+
+# Local development files
+.env.local
+.env.development
+.env.production
+config.local.json
+
+# Development scripts (keep in repo for distribution)
+# cleanup.sh and cleanup.bat are kept for users
+
+# But ignore any personal development scripts
+dev-*.sh
+dev-*.bat
+personal-*.py
+test-*.py
+debug-*.py
+
+# OS specific
+# Windows
+desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+
+# macOS
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*

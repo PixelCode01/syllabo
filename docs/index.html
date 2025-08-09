@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Syllabo - AI-Powered Learning Assistant</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: white;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            transition: opacity 0.3s;
+        }
+
+        .nav-links a:hover {
+            opacity: 0.8;
+        }
+
+        .hero {
+            padding: 120px 0 80px;
+            text-align: center;
+            color: white;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+
+        .hero p {
+            font-size: 1.3rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            cursor: pointer;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: white;
+            color: #667eea;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        .features {
+            background: white;
+            padding: 80px 0;
+        }
+
+        .features h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            color: #333;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: #f8f9fa;
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .installation {
+            background: #f8f9fa;
+            padding: 80px 0;
+        }
+
+        .installation h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .install-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .install-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .install-card h3 {
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            overflow-x: auto;
+        }
+
+        .download-section {
+            text-align: center;
+            margin-top: 3rem;
+        }
+
+        .download-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+
+        .download-btn {
+            background: #667eea;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .download-btn:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+
+        footer {
+            background: #2d3748;
+            color: white;
+            text-align: center;
+            padding: 2rem 0;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .nav-links {
+                display: none;
+            }
+            
+            .cta-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <div class="logo">Syllabo</div>
+            <ul class="nav-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#installation">Installation</a></li>
+                <li><a href="#download">Download</a></li>
+                <li><a href="https://github.com/PixelCode01/syllabo">GitHub</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <div class="container">
+            <h1>Syllabo</h1>
+            <p>AI-Powered Learning Assistant for Students</p>
+            <p>Analyze syllabi, generate quizzes, track progress, and discover educational resources</p>
+            <div class="cta-buttons">
+                <a href="#download" class="btn btn-primary">Download Now</a>
+                <a href="https://github.com/PixelCode01/syllabo" class="btn btn-secondary">View on GitHub</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="features" class="features">
+        <div class="container">
+            <h2>Powerful Learning Features</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📚</div>
+                    <h3>Syllabus Analysis</h3>
+                    <p>Upload PDF or text syllabi to automatically extract topics and create study plans</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🧠</div>
+                    <h3>AI-Generated Quizzes</h3>
+                    <p>Create practice questions from topics, syllabus content, or any text material</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>Progress Tracking</h3>
+                    <p>Visual dashboards to monitor your learning progress and study analytics</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>Study Goals</h3>
+                    <p>Set and track daily, weekly, and milestone-based learning objectives</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <h3>Spaced Repetition</h3>
+                    <p>Review topics at optimal intervals for better long-term retention</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎥</div>
+                    <h3>Resource Discovery</h3>
+                    <p>Find relevant YouTube videos, courses, and educational materials</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⏱️</div>
+                    <h3>Study Sessions</h3>
+                    <p>Built-in Pomodoro timer for focused study sessions</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔖</div>
+                    <h3>Smart Bookmarks</h3>
+                    <p>Save video timestamps and add personal notes to resources</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🌐</div>
+                    <h3>Multi-Platform Search</h3>
+                    <p>Search across YouTube, Coursera, Udemy, and other learning platforms</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="installation" class="installation">
+        <div class="container">
+            <h2>Get Started</h2>
+            <div class="install-options">
+                <div class="install-card">
+                    <h3>🐳 Docker (Recommended)</h3>
+                    <p>The easiest way to run Syllabo with consistent behavior across systems.</p>
+                    <div class="code-block">
+git clone https://github.com/PixelCode01/syllabo.git
+cd syllabo
+./docker-setup.sh  # or docker-setup.bat on Windows
+make run
+                    </div>
+                </div>
+                
+                <div class="install-card">
+                    <h3>📦 Standalone Executable</h3>
+                    <p>Download pre-built executables for your operating system.</p>
+                    <div class="code-block">
+# Download from releases
+# Extract and run installer
+./install.sh  # or install.bat on Windows
+syllabo interactive
+                    </div>
+                </div>
+                
+                <div class="install-card">
+                    <h3>🐍 Python Installation</h3>
+                    <p>Install from source for development or customization.</p>
+                    <div class="code-block">
+git clone https://github.com/PixelCode01/syllabo.git
+cd syllabo
+pip install -r requirements.txt
+python main.py interactive
+                    </div>
+                </div>
+                
+                <div class="install-card">
+                    <h3>🚢 Docker Hub</h3>
+                    <p>Pull the official Docker image from the registry.</p>
+                    <div class="code-block">
+docker pull ghcr.io/pixelcode01/syllabo:latest
+docker run -it --rm ghcr.io/pixelcode01/syllabo:latest
+                    </div>
+                </div>
+            </div>
+
+            <div class="download-section" id="download">
+                <h3>Download Latest Release</h3>
+                <p>Choose your platform and download the standalone executable:</p>
+                <div class="download-buttons">
+                    <a href="https://github.com/PixelCode01/syllabo/releases/latest/download/syllabo-Windows.exe" class="download-btn">
+                        🪟 Windows
+                    </a>
+                    <a href="https://github.com/PixelCode01/syllabo/releases/latest/download/syllabo-Linux" class="download-btn">
+                        🐧 Linux
+                    </a>
+                    <a href="https://github.com/PixelCode01/syllabo/releases/latest/download/syllabo-macOS" class="download-btn">
+                        🍎 macOS
+                    </a>
+                    <a href="https://github.com/PixelCode01/syllabo/releases/latest" class="download-btn">
+                        📋 All Releases
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 Syllabo. Open source learning assistant built with ❤️</p>
+            <p>
+                <a href="https://github.com/PixelCode01/syllabo" style="color: #667eea;">GitHub</a> | 
+                <a href="https://github.com/PixelCode01/syllabo/issues" style="color: #667eea;">Issues</a> | 
+                <a href="https://github.com/PixelCode01/syllabo/blob/main/README.md" style="color: #667eea;">Documentation</a>
+            </p>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+</body>
+</html>

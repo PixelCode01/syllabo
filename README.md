@@ -1,10 +1,10 @@
 # Syllabo
 
-A learning assistant that helps you analyze course syllabi and find educational resources. Built with Python and designed for students who want to organize their study materials effectively.
+An AI-powered learning assistant that analyzes course syllabi and helps students organize their study materials effectively. Built with Python, Syllabo transforms your syllabus into a comprehensive learning management system.
 
-## What it does
+## Overview
 
-Syllabo takes your course syllabus and breaks it down into manageable topics, then helps you find relevant learning materials. It includes tools for tracking progress, generating quizzes, and managing study sessions.
+Syllabo automatically breaks down your course syllabus into manageable topics and helps you find relevant learning materials. The application includes comprehensive tools for progress tracking, quiz generation, study session management, and spaced repetition learning.
 
 ## Key Features
 
@@ -26,196 +26,258 @@ Syllabo takes your course syllabus and breaks it down into manageable topics, th
 - Goal setting and milestone tracking
 - Export functionality for study materials
 
-## Getting Started
+## Installation
 
-### Option 1: Docker (Recommended)
+### Docker Installation (Recommended)
 
-The easiest way to run Syllabo is using Docker. This ensures consistent behavior across different systems.
+The most reliable way to run Syllabo with consistent behavior across different systems:
 
-1. Clone the repository:
 ```bash
 git clone https://github.com/PixelCode01/syllabo.git
 cd syllabo
+./docker-setup.sh  # Linux/macOS
+# or
+docker-setup.bat   # Windows
+make run
 ```
 
-2. Run the setup script:
+### Docker Hub
+
+Pull the official Docker image directly:
+
 ```bash
-# On Linux/Mac
-./docker-setup.sh
-
-# On Windows
-docker-setup.bat
+docker pull ghcr.io/pixelcode01/syllabo:latest
+docker run -it --rm ghcr.io/pixelcode01/syllabo:latest
 ```
 
-3. Start using Syllabo:
+### Standalone Executables
+
+Pre-built executables will be available in future releases. Currently, use Docker or Python source installation.
+
+### Python Source Installation
+
+For development or customization:
+
+```bash
+git clone https://github.com/PixelCode01/syllabo.git
+cd syllabo
+pip install -r requirements.txt
+python main.py interactive
+```
+
+### Documentation
+
+Visit the [project website](https://pixelcode01.github.io/syllabo) for comprehensive documentation and additional resources.
+
+## Usage
+
+### Interactive Mode
+
+Launch the interactive interface:
+
+```bash
+# Docker
+docker-compose run --rm syllabo
+# or
+make interactive
+
+# Standalone executable
+./syllabo interactive
+
+# Python source
+python main.py interactive
+```
+
+The interactive menu provides access to all features:
+- Syllabus analysis and topic extraction
+- Educational video search and discovery
+- Interactive quiz generation and testing
+- Progress tracking and analytics
+- Timed study sessions with Pomodoro timer
+- Bookmark and note management
+
+### Command Line Interface
+
+#### Docker Commands
+
 ```bash
 # Interactive mode
 docker-compose run --rm syllabo
-
-# Or use the Makefile
-make run
-```
-
-### Option 2: Local Installation
-
-1. Clone the repository:
-```bash
-git clone https://github.com/PixelCode01/syllabo.git
-cd syllabo
-```
-
-2. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-3. Set up API keys (optional):
-Copy `.env.example` to `.env` and add your API keys if you have them. The app works without keys but some features may be limited.
-
-## How to Use
-
-### Docker Usage
-
-Run the main program:
-```bash
-# Interactive mode with full menu
-docker-compose run --rm syllabo
-
-# Or using make
-make interactive
-```
-
-This opens an interactive menu where you can:
-- Upload and analyze your syllabus
-- Search for educational videos
-- Take practice quizzes
-- Track your study progress
-- Start timed study sessions
-- Manage bookmarks and notes
-
-### Docker Commands
-
-```bash
-# Interactive mode with full menu
-docker-compose run --rm syllabo
-# or
 make run
 
-# Analyze a syllabus file
+# Analyze syllabus
 docker-compose run --rm syllabo python main.py analyze --file syllabus.pdf
 
-# Search for educational videos
+# Search for educational content
 docker-compose run --rm syllabo python main.py search --topic "Machine Learning" --max-videos 10
 
-# Manage spaced repetition reviews
+# Spaced repetition management
 docker-compose run --rm syllabo python main.py review list
 docker-compose run --rm syllabo python main.py review add --topic "Neural Networks" --description "Deep learning concepts"
 
-# Generate and take quizzes
+# Quiz generation and testing
 docker-compose run --rm syllabo python main.py quiz --topic "Machine Learning" --num-questions 5
 docker-compose run --rm syllabo python main.py quiz --content-file syllabus.pdf
 docker-compose run --rm syllabo python main.py quiz --source topics
 
-# Manage study goals
+# Study goal management
 docker-compose run --rm syllabo python main.py goals list
 docker-compose run --rm syllabo python main.py goals create --title "Daily Study" --type daily --target 30 --unit minutes
 
-# View logs
-make logs
-
-# Open shell for debugging
-make shell
+# System management
+make logs    # View application logs
+make shell   # Open debugging shell
 ```
 
-### Local Installation Commands
+#### Direct Commands
 
 ```bash
-# Interactive mode with full menu
+# Interactive mode
 python main.py interactive
 
-# Analyze a syllabus file
+# Syllabus analysis
 python main.py analyze --file syllabus.pdf
 
-# Search for educational videos
+# Content search
 python main.py search --topic "Machine Learning" --max-videos 10
 
-# Manage spaced repetition reviews
+# Spaced repetition
 python main.py review list
 python main.py review add --topic "Neural Networks" --description "Deep learning concepts"
 python main.py review due
 python main.py review mark --topic "Linear Algebra" --success
 
-# Generate and take quizzes
+# Quiz system
 python main.py quiz --topic "Machine Learning" --num-questions 5
 python main.py quiz --content-file syllabus.pdf
 python main.py quiz --source topics
-python main.py quiz  # Interactive mode
+python main.py quiz  # Interactive quiz mode
 
-# Manage study goals
+# Goal management
 python main.py goals list
 python main.py goals create --title "Daily Study" --type daily --target 30 --unit minutes
 python main.py goals suggest
 ```
 
-## Main Features
+## Core Features
 
-**Syllabus Analysis**: Upload a PDF or paste text to extract course topics automatically.
+### Syllabus Analysis
+Upload PDF files or paste text content to automatically extract course topics and create structured learning plans.
 
-**Resource Discovery**: Find relevant YouTube videos, online courses, and study materials for each topic.
+### Resource Discovery
+Automatically find relevant educational content including YouTube videos, online courses, and study materials for each extracted topic.
 
-**Quiz Generation**: Create practice questions from topics, syllabus files, or text content. Supports multiple question types and interactive testing.
+### Quiz Generation
+Create practice questions from various sources including topics, syllabus files, or any text content. Supports multiple question types with interactive testing capabilities.
 
-**Progress Tracking**: See visual charts of your study progress and time spent on different topics.
+### Progress Tracking
+Monitor your learning progress with visual charts and analytics showing time spent on different topics and overall study patterns.
 
-**Study Sessions**: Built-in Pomodoro timer to help you stay focused during study time.
+### Study Sessions
+Built-in Pomodoro timer system to maintain focus during study sessions with customizable work and break intervals.
 
-**Bookmarks**: Save useful video timestamps and add your own notes.
+### Bookmark Management
+Save important video timestamps and add personal notes to create a comprehensive resource library.
 
-**Spaced Repetition**: Review topics at optimal intervals to improve long-term retention. Fully functional with CLI and interactive modes.
+### Spaced Repetition System
+Review topics at scientifically optimized intervals to improve long-term retention. Fully integrated with both CLI and interactive interfaces.
 
-**Goal Management**: Set and track daily, weekly, and milestone-based study goals with progress monitoring.
+### Goal Management
+Set and track study objectives with support for daily, weekly, and milestone-based goals including progress monitoring and achievement tracking.
 
-## Example Workflow
+## Typical Workflow
 
-1. Upload your course syllabus
-2. Let the program extract topics automatically
-3. Browse recommended videos and resources
-4. Take practice quizzes to test your knowledge
-5. Track your progress over time
-6. Use spaced repetition to review difficult topics
+1. **Import Syllabus**: Upload your course syllabus in PDF format or paste the text content
+2. **Topic Extraction**: Allow the AI system to automatically identify and extract key learning topics
+3. **Resource Discovery**: Browse automatically curated educational videos and learning materials
+4. **Knowledge Testing**: Generate and take practice quizzes to assess your understanding
+5. **Progress Monitoring**: Track your learning progress and identify areas needing attention
+6. **Spaced Review**: Use the spaced repetition system to reinforce learning and improve retention
 
-## Docker Quick Start
+## Distribution
 
-If you have Docker installed, you can get started in just a few commands:
+Syllabo is available in multiple distribution formats:
+
+- **Standalone Executables**: Pre-built binaries requiring no installation - [Download from Releases](https://github.com/PixelCode01/syllabo/releases/latest)
+- **Docker Images**: Container images available at `ghcr.io/pixelcode01/syllabo:latest`
+- **Python Source**: Install directly from source code for development and customization
+- **Documentation**: Comprehensive guides available at [GitHub Pages](https://pixelcode01.github.io/syllabo)
+
+## Development
+
+For developers interested in contributing or customizing Syllabo:
+
+### Setup Development Environment
 
 ```bash
 git clone https://github.com/PixelCode01/syllabo.git
 cd syllabo
-./docker-setup.sh  # or docker-setup.bat on Windows
-make run
+make install-deps
 ```
 
-## Docker Commands Reference
+### Development Commands
 
 ```bash
-make build      # Build the Docker image
-make run        # Run interactively
-make stop       # Stop containers
-make logs       # View logs
-make shell      # Open shell in container
-make clean      # Remove everything
+# Run in development mode
+python main.py interactive
+
+# Build standalone executables
+make build-exe
+
+# Clean development environment
+make clean-dev          # Linux/macOS
+make clean-dev-windows  # Windows
+
+# Create complete release package
+make release
 ```
 
-## Requirements
+## Quick Start Guide
 
-### For Docker (Recommended)
-- Docker and Docker Compose
-- Internet connection for finding resources
+### Standalone Executable
+```bash
+./syllabo interactive
+```
 
-### For Local Installation
+### Docker Container
+```bash
+docker run -it --rm ghcr.io/pixelcode01/syllabo:latest
+```
+
+### Python Source
+```bash
+git clone https://github.com/PixelCode01/syllabo.git
+cd syllabo
+python main.py interactive
+```
+
+## Docker Management
+
+### Container Operations
+```bash
+make build      # Build the Docker image
+make run        # Run application interactively
+make stop       # Stop all running containers
+make logs       # View application logs
+make shell      # Open debugging shell in container
+make clean      # Remove containers and images
+```
+
+## System Requirements
+
+### Docker Installation
+- Docker Engine and Docker Compose
+- Internet connection for resource discovery and content search
+
+### Local Python Installation
 - Python 3.7 or higher
-- Internet connection for finding resources
-- Optional: API keys for enhanced features (see .env.example)
+- pip package manager
+- Internet connection for educational content discovery
+- Optional: API keys for enhanced functionality (configuration details in .env.example)
+
+### Standalone Executable
+- No additional dependencies required
+- Internet connection for full functionality
 
 ## License
 

@@ -1,0 +1,148 @@
+name: Build and Publish
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main, master ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Log in to Container Registry
+      if: github.event_name != 'pull_request'
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+
+  pyinstaller:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pyinstaller
+
+    - name: Build with PyInstaller (Linux/macOS)
+      if: runner.os != 'Windows'
+      run: |
+        pyinstaller --onefile --name syllabo-${{ runner.os }} \
+          --add-data "src:src" \
+          --hidden-import=src.database \
+          --hidden-import=src.logger \
+          --hidden-import=src.ai_client \
+          --hidden-import=src.syllabus_parser \
+          --hidden-import=src.quiz_generator \
+          --hidden-import=src.progress_dashboard \
+          --hidden-import=src.goals_manager \
+          --hidden-import=src.platform_integrator \
+          --hidden-import=src.bookmark_manager \
+          --hidden-import=src.study_session_manager \
+          --hidden-import=src.spaced_repetition \
+          --hidden-import=src.notes_generator \
+          --hidden-import=src.video_analyzer \
+          --hidden-import=src.resource_finder \
+          --hidden-import=src.youtube_client \
+          main.py
+
+    - name: Build with PyInstaller (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        pyinstaller --onefile --name syllabo-Windows.exe `
+          --add-data "src;src" `
+          --hidden-import=src.database `
+          --hidden-import=src.logger `
+          --hidden-import=src.ai_client `
+          --hidden-import=src.syllabus_parser `
+          --hidden-import=src.quiz_generator `
+          --hidden-import=src.progress_dashboard `
+          --hidden-import=src.goals_manager `
+          --hidden-import=src.platform_integrator `
+          --hidden-import=src.bookmark_manager `
+          --hidden-import=src.study_session_manager `
+          --hidden-import=src.spaced_repetition `
+          --hidden-import=src.notes_generator `
+          --hidden-import=src.video_analyzer `
+          --hidden-import=src.resource_finder `
+          --hidden-import=src.youtube_client `
+          main.py
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: syllabo-${{ runner.os }}
+        path: |
+          dist/syllabo-*
+          dist/*.exe
+
+  release:
+    needs: [docker, pyinstaller]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          syllabo-Linux/syllabo-Linux
+          syllabo-Windows/syllabo-Windows.exe
+          syllabo-macOS/syllabo-macOS
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
