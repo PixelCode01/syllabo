@@ -28,28 +28,18 @@ Syllabo automatically breaks down your course syllabus into manageable topics an
 
 ## Installation
 
-### Windows Executable (Ready Now)
+### Docker Installation
 
-Download the pre-built Windows executable - no installation required:
-
-1. Go to [Releases](https://github.com/PixelCode01/syllabo/releases/latest)
-2. Download `syllabo-windows-v1.0.1.zip`
-3. Extract and run `install-windows.bat` as Administrator
-4. Open new Command Prompt and run: `syllabo-Windows.exe interactive`
-
-### Docker Installation (Available After Release)
-
-Docker images will be built automatically when the GitHub release is created:
+For consistent behavior across different systems:
 
 ```bash
-# Will be available after GitHub release
-docker pull ghcr.io/pixelcode01/syllabo:latest
-docker run -it --rm ghcr.io/pixelcode01/syllabo:latest
+git clone https://github.com/PixelCode01/syllabo.git
+cd syllabo
+./docker-setup.sh  # Linux/macOS
+# or
+docker-setup.bat   # Windows
+make run
 ```
-
-### Standalone Executables (Coming Soon)
-
-Pre-built executables for Linux and macOS will be available in future releases. Currently, please use Docker or Python source installation.
 
 ### Python Source Installation
 
