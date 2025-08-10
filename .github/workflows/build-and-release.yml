@@ -36,12 +36,12 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.10'
 
     - name: Cache pip dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -196,7 +196,7 @@ jobs:
         tar -czf syllabo-${{ github.ref_name || github.event.inputs.version }}-${{ matrix.platform }}.tar.gz syllabo-${{ github.ref_name || github.event.inputs.version }}-${{ matrix.platform }}
 
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: syllabo-${{ matrix.platform }}
         path: release/syllabo-${{ github.ref_name || github.event.inputs.version }}-${{ matrix.platform }}.${{ matrix.archive_ext }}
@@ -212,12 +212,15 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Download all artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         path: artifacts
 
     - name: Display structure of downloaded files
-      run: ls -la artifacts/
+      run: |
+        echo "Artifacts structure:"
+        find artifacts -type f -name "*.zip" -o -name "*.tar.gz" | head -10
+        ls -la artifacts/
 
     - name: Create Release
       id: create_release
@@ -315,19 +318,25 @@ jobs:
         draft: false
         prerelease: false
         files: |
-          artifacts/syllabo-Windows/syllabo-${{ github.ref_name || github.event.inputs.version }}-Windows.zip
-          artifacts/syllabo-Linux/syllabo-${{ github.ref_name || github.event.inputs.version }}-Linux.tar.gz
-          artifacts/syllabo-macOS/syllabo-${{ github.ref_name || github.event.inputs.version }}-macOS.tar.gz
+          artifacts/syllabo-Windows/*
+          artifacts/syllabo-Linux/*
+          artifacts/syllabo-macOS/*
 
     - name: Generate release checksums
       run: |
         cd artifacts
+        echo "Generating checksums for release files..."
         find . -name "*.zip" -o -name "*.tar.gz" | while read file; do
           echo "Generating checksum for $file"
           sha256sum "$file" >> checksums.txt
         done
-        echo "Generated checksums:"
-        cat checksums.txt
+        if [ -f checksums.txt ]; then
+          echo "Generated checksums:"
+          cat checksums.txt
+        else
+          echo "No archive files found for checksum generation"
+          touch checksums.txt
+        fi
         
     - name: Upload checksums to release
       uses: softprops/action-gh-release@v1
@@ -357,7 +366,7 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Setup Pages
-      uses: actions/configure-pages@v3
+      uses: actions/configure-pages@v4
 
     - name: Create GitHub Pages site
       run: |
@@ -640,10 +649,10 @@ jobs:
         EOF
 
     - name: Upload artifact
-      uses: actions/upload-pages-artifact@v2
+      uses: actions/upload-pages-artifact@v3
       with:
         path: '_site'
 
     - name: Deploy to GitHub Pages
       id: deployment
-      uses: actions/deploy-pages@v2
+      uses: actions/deploy-pages@v4

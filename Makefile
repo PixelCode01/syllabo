@@ -25,11 +25,13 @@ help:
 	@echo "  release-minor - Bump minor version and release"
 	@echo "  release-major - Bump major version and release"
 	@echo "  first-release - Create your first GitHub release"
+	@echo "  debug-workflows - Debug GitHub workflow issues"
 	@echo ""
 	@echo "Examples:"
 	@echo "  make build           # Build for current platform"
 	@echo "  make portable        # Create portable package"
 	@echo "  make first-release   # Create first GitHub release"
+	@echo "  make debug-workflows # Debug workflow issues"
 	@echo "  make release-patch   # Create patch release"
 	@echo "  make docker-run      # Run in Docker"
 
@@ -93,6 +95,10 @@ release-dry-run:
 first-release:
 	@echo "Creating first GitHub release..."
 	python create-first-release.py
+
+debug-workflows:
+	@echo "Debugging GitHub workflows..."
+	python debug-workflows.py
 
 # Docker targets
 docker-build:
