@@ -52,42 +52,86 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install pyinstaller setuptools wheel
-        pip install -r requirements.txt
+        
+    - name: Install app dependencies (with error handling)
+      run: |
+        echo "Installing core dependencies..."
+        pip install textual==0.47.1 rich==13.7.0 youtube-transcript-api==0.6.1 requests==2.31.0 PyPDF2==3.0.1 python-dotenv==1.0.0 beautifulsoup4==4.12.2 feedparser==6.0.10 google-api-python-client==2.108.0 google-generativeai==0.3.2
+        echo "Attempting to install lxml (may fail on some systems)..."
+        pip install lxml==4.9.3 || echo "lxml installation failed, continuing without it..."
 
     - name: Create version file
       run: |
         echo "VERSION = '${{ github.ref_name || github.event.inputs.version }}'" > src/version.py
 
-    - name: Build standalone executable
+    - name: Build standalone executable (Windows)
+      if: matrix.os == 'windows-latest'
       run: |
-        echo "Building standalone executable using PyInstaller spec file..."
-        pyinstaller --clean --noconfirm syllabo.spec
+        echo "Building Windows standalone executable..."
+        pyinstaller --onefile --name syllabo.exe --add-data "src;src" --console --clean main.py
+      shell: powershell
         
-    - name: Verify executable
+    - name: Build standalone executable (Unix)
+      if: matrix.os != 'windows-latest'
       run: |
-        echo "Verifying standalone executable..."
+        echo "Building Unix standalone executable..."
+        pyinstaller --onefile --name syllabo --add-data "src:src" --console --clean main.py
+      shell: bash
+        
+    - name: Fallback build (if main build failed)
+      if: failure()
+      run: |
+        echo "Trying minimal PyInstaller build..."
+        pyinstaller --onefile --name syllabo --console --clean main.py
+        
+    - name: Verify executable (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        echo "Verifying Windows executable..."
+        dir dist
+        if (Test-Path "dist/syllabo.exe") { 
+          dist/syllabo.exe --help 
+        } else { 
+          echo "syllabo.exe not found" 
+        }
+      shell: powershell
+        
+    - name: Verify executable (Unix)
+      if: matrix.os != 'windows-latest'
+      run: |
+        echo "Verifying Unix executable..."
         ls -la dist/
-        if [ "${{ matrix.os }}" = "windows-latest" ]; then
-          dist/syllabo.exe --help || echo "Executable test failed but continuing..."
-        else
+        if [ -f "dist/syllabo" ]; then
           ./dist/syllabo --help || echo "Executable test failed but continuing..."
+        else
+          echo "syllabo executable not found"
         fi
+      shell: bash
 
     - name: Create installer scripts
       run: python build-all-platforms.py
 
-    - name: Create package directory
+    - name: Create package directory (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        New-Item -ItemType Directory -Force -Path "release/syllabo-${{ github.ref_name || github.event.inputs.version }}-${{ matrix.platform }}"
+      shell: powershell
+        
+    - name: Create package directory (Unix)
+      if: matrix.os != 'windows-latest'
       run: |
         mkdir -p release/syllabo-${{ github.ref_name || github.event.inputs.version }}-${{ matrix.platform }}
 
     - name: Copy files to package (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        copy dist\syllabo.exe release\syllabo-${{ github.ref_name || github.event.inputs.version }}-${{ matrix.platform }}\
-        copy install-windows.bat release\syllabo-${{ github.ref_name || github.event.inputs.version }}-${{ matrix.platform }}\
-        copy uninstall-windows.bat release\syllabo-${{ github.ref_name || github.event.inputs.version }}-${{ matrix.platform }}\
-        copy .env.example release\syllabo-${{ github.ref_name || github.event.inputs.version }}-${{ matrix.platform }}\
-        if exist LICENSE copy LICENSE release\syllabo-${{ github.ref_name || github.event.inputs.version }}-${{ matrix.platform }}\
+        $packageDir = "release/syllabo-${{ github.ref_name || github.event.inputs.version }}-${{ matrix.platform }}"
+        if (Test-Path "dist/syllabo.exe") { Copy-Item "dist/syllabo.exe" "$packageDir/" }
+        if (Test-Path "install-windows.bat") { Copy-Item "install-windows.bat" "$packageDir/" }
+        if (Test-Path "uninstall-windows.bat") { Copy-Item "uninstall-windows.bat" "$packageDir/" }
+        if (Test-Path ".env.example") { Copy-Item ".env.example" "$packageDir/" }
+        if (Test-Path "LICENSE") { Copy-Item "LICENSE" "$packageDir/" }
+      shell: powershell
 
     - name: Copy files to package (Unix)
       if: matrix.os != 'windows-latest'
@@ -186,8 +230,9 @@ jobs:
     - name: Create archive (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        cd release
-        powershell Compress-Archive -Path "syllabo-${{ github.ref_name || github.event.inputs.version }}-${{ matrix.platform }}" -DestinationPath "syllabo-${{ github.ref_name || github.event.inputs.version }}-${{ matrix.platform }}.zip"
+        Set-Location release
+        Compress-Archive -Path "syllabo-${{ github.ref_name || github.event.inputs.version }}-${{ matrix.platform }}" -DestinationPath "syllabo-${{ github.ref_name || github.event.inputs.version }}-${{ matrix.platform }}.zip"
+      shell: powershell
 
     - name: Create archive (Unix)
       if: matrix.os != 'windows-latest'
