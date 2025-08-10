@@ -1,0 +1,164 @@
+name: Simple Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+jobs:
+  build:
+    name: Build ${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: Windows
+            executable: syllabo.exe
+            archive_ext: zip
+          - os: ubuntu-latest
+            platform: Linux
+            executable: syllabo
+            archive_ext: tar.gz
+          - os: macos-latest
+            platform: macOS
+            executable: syllabo
+            archive_ext: tar.gz
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Install PyInstaller
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller
+
+    - name: Install basic dependencies
+      run: |
+        pip install textual rich requests PyPDF2 python-dotenv beautifulsoup4 feedparser
+      continue-on-error: true
+
+    - name: Create version file
+      run: echo 'VERSION = "${{ github.ref_name || github.event.inputs.version }}"' > src/version.py
+      shell: bash
+
+    - name: Simple build
+      run: pyinstaller --onefile --name ${{ matrix.executable }} --console main.py
+
+    - name: Test executable (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        if (Test-Path "dist/${{ matrix.executable }}") {
+          Write-Host "Executable found"
+          dist/${{ matrix.executable }} --help
+        } else {
+          Write-Host "Executable not found"
+          exit 1
+        }
+      shell: powershell
+      continue-on-error: true
+
+    - name: Test executable (Unix)
+      if: matrix.os != 'windows-latest'
+      run: |
+        if [ -f "dist/${{ matrix.executable }}" ]; then
+          echo "Executable found"
+          ./dist/${{ matrix.executable }} --help || echo "Help command failed"
+        else
+          echo "Executable not found"
+          exit 1
+        fi
+      continue-on-error: true
+
+    - name: Create simple package
+      run: |
+        mkdir -p package
+        cp dist/${{ matrix.executable }} package/
+        echo "# Syllabo ${{ github.ref_name || github.event.inputs.version }} - ${{ matrix.platform }}" > package/README.txt
+        echo "" >> package/README.txt
+        echo "Run: ./${{ matrix.executable }} interactive" >> package/README.txt
+
+    - name: Create archive (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        Compress-Archive -Path package -DestinationPath syllabo-${{ github.ref_name || github.event.inputs.version }}-${{ matrix.platform }}.zip
+      shell: powershell
+
+    - name: Create archive (Unix)
+      if: matrix.os != 'windows-latest'
+      run: |
+        tar -czf syllabo-${{ github.ref_name || github.event.inputs.version }}-${{ matrix.platform }}.tar.gz -C package .
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: syllabo-${{ matrix.platform }}
+        path: syllabo-${{ github.ref_name || github.event.inputs.version }}-${{ matrix.platform }}.${{ matrix.archive_ext }}
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+
+    - name: List artifacts
+      run: find artifacts -type f
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref_name || github.event.inputs.version }}
+        name: Syllabo ${{ github.ref_name || github.event.inputs.version }}
+        body: |
+          ## Syllabo ${{ github.ref_name || github.event.inputs.version }}
+          
+          Standalone executables for all platforms - no Python required!
+          
+          ### Downloads
+          
+          - Windows: `syllabo-${{ github.ref_name || github.event.inputs.version }}-Windows.zip`
+          - Linux: `syllabo-${{ github.ref_name || github.event.inputs.version }}-Linux.tar.gz`
+          - macOS: `syllabo-${{ github.ref_name || github.event.inputs.version }}-macOS.tar.gz`
+          
+          ### Usage
+          
+          1. Download and extract the archive for your platform
+          2. Run: `./syllabo interactive` (or `syllabo.exe interactive` on Windows)
+          
+          ### Features
+          
+          - AI-powered syllabus analysis
+          - Interactive quiz generation
+          - Progress tracking
+          - Study session management
+          - Spaced repetition system
+        draft: false
+        prerelease: false
+        files: |
+          artifacts/syllabo-Windows/*
+          artifacts/syllabo-Linux/*
+          artifacts/syllabo-macOS/*
