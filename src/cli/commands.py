@@ -438,4 +438,30 @@ def create_parser():
         help='Show detailed information about each service'
     )
 
+    # Configuration command
+    config_parser = subparsers.add_parser(
+        'config', 
+        help='Manage API keys and application configuration',
+        description='Configure YouTube Data API and Gemini API keys for enhanced functionality.'
+    )
+    config_subparsers = config_parser.add_subparsers(dest='config_action', help='Configuration actions')
+    
+    # Show config subcommand
+    show_config_parser = config_subparsers.add_parser('show', help='Show current configuration status')
+    
+    # Set YouTube API key subcommand
+    youtube_config_parser = config_subparsers.add_parser('youtube', help='Configure YouTube Data API key')
+    youtube_config_parser.add_argument('--key', help='YouTube Data API key')
+    
+    # Set Gemini API key subcommand
+    gemini_config_parser = config_subparsers.add_parser('gemini', help='Configure Gemini API key')
+    gemini_config_parser.add_argument('--key', help='Gemini API key')
+    
+    # Test APIs subcommand
+    test_config_parser = config_subparsers.add_parser('test', help='Test API connections')
+    test_config_parser.add_argument('--service', choices=['youtube', 'gemini', 'all'], default='all', help='Service to test')
+    
+    # Reset config subcommand
+    reset_config_parser = config_subparsers.add_parser('reset', help='Reset configuration to defaults')
+
     return parser

@@ -36,10 +36,29 @@ from src.notes_generator import NotesGenerator
 from src.video_analyzer import VideoAnalyzer
 from src.resource_finder import ResourceFinder
 from src.youtube_client import YouTubeClient
+from src.config_manager import ConfigManager
 
 class SyllaboMain:
     """Main application class with all features"""
     
+    async def _safe_execute_command(self, command_func, *args, **kwargs):
+        """Safely execute a command with proper error handling"""
+        try:
+            return await command_func(*args, **kwargs)
+        except KeyboardInterrupt:
+            self.console.print("\n[yellow]Operation cancelled by user[/yellow]")
+            return False
+        except FileNotFoundError as e:
+            self.console.print(f"[red]File not found: {e}[/red]")
+            return False
+        except PermissionError as e:
+            self.console.print(f"[red]Permission denied: {e}[/red]")
+            return False
+        except Exception as e:
+            self.console.print(f"[red]Unexpected error: {e}[/red]")
+            self.logger.error(f"Command execution error: {e}")
+            return False
+
     def __init__(self):
         self.console = Console()
         self.logger = SyllaboLogger("main")
@@ -63,6 +82,7 @@ class SyllaboMain:
         self.youtube_client = YouTubeClient()
         self.video_analyzer = VideoAnalyzer(self.ai_client)
         self.resource_finder = ResourceFinder(self.ai_client)
+        self.config_manager = ConfigManager()
     
     def print_banner(self):
         """Print enhanced application banner"""
@@ -101,7 +121,8 @@ class SyllaboMain:
             ("9", "videos", "Smart Video Analysis", "Find and analyze educational videos"),
             ("10", "resources", "Resource Finder", "Find books, courses, and learning materials"),
             ("11", "notes", "Generate Study Notes", "Create notes and questions from content"),
-            ("12", "help", "Help & Documentation", "Get help and usage information"),
+            ("12", "config", "Configuration", "Manage API keys and application settings"),
+            ("13", "help", "Help & Documentation", "Get help and usage information"),
             ("0", "exit", "Exit", "Exit the application")
         ]
         
@@ -175,6 +196,8 @@ class SyllaboMain:
                 await self._interactive_resources()
             elif command == 'notes':
                 await self._interactive_notes()
+            elif command == 'config':
+                self._interactive_config()
             else:
                 self.console.print(f"[yellow]Unknown command: {command}[/yellow]")
                 
@@ -1064,6 +1087,63 @@ class SyllaboMain:
         """Handle platforms command from CLI"""
         await self._interactive_platforms()
     
+    async def _handle_config_command(self, args):
+        """Handle config command from CLI"""
+        if not hasattr(args, 'config_action') or not args.config_action:
+            # No subcommand, show interactive config menu
+            self.config_manager.show_config_menu()
+            return
+        
+        if args.config_action == 'show':
+            self.config_manager.show_current_config()
+        
+        elif args.config_action == 'youtube':
+            if hasattr(args, 'key') and args.key:
+                # Set YouTube API key directly
+                if self.config_manager.update_env_key('YOUTUBE_API_KEY', args.key):
+                    self.console.print("[bright_green]✅ YouTube API key updated successfully![/bright_green]")
+                else:
+                    self.console.print("[red]❌ Failed to update YouTube API key[/red]")
+            else:
+                # Interactive YouTube API configuration
+                self.config_manager.configure_youtube_api()
+        
+        elif args.config_action == 'gemini':
+            if hasattr(args, 'key') and args.key:
+                # Set Gemini API key directly
+                if self.config_manager.update_env_key('GEMINI_API_KEY', args.key):
+                    self.console.print("[bright_green]✅ Gemini API key updated successfully![/bright_green]")
+                else:
+                    self.console.print("[red]❌ Failed to update Gemini API key[/red]")
+            else:
+                # Interactive Gemini API configuration
+                self.config_manager.configure_gemini_api()
+        
+        elif args.config_action == 'test':
+            service = getattr(args, 'service', 'all')
+            if service == 'all':
+                self.config_manager.test_api_connections()
+            else:
+                config = self.config_manager.load_config()
+                if service == 'youtube':
+                    youtube_key = config.get('YOUTUBE_API_KEY', '')
+                    if youtube_key and youtube_key != 'your_youtube_api_key_here':
+                        self.config_manager._test_youtube_api(youtube_key)
+                    else:
+                        self.console.print("[yellow]YouTube API key not configured[/yellow]")
+                elif service == 'gemini':
+                    gemini_key = config.get('GEMINI_API_KEY', '')
+                    if gemini_key and gemini_key != 'your_gemini_api_key_here_optional':
+                        self.config_manager._test_gemini_api(gemini_key)
+                    else:
+                        self.console.print("[yellow]Gemini API key not configured[/yellow]")
+        
+        elif args.config_action == 'reset':
+            self.config_manager.reset_configuration()
+        
+        else:
+            self.console.print(f"[yellow]Unknown config action: {args.config_action}[/yellow]")
+    
     def _show_help(self):
         """Show comprehensive help information"""
         help_text = """
@@ -1633,6 +1713,10 @@ For detailed help on any command, use:
             self.console.print(f"\n[bold bright_blue]Study Tips:[/bold bright_blue]")
             for tip in notes_data['study_tips']:
                 self.console.print(f"• {tip}")
+    
+    def _interactive_config(self):
+        """Interactive configuration management"""
+        self.config_manager.show_config_menu()
 
 async def main():
     """Main application entry point"""
@@ -1692,6 +1776,8 @@ async def main():
             await app._handle_bookmarks_command(args)
         elif args.command == 'platforms':
             await app._handle_platforms_command(args)
+        elif args.command == 'config':
+            await app._handle_config_command(args)
         elif args.command == 'interactive':
             # Interactive mode
             while True:

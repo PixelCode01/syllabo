@@ -35,20 +35,21 @@ class GoalsManager:
             # Create data directory if it doesn't exist
             import os
             os.makedirs(os.path.dirname(self.goals_file), exist_ok=True)
-            with open(self.goals_file, 'r') as f:
+            with open(self.goals_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
                 return {
                     goal_id: StudyGoal(**goal_data) 
                     for goal_id, goal_data in data.items()
                 }
-        except FileNotFoundError:
+        except (FileNotFoundError, UnicodeDecodeError, json.JSONDecodeError):
+            # If file doesn't exist or has encoding issues, start fresh
             return {}
     
     def _save_goals(self):
         """Save goals to file"""
         data = {goal_id: asdict(goal) for goal_id, goal in self.goals.items()}
-        with open(self.goals_file, 'w') as f:
-            json.dump(data, f, indent=2)
+        with open(self.goals_file, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
     
     def create_goal(self, title: str, description: str, goal_type: str,
                    target_value: int, unit: str, days_to_complete: int = 30) -> str:

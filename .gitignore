@@ -95,8 +95,19 @@ session_data.json
 clean_main.py
 fix_main.py
 
-# Test files
+# Test files and reports
 test_*.py
+*_test.py
+*test*.py
+fix_*.py
+improve_*.py
+*_report.json
+*_summary.py
+final_*.py
+quick_*.py
+accuracy_*.json
+test_report*.json
+fix_report*.json
 
 # Documentation files (keep only essential docs)
 CODING_STYLE_COMPLIANCE.md

@@ -23,41 +23,41 @@ class QuizGenerator:
         
         # Try AI first, then fallback to template-based generation
         try:
-            prompt = f"""Create {num_questions} quiz questions about {topic} based on this content:
+            prompt = f"""Create {num_questions} quiz questions about {topic}.
 
-{content[:2000]}
-
-Generate questions in this JSON format:
+IMPORTANT: Respond ONLY with valid JSON in this exact format:
 {{
     "questions": [
         {{
-            "question": "What is...",
+            "question": "What is a variable in Python?",
             "type": "multiple_choice",
-            "options": ["A", "B", "C", "D"],
+            "options": ["A storage location", "A function", "A loop", "A comment"],
             "correct_answer": 0,
-            "explanation": "Brief explanation"
+            "explanation": "Variables store data values"
         }}
     ]
 }}
 
-Include different question types: multiple choice, true/false, and short answer.
-Make questions test understanding, not just memorization.
-Ensure all questions are directly related to the provided content."""
+Requirements:
+- Generate exactly {num_questions} questions
+- Use types: multiple_choice, true_false, short_answer
+- For multiple_choice: provide 4 options and correct_answer index (0-3)
+- For true_false: set correct_answer to true or false
+- For short_answer: provide expected answer as string
+- Make questions about {topic} fundamentals
+- NO extra text, ONLY JSON"""
             
             response = await self.ai_client.get_completion(prompt)
             
-            # Try to parse JSON response
+            # Try to parse JSON response with improved error handling
             if response and response.strip():
                 # Clean up the response - sometimes AI adds extra text
                 response = response.strip()
                 
-                # Find JSON content
-                start_idx = response.find('{')
-                end_idx = response.rfind('}') + 1
+                # Multiple strategies to extract JSON
+                json_content = self._extract_json_from_response(response)
                 
-                if start_idx != -1 and end_idx > start_idx:
-                    json_content = response[start_idx:end_idx]
-                    
+                if json_content:
                     try:
                         quiz_data = json.loads(json_content)
                         questions = quiz_data.get("questions", [])
@@ -81,8 +81,15 @@ Ensure all questions are directly related to the provided content."""
                         
                     except json.JSONDecodeError as je:
                         self.logger.error(f"JSON parsing error: {je}")
+                        self.logger.debug(f"Problematic JSON content: {json_content[:200]}...")
                 
-                raise ValueError("Invalid JSON response")
+                # If JSON parsing fails, try to extract questions from text
+                self.logger.warning("JSON parsing failed, attempting text extraction")
+                extracted_quiz = self._extract_quiz_from_text(response, topic, num_questions)
+                if extracted_quiz:
+                    return extracted_quiz
+                
+                raise ValueError("Could not parse AI response")
                 
         except Exception as e:
             self.logger.error(f"AI quiz generation failed: {e}")
@@ -226,9 +233,23 @@ Ensure all questions are directly related to the provided content."""
                     selected_questions.extend(questions)
                     break
         
-        # If still no match, use machine learning as default (most common topic)
+        # If still no match, create generic programming questions
         if not selected_questions:
-            selected_questions = quiz_templates.get('machine learning', quiz_templates.get('python programming', []))
+            selected_questions = [
+                {
+                    "question": f"What is a key concept in {topic}?",
+                    "type": "multiple_choice",
+                    "options": ["Fundamentals", "Advanced topics", "Best practices", "All of the above"],
+                    "correct_answer": 3,
+                    "explanation": f"All aspects are important when learning {topic}."
+                },
+                {
+                    "question": f"Learning {topic} requires practice and understanding.",
+                    "type": "true_false",
+                    "correct_answer": True,
+                    "explanation": f"Practice and understanding are essential for mastering {topic}."
+                }
+            ]
         
         # Select random questions up to the requested number
         if len(selected_questions) > num_questions:
@@ -366,6 +387,88 @@ Ensure all questions are directly related to the provided content."""
             return False
         
         return True
+    
+    def _extract_json_from_response(self, response: str) -> str:
+        """Extract JSON content from AI response using multiple strategies"""
+        # Strategy 1: Find complete JSON object
+        start_idx = response.find('{')
+        if start_idx != -1:
+            brace_count = 0
+            end_idx = start_idx
+            
+            for i, char in enumerate(response[start_idx:], start_idx):
+                if char == '{':
+                    brace_count += 1
+                elif char == '}':
+                    brace_count -= 1
+                    if brace_count == 0:
+                        end_idx = i + 1
+                        break
+            
+            if brace_count == 0:
+                json_content = response[start_idx:end_idx]
+                # Basic validation
+                if json_content.count('{') == json_content.count('}'):
+                    return json_content
+        
+        # Strategy 2: Look for JSON between code blocks
+        import re
+        json_blocks = re.findall(r'```(?:json)?\s*(\{.*?\})\s*```', response, re.DOTALL)
+        if json_blocks:
+            return json_blocks[0]
+        
+        # Strategy 3: Clean up common AI response issues
+        cleaned = response.replace('```json', '').replace('```', '').strip()
+        if cleaned.startswith('{') and cleaned.endswith('}'):
+            return cleaned
+        
+        return None
+    
+    def _extract_quiz_from_text(self, response: str, topic: str, num_questions: int) -> Dict:
+        """Extract quiz questions from plain text response when JSON parsing fails"""
+        import re
+        
+        questions = []
+        
+        # Look for question patterns in the text
+        question_patterns = [
+            r'(?:Question \d+:|Q\d+:|\d+\.)\s*(.+?)(?=Question \d+:|Q\d+:|\d+\.|$)',
+            r'(.+\?)',  # Lines ending with question marks
+        ]
+        
+        for pattern in question_patterns:
+            matches = re.findall(pattern, response, re.DOTALL | re.IGNORECASE)
+            for match in matches:
+                question_text = match.strip()
+                if len(question_text) > 10 and '?' in question_text:
+                    # Create a simple multiple choice question
+                    question = {
+                        "question": question_text,
+                        "type": "multiple_choice",
+                        "options": ["Option A", "Option B", "Option C", "Option D"],
+                        "correct_answer": 0,
+                        "explanation": "This question was extracted from AI response text."
+                    }
+                    questions.append(question)
+                    
+                    if len(questions) >= num_questions:
+                        break
+            
+            if questions:
+                break
+        
+        # If no questions found, create template questions
+        if not questions:
+            self.logger.warning("No questions extracted from text, using template")
+            return self._generate_template_quiz(topic, num_questions, response)
+        
+        return {
+            "title": f"Quiz: {topic}",
+            "topic": topic,
+            "questions": questions[:num_questions],
+            "created_at": datetime.now().isoformat(),
+            "difficulty": self._assess_difficulty(response)
+        }
     
     def _check_short_answer(self, user_answer: str, correct_answer: str) -> bool:
         """Check if short answer is approximately correct"""

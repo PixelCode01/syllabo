@@ -14,7 +14,10 @@ class NotificationSystem:
         """Check if notifications are supported on this system"""
         try:
             if self.system == "windows":
-                import win10toast
+                import warnings
+                with warnings.catch_warnings():
+                    warnings.filterwarnings("ignore", category=UserWarning, module="win10toast")
+                    import win10toast
                 return True
             elif self.system == "darwin":  # macOS
                 return os.system("which osascript > /dev/null 2>&1") == 0
@@ -46,7 +49,11 @@ class NotificationSystem:
     def _send_windows_notification(self, title: str, message: str, duration: int) -> bool:
         """Send notification on Windows"""
         try:
-            from win10toast import ToastNotifier
+            # Suppress the pkg_resources deprecation warning from win10toast
+            import warnings
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=UserWarning, module="win10toast")
+                from win10toast import ToastNotifier
             toaster = ToastNotifier()
             toaster.show_toast(
                 title,
