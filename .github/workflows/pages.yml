@@ -2,7 +2,7 @@ name: Deploy GitHub Pages
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main ]
   workflow_dispatch:
 
 permissions:
@@ -23,15 +23,540 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      
+
       - name: Setup Pages
-        uses: actions/configure-pages@v4
-      
+        uses: actions/configure-pages@v3
+
+      - name: Create GitHub Pages site
+        run: |
+          mkdir -p _site
+          
+          # Get latest release info
+          LATEST_RELEASE=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r '.tag_name // "v1.0.0"')
+          
+          # Create index.html
+          cat > _site/index.html << EOF
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Syllabo - AI-Powered Learning Assistant</title>
+              <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
+              <style>
+                  * {
+                      margin: 0;
+                      padding: 0;
+                      box-sizing: border-box;
+                  }
+                  
+                  body {
+                      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+                      line-height: 1.6;
+                      color: #333;
+                      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                      min-height: 100vh;
+                  }
+                  
+                  .container {
+                      max-width: 1200px;
+                      margin: 0 auto;
+                      padding: 2rem;
+                  }
+                  
+                  .hero {
+                      text-align: center;
+                      color: white;
+                      margin-bottom: 4rem;
+                      padding: 2rem 0;
+                  }
+                  
+                  .hero h1 {
+                      font-size: 4rem;
+                      margin-bottom: 1rem;
+                      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+                      font-weight: 700;
+                  }
+                  
+                  .hero .subtitle {
+                      font-size: 1.5rem;
+                      margin-bottom: 1rem;
+                      opacity: 0.95;
+                      font-weight: 500;
+                  }
+                  
+                  .hero .description {
+                      font-size: 1.1rem;
+                      opacity: 0.85;
+                      max-width: 600px;
+                      margin: 0 auto;
+                  }
+                  
+                  .version-badge {
+                      display: inline-block;
+                      background: rgba(255,255,255,0.2);
+                      padding: 0.5rem 1rem;
+                      border-radius: 20px;
+                      margin-top: 1rem;
+                      font-weight: 600;
+                      backdrop-filter: blur(10px);
+                  }
+                  
+                  .download-section {
+                      background: white;
+                      border-radius: 20px;
+                      padding: 3rem;
+                      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+                      margin-bottom: 3rem;
+                      backdrop-filter: blur(10px);
+                  }
+                  
+                  .section-title {
+                      text-align: center;
+                      font-size: 2.5rem;
+                      margin-bottom: 1rem;
+                      color: #333;
+                      font-weight: 700;
+                  }
+                  
+                  .section-subtitle {
+                      text-align: center;
+                      color: #666;
+                      margin-bottom: 3rem;
+                      font-size: 1.1rem;
+                  }
+                  
+                  .download-grid {
+                      display: grid;
+                      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+                      gap: 2rem;
+                      margin-top: 2rem;
+                  }
+                  
+                  .download-card {
+                      border: 2px solid #f0f0f0;
+                      border-radius: 15px;
+                      padding: 2.5rem;
+                      text-align: center;
+                      transition: all 0.3s ease;
+                      background: #fafafa;
+                  }
+                  
+                  .download-card:hover {
+                      border-color: #667eea;
+                      transform: translateY(-8px);
+                      box-shadow: 0 15px 35px rgba(102, 126, 234, 0.15);
+                      background: white;
+                  }
+                  
+                  .download-card h3 {
+                      font-size: 1.8rem;
+                      margin-bottom: 1rem;
+                      color: #333;
+                      font-weight: 600;
+                  }
+                  
+                  .download-card .os-icon {
+                      font-size: 4rem;
+                      margin-bottom: 1.5rem;
+                      display: block;
+                  }
+                  
+                  .download-card .os-details {
+                      color: #666;
+                      margin-bottom: 2rem;
+                      font-size: 1rem;
+                  }
+                  
+                  .download-btn {
+                      display: inline-block;
+                      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                      color: white;
+                      padding: 15px 30px;
+                      text-decoration: none;
+                      border-radius: 30px;
+                      font-weight: 600;
+                      font-size: 1.1rem;
+                      transition: all 0.3s ease;
+                      margin-top: 1rem;
+                      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+                  }
+                  
+                  .download-btn:hover {
+                      transform: translateY(-3px);
+                      box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+                  }
+                  
+                  .quick-start {
+                      background: white;
+                      border-radius: 20px;
+                      padding: 3rem;
+                      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+                      margin-bottom: 3rem;
+                  }
+                  
+                  .quick-start-grid {
+                      display: grid;
+                      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                      gap: 2rem;
+                      margin-top: 2rem;
+                  }
+                  
+                  .quick-start-card {
+                      background: #f8f9fa;
+                      border-radius: 15px;
+                      padding: 2rem;
+                      border-left: 5px solid #667eea;
+                  }
+                  
+                  .quick-start-card h4 {
+                      font-size: 1.3rem;
+                      margin-bottom: 1rem;
+                      color: #333;
+                      font-weight: 600;
+                  }
+                  
+                  .quick-start-card ol {
+                      margin-left: 1.5rem;
+                      color: #555;
+                  }
+                  
+                  .quick-start-card li {
+                      margin-bottom: 0.5rem;
+                  }
+                  
+                  .features {
+                      background: white;
+                      border-radius: 20px;
+                      padding: 3rem;
+                      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+                      margin-bottom: 3rem;
+                  }
+                  
+                  .features-grid {
+                      display: grid;
+                      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                      gap: 2rem;
+                      margin-top: 2rem;
+                  }
+                  
+                  .feature-card {
+                      text-align: center;
+                      padding: 2rem;
+                      background: #f8f9fa;
+                      border-radius: 15px;
+                      transition: all 0.3s ease;
+                  }
+                  
+                  .feature-card:hover {
+                      transform: translateY(-5px);
+                      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+                      background: white;
+                  }
+                  
+                  .feature-card .emoji {
+                      font-size: 3rem;
+                      margin-bottom: 1.5rem;
+                      display: block;
+                  }
+                  
+                  .feature-card h4 {
+                      font-size: 1.3rem;
+                      margin-bottom: 1rem;
+                      color: #333;
+                      font-weight: 600;
+                  }
+                  
+                  .feature-card p {
+                      color: #666;
+                      line-height: 1.5;
+                  }
+                  
+                  .links-section {
+                      background: rgba(255,255,255,0.1);
+                      border-radius: 20px;
+                      padding: 3rem;
+                      text-align: center;
+                      margin-bottom: 3rem;
+                      backdrop-filter: blur(10px);
+                  }
+                  
+                  .links-grid {
+                      display: grid;
+                      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                      gap: 1.5rem;
+                      margin-top: 2rem;
+                  }
+                  
+                  .link-btn {
+                      display: inline-block;
+                      background: rgba(255,255,255,0.2);
+                      color: white;
+                      padding: 1rem 2rem;
+                      text-decoration: none;
+                      border-radius: 15px;
+                      font-weight: 600;
+                      transition: all 0.3s ease;
+                      backdrop-filter: blur(10px);
+                      border: 1px solid rgba(255,255,255,0.3);
+                  }
+                  
+                  .link-btn:hover {
+                      background: rgba(255,255,255,0.3);
+                      transform: translateY(-3px);
+                      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+                  }
+                  
+                  .footer {
+                      text-align: center;
+                      color: white;
+                      opacity: 0.8;
+                      margin-top: 3rem;
+                      padding: 2rem 0;
+                  }
+                  
+                  .footer a {
+                      color: white;
+                      text-decoration: none;
+                      font-weight: 600;
+                      margin: 0 1rem;
+                  }
+                  
+                  .footer a:hover {
+                      text-decoration: underline;
+                  }
+                  
+                  @media (max-width: 768px) {
+                      .hero h1 {
+                          font-size: 3rem;
+                      }
+                      
+                      .hero .subtitle {
+                          font-size: 1.3rem;
+                      }
+                      
+                      .container {
+                          padding: 1rem;
+                      }
+                      
+                      .download-section, .features, .quick-start {
+                          padding: 2rem;
+                      }
+                      
+                      .section-title {
+                          font-size: 2rem;
+                      }
+                  }
+              </style>
+          </head>
+          <body>
+              <div class="container">
+                  <div class="hero">
+                      <h1>🎓 Syllabo</h1>
+                      <div class="subtitle">AI-Powered Learning Assistant</div>
+                      <div class="description">Transform your study materials into interactive learning experiences with AI-powered analysis, quizzes, and progress tracking</div>
+                      <div class="version-badge">Latest: \$LATEST_RELEASE</div>
+                  </div>
+                  
+                  <div class="download-section">
+                      <h2 class="section-title">Download</h2>
+                      <p class="section-subtitle">Choose your platform and start learning smarter today!</p>
+                      
+                      <div class="download-grid">
+                          <div class="download-card">
+                              <div class="os-icon">🪟</div>
+                              <h3>Windows</h3>
+                              <div class="os-details">Windows 10/11 (64-bit)<br>Includes installer script</div>
+                              <a href="https://github.com/${{ github.repository }}/releases/latest/download/syllabo-\$LATEST_RELEASE-Windows.zip" class="download-btn" onclick="gtag('event', 'download', {'platform': 'Windows'});">Download for Windows</a>
+                              <div style="margin-top: 1rem; font-size: 0.9rem; color: #888;">
+                                  <span>✅ No Python Required</span><br>
+                                  <span>📦 ~30MB Download</span>
+                              </div>
+                          </div>
+                          
+                          <div class="download-card">
+                              <div class="os-icon">🐧</div>
+                              <h3>Linux</h3>
+                              <div class="os-details">Ubuntu, Debian, CentOS, etc.<br>Universal standalone binary</div>
+                              <a href="https://github.com/${{ github.repository }}/releases/latest/download/syllabo-\$LATEST_RELEASE-Linux.tar.gz" class="download-btn" onclick="gtag('event', 'download', {'platform': 'Linux'});">Download for Linux</a>
+                              <div style="margin-top: 1rem; font-size: 0.9rem; color: #888;">
+                                  <span>✅ No Dependencies</span><br>
+                                  <span>📦 ~35MB Download</span>
+                              </div>
+                          </div>
+                          
+                          <div class="download-card">
+                              <div class="os-icon">🍎</div>
+                              <h3>macOS</h3>
+                              <div class="os-details">macOS 10.15+ (Intel & Apple Silicon)<br>App bundle included</div>
+                              <a href="https://github.com/${{ github.repository }}/releases/latest/download/syllabo-\$LATEST_RELEASE-macOS.tar.gz" class="download-btn" onclick="gtag('event', 'download', {'platform': 'macOS'});">Download for macOS</a>
+                              <div style="margin-top: 1rem; font-size: 0.9rem; color: #888;">
+                                  <span>✅ Universal Binary</span><br>
+                                  <span>📦 ~35MB Download</span>
+                              </div>
+                          </div>
+                      </div>
+                      
+                      <div style="text-align: center; margin-top: 3rem; padding: 2rem; background: #f8f9fa; border-radius: 15px;">
+                          <h3 style="color: #333; margin-bottom: 1rem;">🚀 Truly Standalone Executables</h3>
+                          <p style="color: #666; margin-bottom: 1rem;">No Python installation required • No dependencies to manage • Just download and run!</p>
+                          <div style="display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap; margin-top: 1rem;">
+                              <span style="color: #28a745; font-weight: 600;">✅ Works Offline</span>
+                              <span style="color: #28a745; font-weight: 600;">✅ No Setup Required</span>
+                              <span style="color: #28a745; font-weight: 600;">✅ Portable</span>
+                              <span style="color: #28a745; font-weight: 600;">✅ Secure</span>
+                          </div>
+                      </div>
+                  </div>
+                  
+                  <div class="quick-start">
+                      <h2 class="section-title">Quick Start</h2>
+                      <p class="section-subtitle">Get up and running in minutes</p>
+                      
+                      <div class="quick-start-grid">
+                          <div class="quick-start-card">
+                              <h4>🪟 Windows Installation</h4>
+                              <ol>
+                                  <li>Download and extract the ZIP file</li>
+                                  <li>Right-click <code>install-windows.bat</code></li>
+                                  <li>Select "Run as administrator"</li>
+                                  <li>Open Command Prompt: <code>syllabo interactive</code></li>
+                              </ol>
+                          </div>
+                          
+                          <div class="quick-start-card">
+                              <h4>🐧🍎 Linux/macOS Installation</h4>
+                              <ol>
+                                  <li>Extract: <code>tar -xzf syllabo-*.tar.gz</code></li>
+                                  <li>Install: <code>chmod +x install-*.sh && ./install-*.sh</code></li>
+                                  <li>Reload terminal: <code>source ~/.bashrc</code></li>
+                                  <li>Start using: <code>syllabo interactive</code></li>
+                              </ol>
+                          </div>
+                          
+                          <div class="quick-start-card">
+                              <h4>🎯 Portable Mode (No Install)</h4>
+                              <ol>
+                                  <li>Extract the downloaded archive</li>
+                                  <li>Run executable directly from folder</li>
+                                  <li>Windows: Double-click <code>syllabo.exe</code></li>
+                                  <li>Linux/macOS: Run <code>./syllabo interactive</code></li>
+                              </ol>
+                          </div>
+                          
+                          <div class="quick-start-card">
+                              <h4>📚 First Steps</h4>
+                              <ol>
+                                  <li>Launch interactive mode</li>
+                                  <li>Upload your syllabus or study material</li>
+                                  <li>Let AI extract topics and create quizzes</li>
+                                  <li>Start your personalized learning journey</li>
+                              </ol>
+                          </div>
+                          
+                          <div class="quick-start-card">
+                              <h4>⚡ Power Features</h4>
+                              <ol>
+                                  <li>Set up API keys for enhanced features</li>
+                                  <li>Configure study goals and schedules</li>
+                                  <li>Use spaced repetition for better retention</li>
+                                  <li>Track progress with detailed analytics</li>
+                              </ol>
+                          </div>
+                      </div>
+                  </div>
+                  
+                  <div class="features">
+                      <h2 class="section-title">Features</h2>
+                      <p class="section-subtitle">Everything you need for effective learning</p>
+                      
+                      <div class="features-grid">
+                          <div class="feature-card">
+                              <div class="emoji">📚</div>
+                              <h4>Syllabus Analysis</h4>
+                              <p>Extract topics and create structured learning paths from any syllabus or study material</p>
+                          </div>
+                          
+                          <div class="feature-card">
+                              <div class="emoji">🧠</div>
+                              <h4>AI Quiz Generation</h4>
+                              <p>Generate personalized quizzes from your study materials using advanced AI</p>
+                          </div>
+                          
+                          <div class="feature-card">
+                              <div class="emoji">📊</div>
+                              <h4>Progress Tracking</h4>
+                              <p>Monitor your learning progress with detailed analytics and performance insights</p>
+                          </div>
+                          
+                          <div class="feature-card">
+                              <div class="emoji">🎯</div>
+                              <h4>Study Goals</h4>
+                              <p>Set and track learning goals with milestone management and achievement tracking</p>
+                          </div>
+                          
+                          <div class="feature-card">
+                              <div class="emoji">🔄</div>
+                              <h4>Spaced Repetition</h4>
+                              <p>Optimize retention with scientifically-backed spaced repetition algorithms</p>
+                          </div>
+                          
+                          <div class="feature-card">
+                              <div class="emoji">🎥</div>
+                              <h4>Video Analysis</h4>
+                              <p>Analyze educational videos, create smart bookmarks, and extract key concepts</p>
+                          </div>
+                          
+                          <div class="feature-card">
+                              <div class="emoji">🔍</div>
+                              <h4>Resource Search</h4>
+                              <p>Find relevant learning resources across YouTube, Coursera, Udemy, and more</p>
+                          </div>
+                          
+                          <div class="feature-card">
+                              <div class="emoji">⏱️</div>
+                              <h4>Study Sessions</h4>
+                              <p>Pomodoro timer and focus sessions for productive and organized studying</p>
+                          </div>
+                      </div>
+                  </div>
+                  
+                  <div class="links-section">
+                      <h2 class="section-title" style="color: white;">Resources</h2>
+                      <p class="section-subtitle" style="color: rgba(255,255,255,0.8);">Documentation, support, and community</p>
+                      
+                      <div class="links-grid">
+                          <a href="https://github.com/${{ github.repository }}" class="link-btn">📖 Documentation</a>
+                          <a href="https://github.com/${{ github.repository }}/releases" class="link-btn">📦 All Releases</a>
+                          <a href="https://github.com/${{ github.repository }}/issues" class="link-btn">🐛 Report Issues</a>
+                          <a href="https://github.com/${{ github.repository }}/discussions" class="link-btn">💬 Discussions</a>
+                          <a href="https://github.com/${{ github.repository }}/blob/main/INSTALLATION.md" class="link-btn">🔧 Installation Guide</a>
+                          <a href="https://github.com/${{ github.repository }}/blob/main/docs/API_SETUP.md" class="link-btn">🔑 API Setup</a>
+                      </div>
+                  </div>
+                  
+                  <div class="footer">
+                      <p style="font-size: 1.2rem; margin-bottom: 1rem;">Built with ❤️ for learners everywhere</p>
+                      <div>
+                          <a href="https://github.com/${{ github.repository }}">GitHub</a>
+                          <a href="https://github.com/${{ github.repository }}/issues">Issues</a>
+                          <a href="https://github.com/${{ github.repository }}/blob/main/LICENSE">License</a>
+                          <a href="https://github.com/${{ github.repository }}/blob/main/CONTRIBUTING.md">Contributing</a>
+                      </div>
+                  </div>
+              </div>
+          </body>
+          </html>
+          EOF
+          
+          # Replace placeholder with actual latest release
+          sed -i "s/\\\$LATEST_RELEASE/\$LATEST_RELEASE/g" _site/index.html
+
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v2
         with:
-          path: './docs'
-      
+          path: '_site'
+
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v2

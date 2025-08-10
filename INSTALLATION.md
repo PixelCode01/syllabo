@@ -1,54 +1,38 @@
 # Syllabo Installation Guide
 
-This guide covers all the ways to install and run Syllabo on your system.
+This comprehensive guide covers all the ways to install and run Syllabo on Windows, Linux, and macOS.
 
-## Quick Start Options
+## 🚀 Quick Start Options
 
-### 🐳 Docker (Recommended)
+### 📦 Standalone Executable (Recommended)
 
-The easiest way to run Syllabo with consistent behavior across all systems.
+**✅ No Python Required • ✅ No Dependencies • ✅ Just Download & Run**
+
+The easiest way to get started - completely standalone executables that work out of the box:
+
+1. **Visit the [Releases Page](https://github.com/PixelCode01/syllabo/releases/latest)**
+2. **Download for your system:**
+   - `syllabo-vX.X.X-Windows.zip` for Windows (10/11, 64-bit)
+   - `syllabo-vX.X.X-Linux.tar.gz` for Linux (Ubuntu, Debian, CentOS, etc.)
+   - `syllabo-vX.X.X-macOS.tar.gz` for macOS (10.15+, Intel & Apple Silicon)
+3. **Extract and run** - No installation needed!
+4. **Start learning:** `syllabo interactive`
+
+> **🎯 Truly Standalone**: These executables include everything needed to run Syllabo. No Python, no dependencies, no setup required!
+
+### 🐳 Docker (Cross-platform)
+
+Consistent behavior across all systems with Docker:
 
 ```bash
 # Clone the repository
 git clone https://github.com/PixelCode01/syllabo.git
 cd syllabo
 
-# Run setup script
-./docker-setup.sh  # Linux/macOS
-# or
-docker-setup.bat   # Windows
-
-# Start using Syllabo
-make run
+# Build and run
+make docker-run
 # or
 docker-compose run --rm syllabo
-```
-
-### 📦 Standalone Executable
-
-Download pre-built executables for your operating system:
-
-1. Go to [Releases](https://github.com/PixelCode01/syllabo/releases/latest)
-2. Download the appropriate file for your system:
-   - `syllabo-Windows.exe` for Windows
-   - `syllabo-Linux` for Linux
-   - `syllabo-macOS` for macOS
-3. Run the installer script included in the package
-4. Start using: `syllabo interactive`
-
-### Docker Container Registry
-
-Pull the official Docker image (available after GitHub release):
-
-```bash
-# Pull the latest image
-docker pull ghcr.io/pixelcode01/syllabo:latest
-
-# Run interactively
-docker run -it --rm ghcr.io/pixelcode01/syllabo:latest
-
-# Run with persistent data
-docker run -it --rm -v $(pwd)/data:/app/data ghcr.io/pixelcode01/syllabo:latest
 ```
 
 ### 🐍 Python Installation
@@ -67,7 +51,121 @@ pip install -r requirements.txt
 python main.py interactive
 ```
 
-## Detailed Installation Instructions
+## 📋 Platform-Specific Installation
+
+### 🪟 Windows Installation
+
+#### Method 1: Automatic Installer (Recommended)
+1. Download `syllabo-vX.X.X-Windows.zip`
+2. Extract the ZIP file
+3. **Right-click** on `install-windows.bat`
+4. Select **"Run as administrator"**
+5. Follow the installation prompts
+6. Open Command Prompt and run: `syllabo interactive`
+
+#### Method 2: Manual Installation
+1. Extract the ZIP file to a folder (e.g., `C:\Syllabo`)
+2. Add the folder to your system PATH:
+   - Open System Properties → Advanced → Environment Variables
+   - Edit the PATH variable and add your folder
+3. Copy `.env.example` to `.env` if you want to configure API keys
+4. Run: `syllabo interactive`
+
+#### Uninstallation
+- Run `uninstall-windows.bat` as administrator, or
+- Remove the installation folder and PATH entry manually
+
+### 🐧 Linux Installation
+
+#### Method 1: Automatic Installer (Recommended)
+```bash
+# Extract the package
+tar -xzf syllabo-vX.X.X-Linux.tar.gz
+cd syllabo-vX.X.X-Linux
+
+# Run installer
+chmod +x install-linux.sh
+./install-linux.sh
+
+# Restart terminal or reload PATH
+source ~/.bashrc
+
+# Start using
+syllabo interactive
+```
+
+#### Method 2: Manual Installation
+```bash
+# Extract and copy
+tar -xzf syllabo-vX.X.X-Linux.tar.gz
+sudo cp syllabo-vX.X.X-Linux/syllabo /usr/local/bin/
+chmod +x /usr/local/bin/syllabo
+
+# Or for user-only installation
+mkdir -p ~/.local/bin
+cp syllabo-vX.X.X-Linux/syllabo ~/.local/bin/
+chmod +x ~/.local/bin/syllabo
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+```
+
+#### Uninstallation
+```bash
+# If you used the installer
+./uninstall-unix.sh
+
+# Or manually
+sudo rm /usr/local/bin/syllabo
+# or
+rm ~/.local/bin/syllabo
+```
+
+### 🍎 macOS Installation
+
+#### Method 1: Automatic Installer (Recommended)
+```bash
+# Extract the package
+tar -xzf syllabo-vX.X.X-macOS.tar.gz
+cd syllabo-vX.X.X-macOS
+
+# Run installer
+chmod +x install-macos.sh
+./install-macos.sh
+
+# Restart terminal or reload PATH
+source ~/.zshrc
+
+# Start using
+syllabo interactive
+```
+
+#### Method 2: Manual Installation
+```bash
+# Extract and copy
+tar -xzf syllabo-vX.X.X-macOS.tar.gz
+
+# System-wide installation (requires admin)
+sudo cp syllabo-vX.X.X-macOS/syllabo /usr/local/bin/
+chmod +x /usr/local/bin/syllabo
+
+# Or user-only installation
+mkdir -p ~/.local/bin
+cp syllabo-vX.X.X-macOS/syllabo ~/.local/bin/
+chmod +x ~/.local/bin/syllabo
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+```
+
+#### Uninstallation
+```bash
+# If you used the installer
+./uninstall-unix.sh
+
+# Or manually
+sudo rm /usr/local/bin/syllabo
+# or
+rm ~/.local/bin/syllabo
+```
+
+## 🐳 Detailed Docker Instructions
 
 ### Docker Installation
 
