@@ -2,6 +2,7 @@
 """
 Syllabo - AI-Powered Learning Assistant
 Main entry point for all features
+
 """
 
 import os
@@ -277,17 +278,59 @@ class SyllaboMain:
                 self.console.print(f"[bright_red]Error: {e}[/bright_red]")
         
         else:  # text input
-            content = Prompt.ask("[bright_cyan]Enter syllabus text content[/bright_cyan]")
+            self.console.print("[bright_cyan]Enter your syllabus content (press Enter twice when done):[/bright_cyan]")
+            
+            lines = []
+            empty_lines = 0
+            
+            while empty_lines < 2:
+                try:
+                    line = input()
+                    if line.strip() == "":
+                        empty_lines += 1
+                    else:
+                        empty_lines = 0
+                    lines.append(line)
+                except KeyboardInterrupt:
+                    self.console.print("\n[yellow]Input cancelled[/yellow]")
+                    return
+            
+            content = "\n".join(lines).strip()
+            
             if not content:
                 self.console.print("[bright_red]No content provided[/bright_red]")
                 return
             
             try:
+                # Get syllabus title
+                title = Prompt.ask("[bright_cyan]Syllabus title/subject[/bright_cyan]", default="Custom Syllabus")
+                
                 with self.console.status("[bright_cyan]Extracting topics with AI..."):
                     topics = await self.syllabus_parser.extract_topics(content, self.ai_client)
                 
                 if topics:
                     self.console.print(f"[bright_green]Found {len(topics)} topics[/bright_green]")
+                    
+                    # Show topics
+                    topics_table = Table(title="Extracted Topics", border_style="bright_green")
+                    topics_table.add_column("Topic", style="bright_cyan")
+                    topics_table.add_column("Description", style="bright_white")
+                    
+                    for topic in topics[:5]:  # Show first 5
+                        desc = topic.get('description', 'No description')
+                        if len(desc) > 50:
+                            desc = desc[:50] + "..."
+                        topics_table.add_row(topic['name'], desc)
+                    
+                    if len(topics) > 5:
+                        topics_table.add_row(f"... and {len(topics)-5} more", "[dim]Topics extracted[/dim]")
+                    
+                    self.console.print(topics_table)
+                    
+                    # Save to database
+                    syllabus_id = self.db.save_syllabus(title, content)
+                    self.db.save_topics(syllabus_id, topics)
+                    self.console.print("[bright_green]Saved to database[/bright_green]")
                     
                     # Enhanced analysis workflow for text input
                     await self._comprehensive_analysis_workflow(topics)
@@ -1215,6 +1258,16 @@ For detailed help on any command, use:
         # Get user preferences for the analysis
         preferences = await self._get_analysis_preferences()
         
+        # Initialize analysis results collection
+        analysis_results = {
+            'topics': [],
+            'all_videos': [],
+            'all_resources': [],
+            'coverage_analysis': {},
+            'notes_generated': 0,
+            'questions_generated': 0
+        }
+        
         # Process each topic
         topic_names = [topic.get('name', '') for topic in topics[:5]]  # Limit to first 5 topics
         
@@ -1225,25 +1278,41 @@ For detailed help on any command, use:
             self.console.print(f"[bold bright_blue]Topic {i}/{len(topic_names)}: {topic_name}[/bold bright_blue]")
             self.console.print(f"{'-'*60}")
             
+            topic_result = {'name': topic_name, 'videos': [], 'resources': [], 'coverage': {}}
+            
             # 1. Find and analyze videos if requested
             if preferences.get('include_videos', True):
-                await self._analyze_topic_videos(topic_name, preferences)
+                video_analysis = await self._analyze_topic_videos(topic_name, preferences)
+                if video_analysis:
+                    topic_result['videos'] = video_analysis.get('all_content', [])
+                    topic_result['coverage'] = video_analysis.get('topic_coverage_details', {})
+                    analysis_results['all_videos'].extend(topic_result['videos'])
+                    
+                    # Count notes and questions generated
+                    if video_analysis.get('notes_generated'):
+                        analysis_results['notes_generated'] += video_analysis.get('notes_count', 0)
+                        analysis_results['questions_generated'] += video_analysis.get('questions_count', 0)
             
             # 2. Find learning resources if requested
             if preferences.get('include_resources', True):
-                await self._find_topic_resources(topic_name, preferences)
+                resources = await self._find_topic_resources(topic_name, preferences)
+                if resources:
+                    topic_result['resources'] = resources
+                    analysis_results['all_resources'].extend(resources.get('all_resources', []))
             
             # 3. Add to spaced repetition if requested
             if preferences.get('add_to_spaced_repetition', True):
                 self._add_topic_to_spaced_repetition(topic_name, topics[i-1])
+            
+            analysis_results['topics'].append(topic_result)
             
             # Small delay between topics for better UX
             if i < len(topic_names):
                 self.console.print("[dim]Moving to next topic...[/dim]")
                 await asyncio.sleep(1)
         
-        # Final summary and recommendations
-        await self._display_analysis_summary(topic_names, preferences)
+        # Final comprehensive summary with all details
+        await self._display_comprehensive_summary(analysis_results, preferences)
     
     async def _get_analysis_preferences(self) -> Dict:
         """Get user preferences for comprehensive analysis"""
@@ -1325,7 +1394,7 @@ For detailed help on any command, use:
                 
                 if not videos and not playlists:
                     self.console.print(f"[yellow]No videos found for {topic_name}[/yellow]")
-                    return
+                    return None
                 
                 # Analyze content
                 analysis = await self.video_analyzer.analyze_videos_and_playlists(videos, playlists, topic_name)
@@ -1333,12 +1402,39 @@ For detailed help on any command, use:
                 # Display concise results
                 self._display_topic_video_summary(analysis, topic_name)
                 
+                # Prepare detailed results for summary
+                all_content = []
+                
+                # Add primary resource
+                if analysis.get('primary_resource'):
+                    primary = analysis['primary_resource']
+                    primary['is_primary'] = True
+                    all_content.append(primary)
+                
+                # Add supplementary content
+                all_content.extend(analysis.get('supplementary_videos', []))
+                all_content.extend(analysis.get('supplementary_playlists', []))
+                
                 # Generate notes if requested
+                notes_count = 0
+                questions_count = 0
                 if preferences.get('generate_notes', False) and analysis.get('primary_resource'):
-                    await self._generate_topic_notes(analysis['primary_resource'], topic_name)
+                    notes_result = await self._generate_topic_notes(analysis['primary_resource'], topic_name)
+                    if notes_result:
+                        notes_count = notes_result.get('notes_count', 0)
+                        questions_count = notes_result.get('questions_count', 0)
+                
+                return {
+                    'all_content': all_content,
+                    'topic_coverage_details': analysis.get('topic_coverage_details', {}),
+                    'notes_generated': notes_count > 0,
+                    'notes_count': notes_count,
+                    'questions_count': questions_count
+                }
                 
         except Exception as e:
             self.console.print(f"[red]Error analyzing videos for {topic_name}: {e}[/red]")
+            return None
     
     def _display_topic_video_summary(self, analysis: Dict, topic_name: str):
         """Display concise video analysis summary"""
@@ -1383,9 +1479,17 @@ For detailed help on any command, use:
             concepts_count = len(notes_data.get('key_concepts', []))
             
             self.console.print(f"[bright_green]✓ Generated:[/bright_green] {notes_count} notes, {questions_count} questions, {concepts_count} key concepts")
+            
+            return {
+                'notes_count': notes_count,
+                'questions_count': questions_count,
+                'concepts_count': concepts_count,
+                'notes_data': notes_data
+            }
                 
         except Exception as e:
             self.console.print(f"[red]Error generating notes: {e}[/red]")
+            return None
     
     async def _find_topic_resources(self, topic_name: str, preferences: Dict):
         """Find learning resources for a specific topic"""
@@ -1404,7 +1508,22 @@ For detailed help on any command, use:
                 self.console.print(f"[bright_green]✓ Found:[/bright_green] {books_count} books, {courses_count} courses, {other_count} other resources")
                 
                 # Show top resource
-                all_resources = topic_resources.get('books', []) + topic_resources.get('courses', [])
+                all_resources = topic_resources.get('books', []) + topic_resources.get('courses', []) + topic_resources.get('resources', [])
+                
+                if all_resources:
+                    top_resource = all_resources[0]
+                    self.console.print(f"  [bright_white]Top recommendation:[/bright_white] {top_resource.get('title', 'Unknown')}")
+                
+                # Prepare detailed results for summary
+                topic_resources['all_resources'] = all_resources
+                return topic_resources
+            else:
+                self.console.print(f"[yellow]No resources found for {topic_name}[/yellow]")
+                return None
+                
+        except Exception as e:
+            self.console.print(f"[red]Error finding resources for {topic_name}: {e}[/red]")
+            return None
                 if all_resources:
                     top_resource = all_resources[0]
                     resource_type = "Book" if 'author' in top_resource else "Course"
@@ -1430,34 +1549,159 @@ For detailed help on any command, use:
         except Exception as e:
             self.console.print(f"[red]Error adding to spaced repetition: {e}[/red]")
     
-    async def _display_analysis_summary(self, topic_names: List[str], preferences: Dict):
-        """Display final analysis summary and next steps"""
-        self.console.print(f"\n{'='*60}")
-        self.console.print("[bold bright_green]COMPREHENSIVE ANALYSIS COMPLETE[/bold bright_green]")
-        self.console.print(f"{'='*60}")
+    async def _display_comprehensive_summary(self, analysis_results: Dict, preferences: Dict):
+        """Display comprehensive analysis summary with all videos, resources, and coverage details"""
+        self.console.print(f"\n{'='*80}")
+        self.console.print("[bold bright_green]📋 COMPREHENSIVE LEARNING ANALYSIS COMPLETE[/bold bright_green]")
+        self.console.print(f"{'='*80}")
         
-        self.console.print(f"\n[bright_cyan]Processed {len(topic_names)} topics:[/bright_cyan]")
-        for topic in topic_names:
-            self.console.print(f"• {topic}")
+        # Overview statistics
+        total_videos = len(analysis_results['all_videos'])
+        total_resources = len(analysis_results['all_resources'])
+        total_notes = analysis_results['notes_generated']
+        total_questions = analysis_results['questions_generated']
         
-        # Show what was included
-        included_features = []
-        if preferences.get('include_videos'):
-            included_features.append("Video analysis and recommendations")
-        if preferences.get('generate_notes'):
-            included_features.append("Study notes and questions generation")
-        if preferences.get('include_resources'):
-            included_features.append("Books and courses discovery")
-        if preferences.get('add_to_spaced_repetition'):
-            included_features.append("Spaced repetition scheduling")
+        stats_table = Table(title="Analysis Overview", border_style="bright_cyan")
+        stats_table.add_column("Metric", style="bright_white")
+        stats_table.add_column("Count", style="bright_green")
         
-        if included_features:
-            self.console.print(f"\n[bright_yellow]Features included:[/bright_yellow]")
-            for feature in included_features:
-                self.console.print(f"✓ {feature}")
+        stats_table.add_row("Topics Analyzed", str(len(analysis_results['topics'])))
+        stats_table.add_row("Videos Found", str(total_videos))
+        stats_table.add_row("Learning Resources", str(total_resources))
+        stats_table.add_row("Study Notes Generated", str(total_notes))
+        stats_table.add_row("Practice Questions", str(total_questions))
         
-        # Next steps recommendations
-        self.console.print(f"\n[bold bright_magenta]Recommended Next Steps:[/bold bright_magenta]")
+        self.console.print(stats_table)
+        
+        # Detailed breakdown by topic
+        self.console.print(f"\n[bold bright_magenta]📚 DETAILED TOPIC BREAKDOWN[/bold bright_magenta]")
+        
+        for topic_result in analysis_results['topics']:
+            topic_name = topic_result['name']
+            self.console.print(f"\n[bold bright_cyan]🎯 {topic_name}[/bold bright_cyan]")
+            
+            # Video analysis for this topic
+            if topic_result['videos']:
+                self.console.print(f"[bright_yellow]🎥 Videos ({len(topic_result['videos'])}):[/bright_yellow]")
+                
+                for i, video in enumerate(topic_result['videos'][:3], 1):  # Show top 3
+                    is_primary = video.get('is_primary', False)
+                    marker = "⭐ PRIMARY" if is_primary else f"  {i}."
+                    title = video.get('title', 'Unknown Title')[:60]
+                    channel = video.get('channel', 'Unknown Channel')
+                    url = video.get('url', '#')
+                    
+                    self.console.print(f"    {marker} {title}")
+                    self.console.print(f"        Channel: {channel}")
+                    self.console.print(f"        Link: [link]{url}[/link]")
+                    
+                    # Show what's covered and missing
+                    if is_primary and topic_result['coverage']:
+                        coverage = topic_result['coverage']
+                        completeness = coverage.get('learning_completeness', 0)
+                        self.console.print(f"        Coverage: {completeness:.0f}% of expected topics")
+                        
+                        covered = coverage.get('covered_subtopics', [])
+                        if covered:
+                            covered_text = ', '.join(covered[:3])
+                            if len(covered) > 3:
+                                covered_text += f" + {len(covered)-3} more"
+                            self.console.print(f"        ✅ Covers: {covered_text}")
+                        
+                        missing = coverage.get('missing_subtopics', [])
+                        if missing:
+                            missing_text = ', '.join(missing[:3])
+                            if len(missing) > 3:
+                                missing_text += f" + {len(missing)-3} more"
+                            self.console.print(f"        ❌ Missing: {missing_text}")
+                
+                if len(topic_result['videos']) > 3:
+                    self.console.print(f"    ... and {len(topic_result['videos'])-3} more videos")
+            
+            # Resources for this topic
+            if topic_result['resources']:
+                resources = topic_result['resources']
+                books = resources.get('books', [])
+                courses = resources.get('courses', [])
+                other = resources.get('resources', [])
+                
+                self.console.print(f"[bright_yellow]📚 Learning Resources:[/bright_yellow]")
+                
+                # Show books
+                if books:
+                    self.console.print(f"    📖 Books ({len(books)}):")
+                    for book in books[:2]:  # Show top 2
+                        title = book.get('title', 'Unknown')[:50]
+                        author = book.get('author', 'Unknown Author')
+                        url = book.get('url', '#')
+                        self.console.print(f"        • {title} by {author}")
+                        self.console.print(f"          Link: [link]{url}[/link]")
+                
+                # Show courses
+                if courses:
+                    self.console.print(f"    🎓 Courses ({len(courses)}):")
+                    for course in courses[:2]:  # Show top 2
+                        title = course.get('title', 'Unknown')[:50]
+                        provider = course.get('provider', 'Unknown Provider')
+                        url = course.get('url', '#')
+                        price = course.get('price', 'Unknown')
+                        self.console.print(f"        • {title} - {provider}")
+                        self.console.print(f"          Price: {price} | Link: [link]{url}[/link]")
+                
+                # Show other resources
+                if other:
+                    self.console.print(f"    🔗 Other Resources ({len(other)}):")
+                    for resource in other[:2]:  # Show top 2
+                        title = resource.get('title', 'Unknown')[:50]
+                        url = resource.get('url', '#')
+                        self.console.print(f"        • {title}")
+                        self.console.print(f"          Link: [link]{url}[/link]")
+            
+            if not topic_result['videos'] and not topic_result['resources']:
+                self.console.print("    [dim]No videos or resources found for this topic[/dim]")
+        
+        # Overall coverage analysis
+        self.console.print(f"\n[bold bright_magenta]📊 OVERALL COVERAGE ANALYSIS[/bold bright_magenta]")
+        
+        total_topics = len(analysis_results['topics'])
+        topics_with_videos = len([t for t in analysis_results['topics'] if t['videos']])
+        topics_with_resources = len([t for t in analysis_results['topics'] if t['resources']])
+        
+        coverage_table = Table(title="Learning Coverage", border_style="bright_blue")
+        coverage_table.add_column("Aspect", style="bright_white")
+        coverage_table.add_column("Coverage", style="bright_green")
+        coverage_table.add_column("Status", style="bright_yellow")
+        
+        video_coverage = (topics_with_videos / total_topics * 100) if total_topics > 0 else 0
+        resource_coverage = (topics_with_resources / total_topics * 100) if total_topics > 0 else 0
+        
+        video_status = "Excellent" if video_coverage >= 80 else "Good" if video_coverage >= 60 else "Needs Improvement"
+        resource_status = "Excellent" if resource_coverage >= 80 else "Good" if resource_coverage >= 60 else "Needs Improvement"
+        
+        coverage_table.add_row("Video Content", f"{video_coverage:.0f}% ({topics_with_videos}/{total_topics} topics)", video_status)
+        coverage_table.add_row("Learning Resources", f"{resource_coverage:.0f}% ({topics_with_resources}/{total_topics} topics)", resource_status)
+        
+        self.console.print(coverage_table)
+        
+        # Recommendations based on gaps
+        self.console.print(f"\n[bold bright_magenta]💡 RECOMMENDATIONS[/bold bright_magenta]")
+        
+        if video_coverage < 80:
+            missing_video_topics = [t['name'] for t in analysis_results['topics'] if not t['videos']]
+            if missing_video_topics:
+                self.console.print(f"[yellow]📹 Consider searching for additional videos on:[/yellow]")
+                for topic in missing_video_topics[:3]:
+                    self.console.print(f"    • {topic}")
+        
+        if resource_coverage < 80:
+            missing_resource_topics = [t['name'] for t in analysis_results['topics'] if not t['resources']]
+            if missing_resource_topics:
+                self.console.print(f"[yellow]📚 Look for additional books/courses on:[/yellow]")
+                for topic in missing_resource_topics[:3]:
+                    self.console.print(f"    • {topic}")
+        
+        # Next steps
+        self.console.print(f"\n[bold bright_green]🚀 NEXT STEPS[/bold bright_green]")
         
         if preferences.get('add_to_spaced_repetition'):
             due_count = len(self.spaced_repetition.get_due_topics())
@@ -1466,17 +1710,13 @@ For detailed help on any command, use:
             else:
                 self.console.print("• Start reviewing topics tomorrow using spaced repetition (Menu option 8)")
         
-        if preferences.get('include_videos'):
-            self.console.print("• Watch recommended videos and take notes")
-            self.console.print("• Use generated study questions for self-assessment")
-        
-        if preferences.get('include_resources'):
-            self.console.print("• Explore recommended books and courses for deeper learning")
-        
+        self.console.print("• Watch primary videos and take detailed notes")
+        self.console.print("• Use generated study questions for self-assessment")
+        self.console.print("• Explore recommended books and courses for deeper learning")
         self.console.print("• Set learning goals to track your progress (Menu option 4)")
         self.console.print("• Start focused study sessions with Pomodoro timer (Menu option 7)")
         
-        self.console.print(f"\n[bright_green]Your learning journey is ready to begin![/bright_green]")
+        self.console.print(f"\n[bright_green]🎉 Your comprehensive learning plan is ready![/bright_green]")
         self.console.print("[dim]All data has been saved and is accessible from the main menu.[/dim]")
     
     async def _interactive_videos(self):
