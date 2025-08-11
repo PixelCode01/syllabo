@@ -2,9 +2,9 @@
 
 An AI-powered learning assistant that transforms your study materials into interactive learning experiences. Syllabo analyzes course syllabi, generates personalized quizzes, and helps you organize your learning journey with advanced progress tracking and spaced repetition.
 
-## Quick Start
+## Installation
 
-### Standalone Executables (Recommended)
+### Standalone Executables
 
 Download ready-to-run executables that require no Python installation:
 
@@ -16,7 +16,7 @@ Download ready-to-run executables that require no Python installation:
 3. Extract and run the installer
 4. Start with: `syllabo interactive`
 
-### Alternative Installation Methods
+### Development Installation
 
 **Docker (Cross-platform):**
 ```bash

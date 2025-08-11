@@ -95,8 +95,9 @@ session_data.json
 clean_main.py
 fix_main.py
 
-# Test files and reports
+# Test files and reports (but keep essential build tests)
 test_*.py
+!test-standalone-builds.py
 *_test.py
 *test*.py
 fix_*.py

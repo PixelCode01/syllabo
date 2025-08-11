@@ -1,3 +1,4 @@
+# Core dependencies for Syllabo
 textual==0.47.1
 rich==13.7.0
 youtube-transcript-api==0.6.1
@@ -5,7 +6,18 @@ requests==2.31.0
 PyPDF2==3.0.1
 python-dotenv==1.0.0
 beautifulsoup4==4.12.2
-lxml==4.9.3
 feedparser==6.0.10
 google-api-python-client==2.108.0
 google-generativeai==0.3.2
+
+# Additional dependencies for stability
+certifi>=2023.7.22
+charset-normalizer>=3.2.0
+idna>=3.4
+urllib3>=2.0.4
+six>=1.16.0
+packaging>=23.1
+pyparsing>=3.0.9
+
+# Optional dependencies for enhanced functionality
+lxml>=4.9.3; platform_system != "Windows"
