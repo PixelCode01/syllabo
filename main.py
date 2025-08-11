@@ -1268,8 +1268,8 @@ For detailed help on any command, use:
             'questions_generated': 0
         }
         
-        # Process each topic
-        topic_names = [topic.get('name', '') for topic in topics[:5]]  # Limit to first 5 topics
+        # Process each topic (limit to 3 for speed)
+        topic_names = [topic.get('name', '') for topic in topics[:3]]  # Limit to first 3 topics for faster processing
         
         self.console.print(f"\n[bright_cyan]Processing {len(topic_names)} topics...[/bright_cyan]")
         
@@ -1388,9 +1388,9 @@ For detailed help on any command, use:
         
         try:
             with self.console.status(f"Searching for {topic_name} videos..."):
-                # Search for videos and playlists
-                videos = await self.youtube_client.search_videos(topic_name, 8)
-                playlists = await self.youtube_client.search_playlists(topic_name, 3)
+                # Search for videos and playlists (reduced for speed)
+                videos = await self.youtube_client.search_videos(topic_name, 5)  # Reduced from 8 to 5
+                playlists = await self.youtube_client.search_playlists(topic_name, 2)  # Reduced from 3 to 2
                 
                 if not videos and not playlists:
                     self.console.print(f"[yellow]No videos found for {topic_name}[/yellow]")

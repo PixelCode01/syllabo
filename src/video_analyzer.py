@@ -4,8 +4,9 @@ import re
 from .youtube_client import YouTubeClient
 from .feedback_system import FeedbackSystem
 from .logger import SyllaboLogger
+from .video_analyzer_fast import FastVideoAnalyzer
 
-class VideoAnalyzer:
+class VideoAnalyzer(FastVideoAnalyzer):
     def __init__(self, ai_client):
         self.ai_client = ai_client
         self.youtube_client = YouTubeClient()
@@ -30,27 +31,34 @@ class VideoAnalyzer:
         return preference_map.get(choice, 'auto_decide')
     
     async def analyze_videos_and_playlists(self, videos: List[Dict], playlists: List[Dict], topic: str) -> Dict:
-        """Analyze both videos and playlists for a topic"""
+        """Analyze both videos and playlists for a topic with improved speed and accuracy"""
         self.logger.info(f"Analyzing {len(videos)} videos and {len(playlists)} playlists for topic: {topic}")
         
-        # Analyze videos
+        # Fast pre-filtering based on titles and metadata
+        filtered_videos = self._fast_filter_videos(videos, topic)
+        filtered_playlists = self._fast_filter_playlists(playlists, topic)
+        
+        # Analyze only top candidates for speed
+        top_videos = filtered_videos[:5]  # Analyze only top 5 videos
+        top_playlists = filtered_playlists[:3]  # Analyze only top 3 playlists
+        
+        # Parallel analysis with timeout for speed
         analyzed_videos = []
-        if videos:
-            batch_size = 3
-            for i in range(0, len(videos), batch_size):
-                batch = videos[i:i + batch_size]
-                batch_tasks = []
+        if top_videos:
+            try:
+                # Use asyncio.wait_for with timeout to prevent hanging
+                video_tasks = [self._analyze_single_video_fast(video, topic) for video in top_videos]
+                analyzed_videos = await asyncio.wait_for(
+                    asyncio.gather(*video_tasks, return_exceptions=True),
+                    timeout=30.0  # 30 second timeout
+                )
                 
-                for video in batch:
-                    batch_tasks.append(self._analyze_single_video(video, topic))
+                # Filter out exceptions
+                analyzed_videos = [v for v in analyzed_videos if not isinstance(v, Exception)]
                 
-                batch_results = await asyncio.gather(*batch_tasks, return_exceptions=True)
-                
-                for result in batch_results:
-                    if isinstance(result, Exception):
-                        self.logger.error(f"Video analysis failed: {result}")
-                    else:
-                        analyzed_videos.append(result)
+            except asyncio.TimeoutError:
+                self.logger.warning("Video analysis timed out, using fast analysis")
+                analyzed_videos = [self._fast_analyze_video(video, topic) for video in top_videos]
         
         # Analyze playlists
         analyzed_playlists = []

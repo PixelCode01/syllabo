@@ -19,25 +19,42 @@ class YouTubeClient:
         self.session.headers.update({
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         })
+        self.video_cache = {}  # Cache for video details
+        self.search_cache = {}  # Cache for search results
     
     async def search_videos(self, query: str, max_results: int = 10) -> List[Dict]:
-        """Search YouTube videos using web scraping"""
+        """Search YouTube videos with optimized educational queries"""
         try:
-            search_query = f"{query} tutorial lecture education"
-            encoded_query = quote_plus(search_query)
-            search_url = f"https://www.youtube.com/results?search_query={encoded_query}"
+            # Create multiple optimized search queries for better results
+            search_queries = self._generate_optimized_queries(query)
+            all_videos = []
             
-            response = self.session.get(search_url)
-            response.raise_for_status()
+            for search_query in search_queries[:2]:  # Limit to 2 best queries
+                encoded_query = quote_plus(search_query)
+                search_url = f"https://www.youtube.com/results?search_query={encoded_query}&sp=EgIQAQ%253D%253D"  # Filter for videos only
+                
+                response = self.session.get(search_url)
+                response.raise_for_status()
+                
+                videos = self._extract_videos_from_search(response.text, max_results)
+                all_videos.extend(videos)
+                
+                if len(all_videos) >= max_results * 2:  # Get extra for better filtering
+                    break
             
-            videos = self._extract_videos_from_search(response.text, max_results)
+            # Remove duplicates and get video details efficiently
+            unique_videos = self._remove_duplicate_videos(all_videos)
             
-            for video in videos:
-                video_details = self._get_video_details(video['id'])
+            # Get details for top videos only (faster processing)
+            top_videos = unique_videos[:max_results * 2]
+            for video in top_videos:
+                video_details = self._get_video_details_fast(video['id'])
                 video.update(video_details)
-                time.sleep(0.5)  # Rate limiting
             
-            return videos[:max_results]
+            # Rank videos by educational quality
+            ranked_videos = self._rank_educational_videos(top_videos, query)
+            
+            return ranked_videos[:max_results]
             
         except Exception as e:
             print(f"Error searching videos: {e}")
@@ -231,6 +248,148 @@ class YouTubeClient:
             print(f"Error getting comments for {video_id}: {e}")
             return []  # Return empty list instead of fake comments
     
+    def _generate_optimized_queries(self, query: str) -> List[str]:
+        """Generate optimized search queries for educational content"""
+        base_query = query.lower().strip()
+        
+        # Educational keywords that improve search quality
+        educational_terms = [
+            "tutorial", "explained", "course", "lecture", "learn", 
+            "beginner", "complete guide", "step by step", "fundamentals"
+        ]
+        
+        # Quality indicators
+        quality_terms = [
+            "2024", "2023", "comprehensive", "complete", "full course"
+        ]
+        
+        queries = []
+        
+        # Primary query with educational focus
+        queries.append(f"{base_query} tutorial explained")
+        
+        # Course-focused query
+        queries.append(f"{base_query} complete course beginner")
+        
+        # Lecture-style query
+        queries.append(f"{base_query} lecture fundamentals")
+        
+        # Recent content query
+        queries.append(f"{base_query} 2024 tutorial")
+        
+        return queries
+    
+    def _remove_duplicate_videos(self, videos: List[Dict]) -> List[Dict]:
+        """Remove duplicate videos based on ID and title similarity"""
+        seen_ids = set()
+        seen_titles = set()
+        unique_videos = []
+        
+        for video in videos:
+            video_id = video.get('id', '')
+            title = video.get('title', '').lower()
+            
+            # Skip if we've seen this ID
+            if video_id in seen_ids:
+                continue
+            
+            # Skip if we've seen a very similar title
+            title_words = set(title.split())
+            is_duplicate = False
+            
+            for seen_title in seen_titles:
+                seen_words = set(seen_title.split())
+                if len(title_words.intersection(seen_words)) / len(title_words.union(seen_words)) > 0.8:
+                    is_duplicate = True
+                    break
+            
+            if not is_duplicate:
+                seen_ids.add(video_id)
+                seen_titles.add(title)
+                unique_videos.append(video)
+        
+        return unique_videos
+    
+    def _get_video_details_fast(self, video_id: str) -> Dict:
+        """Get video details with caching for faster processing"""
+        if video_id in self.video_cache:
+            return self.video_cache[video_id]
+        
+        details = self._get_video_details(video_id)
+        self.video_cache[video_id] = details
+        return details
+    
+    def _rank_educational_videos(self, videos: List[Dict], query: str) -> List[Dict]:
+        """Rank videos by educational quality and relevance"""
+        query_words = set(query.lower().split())
+        
+        for video in videos:
+            score = 0
+            title = video.get('title', '').lower()
+            channel = video.get('channel', '').lower()
+            description = video.get('description', '').lower()
+            view_count = video.get('view_count', 0)
+            duration = video.get('duration', '0:00')
+            
+            # Title relevance (most important)
+            title_words = set(title.split())
+            title_overlap = len(query_words.intersection(title_words))
+            score += title_overlap * 10
+            
+            # Educational keywords in title
+            educational_keywords = ['tutorial', 'course', 'learn', 'explained', 'guide', 'lecture', 'fundamentals']
+            for keyword in educational_keywords:
+                if keyword in title:
+                    score += 5
+            
+            # Quality indicators
+            quality_keywords = ['complete', 'comprehensive', 'full', 'beginner', 'step by step']
+            for keyword in quality_keywords:
+                if keyword in title:
+                    score += 3
+            
+            # Channel credibility (educational channels)
+            educational_channels = [
+                'khan academy', 'mit', 'stanford', 'harvard', 'coursera', 'edx',
+                'freecodecamp', 'programming with mosh', 'traversy media', 
+                'the net ninja', 'academind', 'corey schafer'
+            ]
+            for edu_channel in educational_channels:
+                if edu_channel in channel:
+                    score += 15
+                    break
+            
+            # View count (balanced - not too low, not too high)
+            if isinstance(view_count, (int, float)):
+                if 10000 <= view_count <= 1000000:
+                    score += 5
+                elif view_count > 1000000:
+                    score += 3
+            
+            # Duration preference (10-60 minutes is ideal for tutorials)
+            try:
+                duration_parts = duration.split(':')
+                if len(duration_parts) >= 2:
+                    minutes = int(duration_parts[-2])
+                    if 10 <= minutes <= 60:
+                        score += 5
+                    elif 5 <= minutes <= 90:
+                        score += 3
+            except:
+                pass
+            
+            # Avoid very short or very long videos
+            if 'shorts' in title or duration.startswith('0:0'):
+                score -= 10
+            
+            # Recent content bonus
+            if any(year in title for year in ['2024', '2023']):
+                score += 2
+            
+            video['educational_score'] = score
+        
+        # Sort by educational score (descending)
+        return sorted(videos, key=lambda x: x.get('educational_score', 0), reverse=True)
     def _extract_playlists_from_search(self, html_content: str, max_results: int) -> List[Dict]:
         """Extract playlist information from YouTube search results"""
         playlists = []
