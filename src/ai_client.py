@@ -11,6 +11,10 @@ class AIClient:
     def __init__(self):
         self.gemini_key = os.getenv('GEMINI_API_KEY')
         self.use_gemini = bool(self.gemini_key and self.gemini_key != "your_gemini_api_key_here_optional")
+        self._initialize_services()
+    
+    def _initialize_services(self):
+        """Initialize AI services and configuration"""
         self.logger = SyllaboLogger("ai_client")
         self.cache = {}
         self.cache_ttl = 3600  # 1 hour cache
@@ -65,6 +69,20 @@ class AIClient:
             
         if not self.gemini_key or self.gemini_key == "your_gemini_api_key_here_optional":
             self.logger.info("No API key required - using free services")
+    
+    def reload_config(self):
+        """Reload configuration after setup"""
+        from dotenv import load_dotenv
+        load_dotenv(override=True)
+        
+        self.gemini_key = os.getenv('GEMINI_API_KEY')
+        self.use_gemini = bool(self.gemini_key and self.gemini_key != "your_gemini_api_key_here_optional")
+        
+        if self.use_gemini:
+            self.logger.info("Gemini API configured - will try models in priority order: 2.5 Pro -> 2.5 Flash -> Pro")
+        else:
+            active_services = [s['name'] for s in self.free_services if s['active']]
+            self.logger.info(f"Using free AI services: {', '.join(active_services)}")
     
     async def get_completion(self, prompt: str, use_cache: bool = True) -> str:
         if use_cache:

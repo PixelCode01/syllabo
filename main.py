@@ -84,6 +84,15 @@ class SyllaboMain:
         self.resource_finder = ResourceFinder(self.ai_client)
         self.config_manager = ConfigManager()
     
+    def reload_ai_client(self):
+        """Reload AI client after configuration changes"""
+        self.ai_client.reload_config()
+        # Update components that use AI client
+        self.quiz_generator.ai_client = self.ai_client
+        self.notes_generator.ai_client = self.ai_client
+        self.video_analyzer.ai_client = self.ai_client
+        self.resource_finder.ai_client = self.ai_client
+    
     def print_banner(self):
         """Print enhanced application banner"""
         banner_text = Text()
@@ -1720,6 +1729,20 @@ For detailed help on any command, use:
 
 async def main():
     """Main application entry point"""
+    
+    # Check for first-run setup
+    from src.setup_manager import SetupManager
+    setup_manager = SetupManager()
+    
+    if setup_manager.is_first_run():
+        setup_success = await setup_manager.run_first_time_setup()
+        if not setup_success:
+            print("Setup was cancelled. You can run Syllabo again to retry setup.")
+            return
+        
+        # Reload environment after setup
+        from dotenv import load_dotenv
+        load_dotenv(override=True)
     
     # If no arguments provided, go directly to interactive mode
     if len(sys.argv) == 1:

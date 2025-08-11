@@ -166,6 +166,9 @@ coverage.xml
 # Kiro IDE
 .kiro/
 
+# Setup files
+.syllabo_setup_complete
+
 # Build and distribution files
 build/
 dist/
