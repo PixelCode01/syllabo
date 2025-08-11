@@ -80,8 +80,14 @@ def main():
         "--hidden-import=src.spaced_repetition",
         "--hidden-import=src.notes_generator",
         "--hidden-import=src.video_analyzer",
+        "--hidden-import=src.video_analyzer_fast",
         "--hidden-import=src.resource_finder",
         "--hidden-import=src.youtube_client",
+        "--hidden-import=src.setup_manager",
+        "--hidden-import=src.config_manager",
+        "--hidden-import=src.validation_utils",
+        "--hidden-import=src.performance_monitor",
+        "--hidden-import=src.config_validator",
         
         # Third-party dependencies
         "--hidden-import=textual",
