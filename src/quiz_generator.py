@@ -23,28 +23,29 @@ class QuizGenerator:
         
         # Try AI first, then fallback to template-based generation
         try:
-            prompt = f"""Create {num_questions} quiz questions about {topic}.
+            prompt = f"""Create {num_questions} quiz questions based on this specific content: "{content}"
 
 IMPORTANT: Respond ONLY with valid JSON in this exact format:
 {{
     "questions": [
         {{
-            "question": "What is a variable in Python?",
+            "question": "What is pandas in Python?",
             "type": "multiple_choice",
-            "options": ["A storage location", "A function", "A loop", "A comment"],
+            "options": ["A data analysis library", "A web framework", "A game engine", "An image editor"],
             "correct_answer": 0,
-            "explanation": "Variables store data values"
+            "explanation": "Pandas is a powerful data analysis and manipulation library for Python"
         }}
     ]
 }}
 
 Requirements:
-- Generate exactly {num_questions} questions
+- Generate exactly {num_questions} questions SPECIFICALLY about: {content}
+- Base questions on the actual content provided, not generic topics
 - Use types: multiple_choice, true_false, short_answer
 - For multiple_choice: provide 4 options and correct_answer index (0-3)
 - For true_false: set correct_answer to true or false
 - For short_answer: provide expected answer as string
-- Make questions about {topic} fundamentals
+- Questions must be directly related to "{content}"
 - NO extra text, ONLY JSON"""
             
             response = await self.ai_client.get_completion(prompt)
@@ -215,41 +216,31 @@ Requirements:
             ]
         }
         
-        # Find matching questions
+        # Find matching questions based on both content and topic
+        content_lower = content.lower() if content else ""
         topic_lower = topic.lower()
+        search_text = f"{content_lower} {topic_lower}".strip()
         selected_questions = []
         
-        # Look for exact or partial matches
+        # Look for exact or partial matches in content first, then topic
         for template_topic, questions in quiz_templates.items():
-            if template_topic in topic_lower or any(word in topic_lower for word in template_topic.split()):
+            # Check if template topic matches the content or topic
+            if (template_topic in search_text or 
+                any(word in search_text for word in template_topic.split())):
                 selected_questions.extend(questions)
+                break  # Use first match to avoid mixing different topics
         
-        # If no specific match, try broader matches
+        # If no specific match, try broader keyword matching
         if not selected_questions:
-            # Try broader keyword matching
             for template_topic, questions in quiz_templates.items():
                 topic_keywords = template_topic.split()
-                if any(keyword in topic_lower for keyword in topic_keywords):
+                if any(keyword in search_text for keyword in topic_keywords):
                     selected_questions.extend(questions)
                     break
         
-        # If still no match, create generic programming questions
+        # If still no match, create content-specific questions
         if not selected_questions:
-            selected_questions = [
-                {
-                    "question": f"What is a key concept in {topic}?",
-                    "type": "multiple_choice",
-                    "options": ["Fundamentals", "Advanced topics", "Best practices", "All of the above"],
-                    "correct_answer": 3,
-                    "explanation": f"All aspects are important when learning {topic}."
-                },
-                {
-                    "question": f"Learning {topic} requires practice and understanding.",
-                    "type": "true_false",
-                    "correct_answer": True,
-                    "explanation": f"Practice and understanding are essential for mastering {topic}."
-                }
-            ]
+            selected_questions = self._create_content_based_questions(content, topic, num_questions)
         
         # Select random questions up to the requested number
         if len(selected_questions) > num_questions:
@@ -469,6 +460,75 @@ Requirements:
             "created_at": datetime.now().isoformat(),
             "difficulty": self._assess_difficulty(response)
         }
+    
+    def _create_content_based_questions(self, content: str, topic: str, num_questions: int) -> List[Dict]:
+        """Create questions based on the actual content provided"""
+        questions = []
+        content_lower = content.lower() if content else ""
+        
+        # Analyze content for specific technologies/concepts
+        if "pandas" in content_lower:
+            questions.extend([
+                {
+                    "question": "What is pandas primarily used for in Python?",
+                    "type": "multiple_choice",
+                    "options": ["Data analysis and manipulation", "Web development", "Game development", "Mobile app development"],
+                    "correct_answer": 0,
+                    "explanation": "Pandas is a powerful library for data analysis and manipulation in Python."
+                },
+                {
+                    "question": "Pandas DataFrames can handle multiple data types in different columns.",
+                    "type": "true_false",
+                    "correct_answer": True,
+                    "explanation": "DataFrames can store different data types (integers, floats, strings, etc.) in different columns."
+                }
+            ])
+        elif "numpy" in content_lower:
+            questions.extend([
+                {
+                    "question": "What does NumPy primarily provide for Python?",
+                    "type": "multiple_choice",
+                    "options": ["Web frameworks", "Numerical computing capabilities", "Database connections", "GUI development"],
+                    "correct_answer": 1,
+                    "explanation": "NumPy provides powerful numerical computing capabilities with efficient array operations."
+                }
+            ])
+        elif "python" in content_lower:
+            questions.extend([
+                {
+                    "question": "Python is known for its readability and simplicity.",
+                    "type": "true_false",
+                    "correct_answer": True,
+                    "explanation": "Python's syntax is designed to be readable and straightforward, making it beginner-friendly."
+                },
+                {
+                    "question": "What type of programming language is Python?",
+                    "type": "multiple_choice",
+                    "options": ["Compiled only", "Interpreted", "Assembly", "Machine code"],
+                    "correct_answer": 1,
+                    "explanation": "Python is an interpreted language, meaning code is executed line by line at runtime."
+                }
+            ])
+        
+        # If no specific content match, create generic but relevant questions
+        if not questions:
+            questions = [
+                {
+                    "question": f"What is the main focus when studying {content or topic}?",
+                    "type": "multiple_choice",
+                    "options": ["Understanding core concepts", "Memorizing syntax only", "Avoiding practice", "Skipping documentation"],
+                    "correct_answer": 0,
+                    "explanation": f"Understanding core concepts is essential when learning {content or topic}."
+                },
+                {
+                    "question": f"Practical experience is important when learning {content or topic}.",
+                    "type": "true_false",
+                    "correct_answer": True,
+                    "explanation": f"Hands-on practice helps solidify understanding of {content or topic}."
+                }
+            ]
+        
+        return questions[:num_questions]
     
     def _check_short_answer(self, user_answer: str, correct_answer: str) -> bool:
         """Check if short answer is approximately correct"""
