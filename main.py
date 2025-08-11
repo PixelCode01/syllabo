@@ -1524,15 +1524,6 @@ For detailed help on any command, use:
         except Exception as e:
             self.console.print(f"[red]Error finding resources for {topic_name}: {e}[/red]")
             return None
-                if all_resources:
-                    top_resource = all_resources[0]
-                    resource_type = "Book" if 'author' in top_resource else "Course"
-                    price_tag = "Free" if top_resource.get('type') == 'free' else "Paid"
-                    self.console.print(f"  [bright_white]Top {resource_type}:[/bright_white] {top_resource['title']} ({price_tag})")
-            else:
-                self.console.print(f"[yellow]Limited resources found for {topic_name}[/yellow]")
-                    
-        except Exception as e:
             self.console.print(f"[red]Error finding resources for {topic_name}: {e}[/red]")
     
     def _add_topic_to_spaced_repetition(self, topic_name: str, topic_data: Dict):
