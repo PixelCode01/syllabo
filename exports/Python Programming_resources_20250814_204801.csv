@@ -1,0 +1,6 @@
+Type,Title,Author/Channel,Duration/Price,Direct Link,Description
+YouTube Video,Python Programming Complete Course,Programming with Mosh,6:14:07,https://www.youtube.com/watch?v=dQw4w9WgXcQ,Complete Python tutorial for beginners
+YouTube Video,Python Data Structures Explained,Corey Schafer,45:30,https://www.youtube.com/watch?v=abc123def,Deep dive into Python data structures
+YouTube Playlist,Complete Python Course Playlist,freeCodeCamp.org,25 videos,https://www.youtube.com/playlist?list=PLrAXtmRdnEQy,Comprehensive Python learning playlist
+Book,Python Crash Course,Eric Matthes,$39.99,https://www.amazon.com/s?k=Python+Crash+Course+Eric+Matthes,"Topics: basics, projects"
+Online Course,Complete Python Bootcamp,Udemy,$84.99,https://www.udemy.com/courses/search/?q=Complete+Python+Bootcamp,"Topics: basics, advanced"

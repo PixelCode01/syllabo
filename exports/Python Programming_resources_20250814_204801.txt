@@ -1,0 +1,49 @@
+LEARNING RESOURCES FOR: PYTHON PROGRAMMING
+============================================================
+Generated: 2025-08-14 20:48:01
+
+🎥 YOUTUBE VIDEOS
+------------------------------
+1. Python Programming Complete Course
+   Channel: Programming with Mosh
+   Duration: 6:14:07
+   Views: 2,500,000
+   🔗 DIRECT LINK: https://www.youtube.com/watch?v=dQw4w9WgXcQ
+   Description: Complete Python tutorial for beginners
+
+2. Python Data Structures Explained
+   Channel: Corey Schafer
+   Duration: 45:30
+   Views: 850,000
+   🔗 DIRECT LINK: https://www.youtube.com/watch?v=abc123def
+   Description: Deep dive into Python data structures
+
+📚 YOUTUBE PLAYLISTS
+------------------------------
+1. Complete Python Course Playlist
+   Channel: freeCodeCamp.org
+   Videos: 25 videos
+   Total Views: 5,000,000
+   🔗 DIRECT LINK: https://www.youtube.com/playlist?list=PLrAXtmRdnEQy
+
+📖 RECOMMENDED BOOKS
+------------------------------
+1. Python Crash Course
+   Author: Eric Matthes
+   Price: $39.99
+   Type: Paid
+   🛒 Amazon: https://www.amazon.com/s?k=Python+Crash+Course+Eric+Matthes
+   📚 Google Books: https://books.google.com/books?q=Python+Crash+Course+Eric+Matthes
+
+🎓 ONLINE COURSES
+------------------------------
+1. Complete Python Bootcamp
+   Platform: Udemy
+   Price: $84.99
+   Type: Paid
+   🔗 Platform Link: https://www.udemy.com/courses/search/?q=Complete+Python+Bootcamp
+
+============================================================
+💡 TIP: Copy and paste the links above into your browser
+📱 Save this file for future reference
+🔄 Use Syllabo to generate quizzes from these resources

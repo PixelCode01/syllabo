@@ -1,0 +1,115 @@
+LEARNING RESOURCES FOR: CALCC
+============================================================
+Generated: 2025-08-14 20:40:26
+
+🎥 YOUTUBE VIDEOS
+------------------------------
+1. C Language Tutorial for Beginners (with Notes & Practice Questions)
+   Channel: Apna College
+   Duration: 10:32:06
+   Views: 43,794,243
+   🔗 DIRECT LINK: https://www.youtube.com/watch?v=irqbmMNs2Bo
+   Description: You can join the NEW Web Development batch using the below link. Delta 3.0(Full Stack Web Development) ...
+
+2. Taylor series | Chapter 11, Essence of calculus
+   Channel: 3Blue1Brown
+   Duration: 22:19
+   Views: 4,595,972
+   🔗 DIRECT LINK: https://www.youtube.com/watch?v=3d6DsjIBzJ4
+   Description: Taylor polynomials are incredibly powerful for approximations and analysis. Help fund future projects: ...
+
+3. Convex and Concave Lenses
+   Channel: Manocha Academy
+   Duration: 18:12
+   Views: 4,057,732
+   🔗 DIRECT LINK: https://www.youtube.com/watch?v=CJ6aB5ULqa0
+   Description: Convex and Concave Lenses are Spherical Lenses. We look at the Image Formation by these spherical lenses using ray ...
+
+4. Taylor Series and Maclaurin Series - Calculus 2
+   Channel: The Organic Chemistry Tutor
+   Duration: 29:21
+   Views: 2,885,841
+   🔗 DIRECT LINK: https://www.youtube.com/watch?v=LDBnS4c7YbA
+   Description: This calculus 2 video tutorial explains how to find the Taylor series and the Maclaurin series of a function using a simple formula.
+
+5. SEO In 5 Minutes | What Is SEO And How Does It Work | SEO Explained | SEO Tutorial | Simplilearn
+   Channel: Simplilearn
+   Duration: 5:04
+   Views: 2,048,446
+   🔗 DIRECT LINK: https://www.youtube.com/watch?v=MYE6T_gd7H0
+   Description: Meta - Digital Marketing Specialist ...
+
+6. What is SEO and How Does it Work? | Types of SEO | Search Engine Optimization Full Information
+   Channel: WsCube Tech
+   Duration: 4:26
+   Views: 2,531,167
+   🔗 DIRECT LINK: https://www.youtube.com/watch?v=bLUkIgY8MTE
+   Description: Types of SEO | Search Engine Optimization with Full Information. Find all the videos of the SEO Full Course in this playlist: ...
+
+7. Concave and Convex Mirrors
+   Channel: Manocha Academy
+   Duration: 13:57
+   Views: 2,305,939
+   🔗 DIRECT LINK: https://www.youtube.com/watch?v=oDNqfxRYQY0
+   Description: Concave and Convex Mirrors are Spherical Mirrors. These Curved Mirrors are discussed in the video. Difference between ...
+
+8. Concavity, Inflection Points, Increasing Decreasing, First & Second Derivative - Calculus
+   Channel: The Organic Chemistry Tutor
+   Duration: 54:17
+   Views: 1,560,554
+   🔗 DIRECT LINK: https://www.youtube.com/watch?v=15awMHeP1Yc
+   Description: This calculus video tutorial shows you how to find the intervals where the function is increasing and decreasing, the critical points ...
+
+9. Maxima And Minima of Two Variables Function | Examples And Solution
+   Channel: Dr.Gajendra Purohit
+   Duration: 24:59
+   Views: 1,508,441
+   🔗 DIRECT LINK: https://www.youtube.com/watch?v=NpR91wexqHA
+   Description: Comment Below If This Video Helped You 💯 Like 👍 & Share With Your Classmates - ALL THE BEST 🔥 Do Visit My Second ...
+
+10. Finding Local Maximum and Minimum Values of a Function - Relative Extrema
+   Channel: The Organic Chemistry Tutor
+   Duration: 14:17
+   Views: 1,477,568
+   🔗 DIRECT LINK: https://www.youtube.com/watch?v=WCq3sRzsJfs
+   Description: This calculus video tutorial explains how to find the local maximum and minimum values of a function. In order to determine the ...
+
+11. SEO Full Course for Beginners in 13 HOURS (FREE) | Learn Full Search Engine Optimization in 2024
+   Channel: WsCube Tech
+   Duration: 13:29:19
+   Views: 1,185,570
+   🔗 DIRECT LINK: https://www.youtube.com/watch?v=0J8JaN76Mrs
+   Description: SEO Full Course for Beginners in 13 HOURS (FREE) | Learn Full Search Engine Optimization in 2024 SEO Full Course for ...
+
+12. Real Analysis | Mean Value Theorem | Rolle's Theorem - Proof & Examples
+   Channel: Dr.Gajendra Purohit
+   Duration: 15:54
+   Views: 1,182,580
+   🔗 DIRECT LINK: https://www.youtube.com/watch?v=IFtjDDB8fzo
+   Description: This video lecture on Real Analysis | Mean Value Theorem | Rolle's Theorem - Proof & Examples | Problems & Concepts by GP ...
+
+13. Successive Differentiation | Differential Calculus | Concepts & Examples
+   Channel: Dr.Gajendra Purohit
+   Duration: 15:05
+   Views: 1,082,564
+   🔗 DIRECT LINK: https://www.youtube.com/watch?v=KijGLjxKlsY
+   Description: Comment Below If This Video Helped You 💯 Like 👍 & Share With Your Classmates - ALL THE BEST 🔥 Do Visit My Second ...
+
+14. Why Does Light Bend? | Concave & Convex Lenses | The Dr Binocs Show | Peekaboo Kidz
+   Channel: Peekaboo Kidz
+   Duration: 5:27
+   Views: 1,051,686
+   🔗 DIRECT LINK: https://www.youtube.com/watch?v=b_R6t-q4ALc
+   Description: What Are Concave & Convex Lenses? | What Is A Lens? | Why Does Light Bend? | What Is Concave Lens? | What Is Convex Lens ...
+
+15. Critical points introduction | AP Calculus AB | Khan Academy
+   Channel: Khan Academy
+   Duration: 7:52
+   Views: 995,502
+   🔗 DIRECT LINK: https://www.youtube.com/watch?v=lDY9JcFaRd4
+   Description: Courses on Khan Academy are always 100% free. Start practicing—and saving your progress—now: ...
+
+============================================================
+💡 TIP: Copy and paste the links above into your browser
+📱 Save this file for future reference
+🔄 Use Syllabo to generate quizzes from these resources

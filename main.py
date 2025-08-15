@@ -8,6 +8,8 @@ Main entry point for all features
 import os
 import sys
 import asyncio
+import time
+from datetime import datetime
 from typing import Dict, List
 from dotenv import load_dotenv
 from rich.console import Console
@@ -38,6 +40,13 @@ from src.video_analyzer import VideoAnalyzer
 from src.resource_finder import ResourceFinder
 from src.youtube_client import YouTubeClient
 from src.config_manager import ConfigManager
+from src.resource_manager import ResourceManager
+from src.persistent_quiz_manager import PersistentQuizManager
+from src.enhanced_video_search import EnhancedVideoSearch
+from src.ai_learning_engine import AILearningEngine
+from src.adaptive_quiz_engine import AdaptiveQuizEngine
+from src.learning_analytics_dashboard import LearningAnalyticsDashboard
+from src.predictive_learning_intelligence import PredictiveLearningIntelligence
 
 class SyllaboMain:
     """Main application class with all features"""
@@ -84,6 +93,17 @@ class SyllaboMain:
         self.video_analyzer = VideoAnalyzer(self.ai_client)
         self.resource_finder = ResourceFinder(self.ai_client)
         self.config_manager = ConfigManager()
+        
+        # Initialize enhanced resource and quiz management
+        self.resource_manager = ResourceManager()
+        self.persistent_quiz_manager = PersistentQuizManager(self.ai_client)
+        self.enhanced_video_search = EnhancedVideoSearch()
+        
+        # Initialize AI-powered learning features
+        self.ai_learning_engine = AILearningEngine(self.ai_client, self.db)
+        self.adaptive_quiz_engine = AdaptiveQuizEngine(self.ai_client, self.db)
+        self.learning_analytics = LearningAnalyticsDashboard(self.ai_client, self.db)
+        self.predictive_intelligence = PredictiveLearningIntelligence(self.ai_client, self.db)
     
     def reload_ai_client(self):
         """Reload AI client after configuration changes"""
@@ -120,19 +140,26 @@ class SyllaboMain:
         self.console.print(Rule("[bold bright_cyan]Main Menu[/bold bright_cyan]", style="bright_cyan"))
         
         menu_options = [
-            ("1", "analyze", "Analyze Syllabus", "Process syllabus and find learning resources"),
+            ("1", "analyze", "Analyze Syllabus", "Process syllabus and find learning resources with direct links"),
             ("2", "quiz", "Interactive Quizzes", "Generate quizzes from topics, syllabus, or text"),
-            ("3", "progress", "Progress Dashboard", "View learning progress and analytics"),
-            ("4", "goals", "Study Goals", "Manage learning goals and milestones"),
-            ("5", "platforms", "Multi-Platform Search", "Search across learning platforms"),
-            ("6", "bookmarks", "Smart Bookmarks", "Manage video bookmarks and notes"),
-            ("7", "session", "Study Sessions", "Pomodoro timer and focus sessions"),
-            ("8", "review", "Spaced Repetition", "Review topics using spaced repetition"),
-            ("9", "videos", "Smart Video Analysis", "Find and analyze educational videos"),
-            ("10", "resources", "Resource Finder", "Find books, courses, and learning materials"),
-            ("11", "notes", "Generate Study Notes", "Create notes and questions from content"),
-            ("12", "config", "Configuration", "Manage API keys and application settings"),
-            ("13", "help", "Help & Documentation", "Get help and usage information"),
+            ("3", "saved_quizzes", "Saved Quizzes", "View and retake your saved quizzes"),
+            ("4", "progress", "Progress Dashboard", "View learning progress and analytics"),
+            ("5", "goals", "Study Goals", "Manage learning goals and milestones"),
+            ("6", "platforms", "Multi-Platform Search", "Search across learning platforms"),
+            ("7", "bookmarks", "Smart Bookmarks", "Manage video bookmarks and notes"),
+            ("8", "session", "Study Sessions", "Pomodoro timer and focus sessions"),
+            ("9", "review", "Spaced Repetition", "Review topics using spaced repetition"),
+            ("10", "videos", "Smart Video Analysis", "Find and analyze educational videos"),
+            ("11", "enhanced_videos", "Enhanced Video Search", "Comprehensive video search with topic coverage"),
+            ("12", "resources", "Enhanced Resource Finder", "Find resources with direct links and save them"),
+            ("13", "saved_resources", "Saved Resources", "View and manage your saved learning resources"),
+            ("14", "notes", "Generate Study Notes", "Create notes and questions from content"),
+            ("15", "ai_learning", "AI Learning Paths", "Generate adaptive learning paths with AI"),
+            ("16", "adaptive_quiz", "Adaptive Quizzes", "Take intelligent adaptive quizzes"),
+            ("17", "learning_analytics", "Learning Analytics", "View comprehensive learning analytics"),
+            ("18", "predictions", "Learning Predictions", "Get AI predictions for learning outcomes"),
+            ("19", "config", "Configuration", "Manage API keys and application settings"),
+            ("20", "help", "Help & Documentation", "Get help and usage information"),
             ("0", "exit", "Exit", "Exit the application")
         ]
         
@@ -188,6 +215,8 @@ class SyllaboMain:
                 await self._interactive_analyze()
             elif command == 'quiz':
                 await self._interactive_quiz()
+            elif command == 'saved_quizzes':
+                await self._interactive_saved_quizzes()
             elif command == 'progress':
                 await self._interactive_progress()
             elif command == 'goals':
@@ -202,10 +231,22 @@ class SyllaboMain:
                 await self._interactive_review()
             elif command == 'videos':
                 await self._interactive_videos()
+            elif command == 'enhanced_videos':
+                await self._interactive_enhanced_videos()
             elif command == 'resources':
-                await self._interactive_resources()
+                await self._interactive_enhanced_resources()
+            elif command == 'saved_resources':
+                await self._interactive_saved_resources()
             elif command == 'notes':
                 await self._interactive_notes()
+            elif command == 'ai_learning':
+                await self._interactive_ai_learning()
+            elif command == 'adaptive_quiz':
+                await self._interactive_adaptive_quiz()
+            elif command == 'learning_analytics':
+                await self._interactive_learning_analytics()
+            elif command == 'predictions':
+                await self._interactive_predictions()
             elif command == 'config':
                 self._interactive_config()
             else:
@@ -269,7 +310,7 @@ class SyllaboMain:
                     self.console.print("[bright_green]Saved to database[/bright_green]")
                     
                     # Enhanced analysis workflow - integrate new features
-                    await self._comprehensive_analysis_workflow(topics)
+                    await self._comprehensive_analysis_workflow(topics, title)
                     
                 else:
                     self.console.print("[bright_yellow]No topics found[/bright_yellow]")
@@ -333,7 +374,7 @@ class SyllaboMain:
                     self.console.print("[bright_green]Saved to database[/bright_green]")
                     
                     # Enhanced analysis workflow for text input
-                    await self._comprehensive_analysis_workflow(topics)
+                    await self._comprehensive_analysis_workflow(topics, title)
                 else:
                     self.console.print("[bright_yellow]No topics found[/bright_yellow]")
                     
@@ -1957,6 +1998,1192 @@ For detailed help on any command, use:
     def _interactive_config(self):
         """Interactive configuration management"""
         self.config_manager.show_config_menu()
+    
+    async def _comprehensive_analysis_workflow(self, topics: List[Dict], syllabus_title: str):
+        """Enhanced comprehensive analysis workflow with resource saving"""
+        if not topics:
+            return
+        
+        self.console.print(Rule("[bold bright_green]Enhanced Resource Discovery[/bold bright_green]"))
+        
+        # Ask user if they want to find resources with direct links
+        find_resources = Prompt.ask(
+            "[bright_yellow]Find learning resources with direct links?[/bright_yellow]",
+            choices=["yes", "no"],
+            default="yes"
+        )
+        
+        if find_resources == "yes":
+            # Extract topic names for resource finding
+            topic_names = [topic.get('name', '') for topic in topics if topic.get('name')]
+            
+            with self.console.status("[bright_cyan]Finding resources with direct links..."):
+                # Find resources for all topics
+                all_resources = await self.resource_finder.find_resources_for_syllabus(topic_names, 'both')
+                
+                # Use enhanced video search for comprehensive coverage
+                youtube_resources = await self._enhanced_video_search_for_syllabus(syllabus_title, topic_names)
+                
+                # Combine resources
+                combined_resources = self._combine_all_resources(all_resources, youtube_resources)
+            
+            if combined_resources:
+                self.console.print(f"[bright_green]Found resources for {syllabus_title}![/bright_green]")
+                
+                # Display summary with enhanced video information
+                self._display_resource_summary(combined_resources)
+                
+                # Show detailed video breakdown if enhanced search was used
+                if 'study_order' in combined_resources:
+                    self._display_enhanced_video_results(combined_resources)
+                
+                # Ask if user wants to save resources
+                save_resources = Prompt.ask(
+                    "[bright_yellow]Save these resources with direct links for future reference?[/bright_yellow]",
+                    choices=["yes", "no"],
+                    default="yes"
+                )
+                
+                if save_resources == "yes":
+                    # Save resources in multiple formats
+                    saved_files = self.resource_manager.save_learning_resources(
+                        syllabus_title, combined_resources, include_links=True
+                    )
+                    
+                    self.console.print("[bright_green]Resources saved in multiple formats:[/bright_green]")
+                    for format_type, file_path in saved_files.items():
+                        self.console.print(f"  📄 {format_type.upper()}: {file_path}")
+                    
+                    self.console.print("\n[bright_cyan]💡 You can now:[/bright_cyan]")
+                    self.console.print("  • Click links in the HTML file to go directly to resources")
+                    self.console.print("  • Reference the text file anytime")
+                    self.console.print("  • Import the CSV into spreadsheet apps")
+                
+                # Ask if user wants to create a quiz from these resources
+                create_quiz = Prompt.ask(
+                    "[bright_yellow]Create a quiz based on these resources?[/bright_yellow]",
+                    choices=["yes", "no"],
+                    default="yes"
+                )
+                
+                if create_quiz == "yes":
+                    await self._create_resource_based_quiz(syllabus_title, combined_resources)
+    
+    async def _find_youtube_resources_for_topics(self, topics: List[str]) -> Dict:
+        """Find YouTube videos and playlists for topics"""
+        youtube_resources = {'videos': [], 'playlists': []}
+        
+        for topic in topics[:2]:  # Limit to 2 topics for speed
+            try:
+                # Search for videos
+                videos = await self.youtube_client.search_videos(topic, max_results=3)
+                youtube_resources['videos'].extend(videos)
+                
+                # Search for playlists
+                playlists = await self.youtube_client.search_playlists(topic, max_results=2)
+                youtube_resources['playlists'].extend(playlists)
+                
+            except Exception as e:
+                self.logger.error(f"Error finding YouTube resources for {topic}: {e}")
+        
+        return youtube_resources
+    
+    async def _enhanced_video_search_for_syllabus(self, syllabus_title: str, topic_names: List[str]) -> Dict:
+        """Use enhanced video search for comprehensive syllabus coverage"""
+        try:
+            # Create syllabus text from topic names
+            syllabus_text = f"{syllabus_title}. Topics: {', '.join(topic_names)}"
+            
+            # Use enhanced search
+            search_results = await self.enhanced_video_search.comprehensive_topic_search(
+                syllabus_text, max_videos_per_topic=4
+            )
+            
+            # Convert to expected format
+            youtube_resources = {
+                'videos': search_results.get('comprehensive_videos', []),
+                'playlists': [],  # Enhanced search focuses on videos
+                'topic_coverage': search_results.get('topic_coverage', {}),
+                'missing_topics': search_results.get('missing_topics', []),
+                'study_order': search_results.get('recommended_study_order', []),
+                'channel_diversity': search_results.get('channel_diversity', {})
+            }
+            
+            self.logger.info(f"Enhanced search found {len(youtube_resources['videos'])} videos with {youtube_resources['channel_diversity'].get('total_channels', 0)} different channels")
+            
+            return youtube_resources
+            
+        except Exception as e:
+            self.logger.error(f"Enhanced video search failed: {e}")
+            # Fallback to original method
+            return await self._find_youtube_resources_for_topics(topic_names[:3])
+    
+    def _combine_all_resources(self, general_resources: Dict, youtube_resources: Dict) -> Dict:
+        """Combine general resources with YouTube resources"""
+        combined = general_resources.copy()
+        
+        # Add YouTube videos
+        if 'videos' not in combined:
+            combined['videos'] = []
+        combined['videos'].extend(youtube_resources.get('videos', []))
+        
+        # Add YouTube playlists
+        if 'playlists' not in combined:
+            combined['playlists'] = []
+        combined['playlists'].extend(youtube_resources.get('playlists', []))
+        
+        return combined
+    
+    def _display_resource_summary(self, resources: Dict):
+        """Display a summary of found resources with enhanced video information"""
+        summary_table = Table(title="Resources Found", border_style="bright_green")
+        summary_table.add_column("Type", style="bright_cyan")
+        summary_table.add_column("Count", style="bright_white")
+        summary_table.add_column("Examples", style="bright_yellow")
+        
+        # Only process actual resource lists, not metadata
+        resource_types_to_display = ['videos', 'playlists', 'books', 'courses', 'free_resources', 'paid_resources']
+        
+        for resource_type, items in resources.items():
+            if resource_type in resource_types_to_display and isinstance(items, list) and items:
+                count = len(items)
+                examples = []
+                for item in items[:2]:
+                    if isinstance(item, dict):
+                        title = item.get('title', 'Unknown')
+                    elif isinstance(item, str):
+                        title = item
+                    else:
+                        title = str(item)
+                    examples.append(title[:30] + "..." if len(title) > 30 else title)
+                examples_str = ", ".join(examples)
+                summary_table.add_row(resource_type.title(), str(count), examples_str)
+        
+        self.console.print(summary_table)
+        
+        # Show enhanced video information if available
+        if 'channel_diversity' in resources:
+            diversity = resources['channel_diversity']
+            self.console.print(f"\n[bright_cyan]📺 Video Diversity:[/bright_cyan]")
+            self.console.print(f"   Channels: {diversity.get('total_channels', 0)}")
+            self.console.print(f"   Diversity Score: {diversity.get('diversity_score', 0):.2f}")
+        
+        if 'missing_topics' in resources and resources['missing_topics']:
+            self.console.print(f"\n[bright_yellow]⚠️  Topics needing more coverage:[/bright_yellow]")
+            for topic in resources['missing_topics'][:3]:
+                self.console.print(f"   • {topic}")
+        
+        if 'topic_coverage' in resources:
+            coverage = resources['topic_coverage']
+            excellent_topics = [t for t, info in coverage.items() if info.get('coverage_quality') == 'Excellent']
+            if excellent_topics:
+                self.console.print(f"\n[bright_green]✅ Well-covered topics:[/bright_green]")
+                for topic in excellent_topics[:3]:
+                    self.console.print(f"   • {topic}")
+    
+    def _display_enhanced_video_results(self, resources: Dict):
+        """Display enhanced video search results with study order and topic coverage"""
+        if 'study_order' not in resources:
+            return
+        
+        study_order = resources['study_order']
+        if not study_order:
+            return
+        
+        self.console.print(f"\n[bold bright_blue]📚 Recommended Study Order[/bold bright_blue]")
+        
+        study_table = Table(border_style="bright_blue")
+        study_table.add_column("Order", style="bright_cyan", width=5)
+        study_table.add_column("Video Title", style="bright_white", width=40)
+        study_table.add_column("Channel", style="bright_green", width=20)
+        study_table.add_column("Duration", style="bright_yellow", width=8)
+        study_table.add_column("Views", style="bright_magenta", width=10)
+        
+        for i, video in enumerate(study_order[:8], 1):  # Show top 8 in study order
+            title = video.get('title', 'Unknown')[:37] + "..." if len(video.get('title', '')) > 40 else video.get('title', 'Unknown')
+            channel = video.get('channel', 'Unknown')[:17] + "..." if len(video.get('channel', '')) > 20 else video.get('channel', 'Unknown')
+            duration = video.get('duration', 'Unknown')
+            views = f"{video.get('view_count', 0):,}"
+            
+            study_table.add_row(str(i), title, channel, duration, views)
+        
+        self.console.print(study_table)
+        
+        # Show topic coverage breakdown
+        if 'topic_coverage' in resources:
+            self._display_topic_coverage_breakdown(resources['topic_coverage'])
+    
+    def _display_topic_coverage_breakdown(self, topic_coverage: Dict):
+        """Display detailed topic coverage information"""
+        if not topic_coverage:
+            return
+        
+        self.console.print(f"\n[bold bright_green]📊 Topic Coverage Analysis[/bold bright_green]")
+        
+        coverage_table = Table(border_style="bright_green")
+        coverage_table.add_column("Topic", style="bright_cyan", width=25)
+        coverage_table.add_column("Videos", style="bright_white", width=8)
+        coverage_table.add_column("Quality", style="bright_yellow", width=12)
+        coverage_table.add_column("Best Video", style="bright_green", width=35)
+        
+        for topic, info in list(topic_coverage.items())[:6]:  # Show top 6 topics
+            video_count = info.get('video_count', 0)
+            quality = info.get('coverage_quality', 'Unknown')
+            
+            best_video = "No videos found"
+            if info.get('videos'):
+                best_video = info['videos'][0].get('title', 'Unknown')[:32] + "..." if len(info['videos'][0].get('title', '')) > 35 else info['videos'][0].get('title', 'Unknown')
+            
+            # Color code quality
+            quality_color = {
+                'Excellent': '[bright_green]Excellent[/bright_green]',
+                'Good': '[bright_yellow]Good[/bright_yellow]',
+                'Fair': '[bright_blue]Fair[/bright_blue]',
+                'Limited': '[bright_red]Limited[/bright_red]',
+                'No coverage': '[red]None[/red]'
+            }.get(quality, quality)
+            
+            coverage_table.add_row(
+                topic[:22] + "..." if len(topic) > 25 else topic,
+                str(video_count),
+                quality_color,
+                best_video
+            )
+        
+        self.console.print(coverage_table)
+    
+    async def _interactive_enhanced_videos(self):
+        """Interactive enhanced video search with comprehensive topic coverage"""
+        self.console.print(Rule("[bold bright_blue]Enhanced Video Search[/bold bright_blue]"))
+        
+        # Get input method
+        input_choice = Prompt.ask(
+            "[bright_yellow]How would you like to search for videos?[/bright_yellow]",
+            choices=["syllabus", "topics"],
+            default="topics"
+        )
+        
+        if input_choice == "syllabus":
+            # Get syllabus text
+            self.console.print("[bright_cyan]Enter your syllabus content (press Enter twice when done):[/bright_cyan]")
+            
+            lines = []
+            empty_lines = 0
+            
+            while empty_lines < 2:
+                try:
+                    line = input()
+                    if line.strip() == "":
+                        empty_lines += 1
+                    else:
+                        empty_lines = 0
+                    lines.append(line)
+                except KeyboardInterrupt:
+                    self.console.print("\n[yellow]Input cancelled[/yellow]")
+                    return
+            
+            syllabus_text = "\n".join(lines).strip()
+            
+            if not syllabus_text:
+                self.console.print("[bright_red]No syllabus content provided[/bright_red]")
+                return
+            
+            syllabus_title = Prompt.ask("[bright_cyan]Syllabus title/subject[/bright_cyan]", default="Course Syllabus")
+            
+        else:  # topics
+            topic_input = Prompt.ask("[bright_cyan]Enter topics (comma-separated)[/bright_cyan]")
+            if not topic_input:
+                self.console.print("[bright_red]No topics provided[/bright_red]")
+                return
+            
+            topics = [t.strip() for t in topic_input.split(',')]
+            syllabus_title = Prompt.ask("[bright_cyan]Subject name[/bright_cyan]", default="Study Topics")
+            syllabus_text = f"{syllabus_title}. Topics: {', '.join(topics)}"
+        
+        try:
+            with self.console.status("[bright_cyan]Performing comprehensive video search..."):
+                # Use enhanced video search
+                search_results = await self.enhanced_video_search.comprehensive_topic_search(
+                    syllabus_text, max_videos_per_topic=4
+                )
+            
+            if not search_results.get('comprehensive_videos'):
+                self.console.print("[yellow]No videos found for the given topics[/yellow]")
+                return
+            
+            # Display results
+            videos = search_results['comprehensive_videos']
+            self.console.print(f"[bright_green]Found {len(videos)} videos from {search_results.get('channel_diversity', {}).get('total_channels', 0)} different channels![/bright_green]")
+            
+            # Show enhanced results
+            youtube_resources = {
+                'videos': videos,
+                'topic_coverage': search_results.get('topic_coverage', {}),
+                'missing_topics': search_results.get('missing_topics', []),
+                'study_order': search_results.get('recommended_study_order', []),
+                'channel_diversity': search_results.get('channel_diversity', {})
+            }
+            
+            self._display_resource_summary(youtube_resources)
+            self._display_enhanced_video_results(youtube_resources)
+            
+            # Ask if user wants to save results
+            save_results = Prompt.ask(
+                "[bright_yellow]Save these video results for future reference?[/bright_yellow]",
+                choices=["yes", "no"],
+                default="yes"
+            )
+            
+            if save_results == "yes":
+                # Convert to resource format and save
+                resource_format = {
+                    'videos': videos,
+                    'playlists': [],
+                    'books': [],
+                    'courses': []
+                }
+                
+                saved_files = self.resource_manager.save_learning_resources(
+                    syllabus_title, resource_format, include_links=True
+                )
+                
+                self.console.print("[bright_green]Video results saved![/bright_green]")
+                for format_type, file_path in saved_files.items():
+                    self.console.print(f"  📄 {format_type.upper()}: {file_path}")
+            
+            # Ask if user wants to create a quiz
+            create_quiz = Prompt.ask(
+                "[bright_yellow]Create a quiz based on these videos?[/bright_yellow]",
+                choices=["yes", "no"],
+                default="no"
+            )
+            
+            if create_quiz == "yes":
+                await self._create_resource_based_quiz(syllabus_title, youtube_resources)
+                
+        except Exception as e:
+            self.console.print(f"[red]Error during enhanced video search: {e}[/red]")
+            self.logger.error(f"Enhanced video search error: {e}")
+    
+    async def _create_resource_based_quiz(self, topic: str, resources: Dict):
+        """Create a quiz based on the found resources"""
+        try:
+            num_questions = int(Prompt.ask(
+                "[bright_yellow]How many questions for the quiz?[/bright_yellow]",
+                default="10"
+            ))
+            
+            difficulty = Prompt.ask(
+                "[bright_yellow]Quiz difficulty?[/bright_yellow]",
+                choices=["easy", "medium", "hard", "mixed"],
+                default="mixed"
+            )
+            
+            with self.console.status("[bright_cyan]Creating quiz from your resources..."):
+                quiz_data = await self.persistent_quiz_manager.create_quiz_from_resources(
+                    topic, resources, num_questions, difficulty
+                )
+            
+            if quiz_data:
+                self.console.print(f"[bright_green]Created quiz: {quiz_data.get('title')}[/bright_green]")
+                self.console.print(f"Questions: {quiz_data.get('total_questions', 0)}")
+                self.console.print(f"Estimated time: {quiz_data.get('estimated_time', 0)} minutes")
+                
+                # Ask if user wants to take the quiz now
+                take_now = Prompt.ask(
+                    "[bright_yellow]Take the quiz now?[/bright_yellow]",
+                    choices=["yes", "no"],
+                    default="yes"
+                )
+                
+                if take_now == "yes":
+                    await self._take_persistent_quiz(quiz_data)
+                else:
+                    self.console.print("[bright_cyan]Quiz saved! You can take it later from 'Saved Quizzes' menu.[/bright_cyan]")
+            
+        except ValueError:
+            self.console.print("[red]Please enter a valid number for questions[/red]")
+        except Exception as e:
+            self.console.print(f"[red]Error creating quiz: {e}[/red]")
+    
+    async def _interactive_enhanced_resources(self):
+        """Enhanced interactive resource finder with direct links"""
+        self.console.print(Rule("[bold bright_blue]Enhanced Resource Finder[/bold bright_blue]"))
+        
+        topic = Prompt.ask("[bright_cyan]What topic would you like to find resources for?[/bright_cyan]")
+        
+        if not topic:
+            self.console.print("[red]Please enter a topic[/red]")
+            return
+        
+        try:
+            with self.console.status("[bright_cyan]Finding resources with direct links..."):
+                # Find general resources
+                general_resources = await self.resource_finder.find_resources_for_syllabus([topic], 'both')
+                
+                # Find YouTube resources
+                youtube_resources = await self._find_youtube_resources_for_topics([topic])
+                
+                # Combine resources
+                combined_resources = self._combine_all_resources(general_resources, youtube_resources)
+            
+            if combined_resources:
+                self.console.print(f"[bright_green]Found resources for '{topic}'![/bright_green]")
+                
+                # Display resources
+                self._display_resource_summary(combined_resources)
+                
+                # Show some direct links
+                self._show_sample_direct_links(combined_resources)
+                
+                # Ask to save
+                save_resources = Prompt.ask(
+                    "[bright_yellow]Save these resources with direct links?[/bright_yellow]",
+                    choices=["yes", "no"],
+                    default="yes"
+                )
+                
+                if save_resources == "yes":
+                    saved_files = self.resource_manager.save_learning_resources(
+                        topic, combined_resources, include_links=True
+                    )
+                    
+                    self.console.print("[bright_green]Resources saved![/bright_green]")
+                    for format_type, file_path in saved_files.items():
+                        self.console.print(f"  📄 {format_type.upper()}: {file_path}")
+                
+                # Ask to create quiz
+                create_quiz = Prompt.ask(
+                    "[bright_yellow]Create a quiz from these resources?[/bright_yellow]",
+                    choices=["yes", "no"],
+                    default="no"
+                )
+                
+                if create_quiz == "yes":
+                    await self._create_resource_based_quiz(topic, combined_resources)
+            else:
+                self.console.print("[yellow]No resources found for this topic[/yellow]")
+                
+        except Exception as e:
+            self.console.print(f"[red]Error finding resources: {e}[/red]")
+    
+    def _show_sample_direct_links(self, resources: Dict):
+        """Show sample direct links to demonstrate the feature"""
+        self.console.print("\n[bright_cyan]📎 Sample Direct Links:[/bright_cyan]")
+        
+        # Show video links
+        if 'videos' in resources and resources['videos']:
+            video = resources['videos'][0]
+            if isinstance(video, dict) and 'direct_link' in video:
+                title = video.get('title', 'Video')[:40]
+                self.console.print(f"🎥 {title}...")
+                self.console.print(f"   🔗 {video['direct_link']}")
+        
+        # Show playlist links
+        if 'playlists' in resources and resources['playlists']:
+            playlist = resources['playlists'][0]
+            if isinstance(playlist, dict) and 'direct_link' in playlist:
+                title = playlist.get('title', 'Playlist')[:40]
+                self.console.print(f"📚 {title}...")
+                self.console.print(f"   🔗 {playlist['direct_link']}")
+        
+        self.console.print("[dim]All links will be saved in the files for easy access![/dim]\n")
+    
+    async def _interactive_saved_resources(self):
+        """Interactive management of saved resources"""
+        self.console.print(Rule("[bold bright_blue]Saved Resources[/bold bright_blue]"))
+        
+        # Get saved resources
+        saved_resources = self.resource_manager.get_saved_resources()
+        
+        if not saved_resources:
+            self.console.print("[yellow]No saved resources found[/yellow]")
+            return
+        
+        # Display saved resources
+        resources_table = Table(title="Your Saved Resources", border_style="bright_green")
+        resources_table.add_column("ID", style="bright_cyan", width=3)
+        resources_table.add_column("Topic", style="bright_white")
+        resources_table.add_column("Generated", style="bright_yellow")
+        resources_table.add_column("Resources", style="bright_green")
+        
+        for i, resource in enumerate(saved_resources, 1):
+            generated_date = resource.get('generated_at', '')[:10]  # Just date part
+            resources_table.add_row(
+                str(i),
+                resource.get('topic', 'Unknown'),
+                generated_date,
+                str(resource.get('total_count', 0))
+            )
+        
+        self.console.print(resources_table)
+        
+        # Ask what to do
+        action = Prompt.ask(
+            "[bright_yellow]What would you like to do?[/bright_yellow]",
+            choices=["view", "create_quiz", "back"],
+            default="view"
+        )
+        
+        if action == "view":
+            try:
+                choice = int(Prompt.ask("[bright_yellow]Select resource ID to view[/bright_yellow]"))
+                if 1 <= choice <= len(saved_resources):
+                    selected = saved_resources[choice - 1]
+                    resource_data = self.resource_manager.load_saved_resources(selected['file'])
+                    
+                    if resource_data:
+                        self.console.print(f"\n[bright_green]Resources for: {resource_data.get('topic')}[/bright_green]")
+                        self._display_resource_summary(resource_data.get('resources', {}))
+                        
+                        # Show file locations
+                        self.console.print(f"\n[bright_cyan]Saved files:[/bright_cyan]")
+                        base_name = selected['file'].replace('.json', '')
+                        self.console.print(f"📄 Text: {base_name.replace('data/resources/', 'exports/')}.txt")
+                        self.console.print(f"📊 CSV: {base_name.replace('data/resources/', 'exports/')}.csv")
+                        self.console.print(f"🌐 HTML: {base_name.replace('data/resources/', 'exports/')}.html")
+                else:
+                    self.console.print("[red]Invalid selection[/red]")
+            except ValueError:
+                self.console.print("[red]Please enter a valid number[/red]")
+        
+        elif action == "create_quiz":
+            try:
+                choice = int(Prompt.ask("[bright_yellow]Select resource ID to create quiz from[/bright_yellow]"))
+                if 1 <= choice <= len(saved_resources):
+                    selected = saved_resources[choice - 1]
+                    resource_data = self.resource_manager.load_saved_resources(selected['file'])
+                    
+                    if resource_data:
+                        await self._create_resource_based_quiz(
+                            resource_data.get('topic', 'Unknown'),
+                            resource_data.get('resources', {})
+                        )
+                else:
+                    self.console.print("[red]Invalid selection[/red]")
+            except ValueError:
+                self.console.print("[red]Please enter a valid number[/red]")
+    
+    async def _interactive_saved_quizzes(self):
+        """Interactive management of saved quizzes"""
+        self.console.print(Rule("[bold bright_blue]Saved Quizzes[/bold bright_blue]"))
+        
+        # Get saved quizzes
+        saved_quizzes = self.persistent_quiz_manager.get_saved_quizzes()
+        
+        if not saved_quizzes:
+            self.console.print("[yellow]No saved quizzes found[/yellow]")
+            self.console.print("[bright_cyan]💡 Create quizzes from the main menu or when analyzing syllabi![/bright_cyan]")
+            return
+        
+        # Display saved quizzes
+        quizzes_table = Table(title="Your Saved Quizzes", border_style="bright_green")
+        quizzes_table.add_column("ID", style="bright_cyan", width=3)
+        quizzes_table.add_column("Title", style="bright_white")
+        quizzes_table.add_column("Questions", style="bright_yellow", width=10)
+        quizzes_table.add_column("Attempts", style="bright_green", width=10)
+        quizzes_table.add_column("Best Score", style="bright_magenta", width=12)
+        quizzes_table.add_column("Source", style="bright_blue", width=10)
+        
+        for i, quiz in enumerate(saved_quizzes, 1):
+            quizzes_table.add_row(
+                str(i),
+                quiz.get('title', 'Unknown')[:30] + ("..." if len(quiz.get('title', '')) > 30 else ""),
+                str(quiz.get('total_questions', 0)),
+                str(quiz.get('attempts', 0)),
+                f"{quiz.get('best_score', 0):.1f}%",
+                quiz.get('source_type', 'unknown')
+            )
+        
+        self.console.print(quizzes_table)
+        
+        # Ask what to do
+        action = Prompt.ask(
+            "[bright_yellow]What would you like to do?[/bright_yellow]",
+            choices=["take", "stats", "delete", "back"],
+            default="take"
+        )
+        
+        if action == "take":
+            await self._select_and_take_quiz(saved_quizzes)
+        elif action == "stats":
+            await self._show_quiz_statistics(saved_quizzes)
+        elif action == "delete":
+            await self._delete_quiz(saved_quizzes)
+    
+    async def _select_and_take_quiz(self, saved_quizzes: List[Dict]):
+        """Select and take a saved quiz"""
+        try:
+            choice = int(Prompt.ask("[bright_yellow]Select quiz ID to take[/bright_yellow]"))
+            if 1 <= choice <= len(saved_quizzes):
+                selected_quiz = saved_quizzes[choice - 1]
+                quiz_data = self.persistent_quiz_manager.load_quiz(selected_quiz['id'])
+                
+                if quiz_data:
+                    await self._take_persistent_quiz(quiz_data)
+                else:
+                    self.console.print("[red]Error loading quiz[/red]")
+            else:
+                self.console.print("[red]Invalid selection[/red]")
+        except ValueError:
+            self.console.print("[red]Please enter a valid number[/red]")
+    
+    async def _take_persistent_quiz(self, quiz_data: Dict):
+        """Take a persistent quiz and save results"""
+        self.console.print(f"\n[bold bright_green]Quiz: {quiz_data.get('title', 'Unknown Quiz')}[/bold bright_green]")
+        self.console.print(f"Questions: {quiz_data.get('total_questions', 0)}")
+        self.console.print(f"Estimated time: {quiz_data.get('estimated_time', 0)} minutes")
+        
+        if quiz_data.get('source_resources'):
+            self.console.print("[bright_cyan]📚 Based on your saved learning resources[/bright_cyan]")
+        
+        questions = quiz_data.get('questions', [])
+        if not questions:
+            self.console.print("[yellow]No questions available[/yellow]")
+            return
+        
+        score = 0
+        total = len(questions)
+        answers = []
+        start_time = datetime.now()
+        
+        for i, question in enumerate(questions, 1):
+            self.console.print(f"\n[bold bright_cyan]Question {i}/{total}:[/bold bright_cyan]")
+            self.console.print(question.get('question', ''))
+            
+            question_type = question.get('type', 'multiple_choice')
+            user_answer = None
+            is_correct = False
+            
+            if question_type == 'multiple_choice':
+                options = question.get('options', [])
+                if options:
+                    for j, option in enumerate(options, 1):
+                        self.console.print(f"  {j}. {option}")
+                    
+                    try:
+                        answer = int(Prompt.ask("[bright_yellow]Your answer[/bright_yellow]"))
+                        user_answer = answer
+                        correct_index = question.get('correct_answer', 0)
+                        
+                        if isinstance(correct_index, str):
+                            # If correct_answer is the actual text, find its index
+                            try:
+                                correct_index = options.index(correct_index)
+                            except ValueError:
+                                correct_index = 0
+                        
+                        correct_display = correct_index + 1
+                        
+                        if answer == correct_display:
+                            self.console.print("[bright_green]✓ Correct![/bright_green]")
+                            is_correct = True
+                        else:
+                            correct_option = options[correct_index] if correct_index < len(options) else "Unknown"
+                            self.console.print(f"[bright_red]✗ Incorrect. The correct answer was {correct_display}: {correct_option}[/bright_red]")
+                            
+                    except ValueError:
+                        self.console.print("[red]Invalid answer[/red]")
+                        user_answer = "invalid"
+                        
+            elif question_type == 'true_false':
+                answer = Prompt.ask("[bright_yellow]True or False (T/F)[/bright_yellow]").upper().strip()
+                user_answer = answer
+                correct_answer = question.get('correct_answer', True)
+                
+                if (answer == 'T' and correct_answer) or (answer == 'F' and not correct_answer):
+                    self.console.print("[bright_green]✓ Correct![/bright_green]")
+                    is_correct = True
+                else:
+                    correct_text = "True" if correct_answer else "False"
+                    self.console.print(f"[bright_red]✗ Incorrect. The correct answer was {correct_text}[/bright_red]")
+                    
+            elif question_type == 'short_answer':
+                answer = Prompt.ask("[bright_yellow]Your answer[/bright_yellow]").strip()
+                user_answer = answer
+                correct_answer = question.get('correct_answer', '')
+                
+                if self._check_short_answer_match(answer, correct_answer):
+                    self.console.print("[bright_green]✓ Correct![/bright_green]")
+                    is_correct = True
+                else:
+                    self.console.print(f"[bright_red]✗ Incorrect. Expected: {correct_answer}[/bright_red]")
+            
+            # Show explanation if available
+            explanation = question.get('explanation', '')
+            if explanation:
+                self.console.print(f"[dim]💡 {explanation}[/dim]")
+            
+            # Show resource reference if available
+            resource_ref = question.get('resource_reference', '')
+            if resource_ref:
+                self.console.print(f"[dim]📚 Related to: {resource_ref}[/dim]")
+            
+            if is_correct:
+                score += 1
+            
+            # Save answer details
+            answers.append({
+                'question_number': i,
+                'question': question.get('question', ''),
+                'user_answer': user_answer,
+                'correct_answer': question.get('correct_answer'),
+                'is_correct': is_correct,
+                'explanation': explanation
+            })
+        
+        # Calculate time taken
+        end_time = datetime.now()
+        time_taken = int((end_time - start_time).total_seconds() / 60)
+        
+        # Show final score
+        percentage = (score / total) * 100
+        self.console.print(f"\n[bold bright_green]Quiz Complete![/bold bright_green]")
+        self.console.print(f"Score: {score}/{total} ({percentage:.1f}%)")
+        self.console.print(f"Time taken: {time_taken} minutes")
+        
+        # Save quiz attempt
+        quiz_id = quiz_data.get('id')
+        if quiz_id:
+            success = self.persistent_quiz_manager.save_quiz_attempt(
+                quiz_id, score, total, answers, time_taken
+            )
+            
+            if success:
+                self.console.print("[bright_green]📊 Results saved![/bright_green]")
+                
+                # Show improvement if this isn't the first attempt
+                stats = self.persistent_quiz_manager.get_quiz_statistics(quiz_id)
+                if stats and stats.get('total_attempts', 0) > 1:
+                    trend = stats.get('improvement_trend', '')
+                    if trend == "Improving":
+                        self.console.print("[bright_green]📈 You're improving! Keep it up![/bright_green]")
+                    elif trend == "Stable":
+                        self.console.print("[bright_yellow]📊 Consistent performance[/bright_yellow]")
+            else:
+                self.console.print("[yellow]Could not save results[/yellow]")
+    
+    async def _show_quiz_statistics(self, saved_quizzes: List[Dict]):
+        """Show detailed statistics for a quiz"""
+        try:
+            choice = int(Prompt.ask("[bright_yellow]Select quiz ID to view stats[/bright_yellow]"))
+            if 1 <= choice <= len(saved_quizzes):
+                selected_quiz = saved_quizzes[choice - 1]
+                stats = self.persistent_quiz_manager.get_quiz_statistics(selected_quiz['id'])
+                
+                if stats:
+                    self.console.print(f"\n[bold bright_green]Statistics: {stats.get('quiz_title')}[/bold bright_green]")
+                    
+                    stats_table = Table(border_style="bright_blue")
+                    stats_table.add_column("Metric", style="bright_cyan")
+                    stats_table.add_column("Value", style="bright_white")
+                    
+                    stats_table.add_row("Total Attempts", str(stats.get('total_attempts', 0)))
+                    stats_table.add_row("Best Score", f"{stats.get('best_score', 0):.1f}%")
+                    stats_table.add_row("Average Score", f"{stats.get('average_score', 0):.1f}%")
+                    stats_table.add_row("Latest Score", f"{stats.get('latest_score', 0):.1f}%")
+                    stats_table.add_row("Trend", stats.get('improvement_trend', 'Unknown'))
+                    
+                    self.console.print(stats_table)
+                    
+                    # Show recent attempts
+                    recent_attempts = stats.get('attempts_history', [])
+                    if recent_attempts:
+                        self.console.print("\n[bright_cyan]Recent Attempts:[/bright_cyan]")
+                        for attempt in recent_attempts[-3:]:
+                            date = attempt.get('timestamp', '')[:10]
+                            score = attempt.get('percentage', 0)
+                            self.console.print(f"  📅 {date}: {score:.1f}%")
+                else:
+                    self.console.print("[red]Could not load statistics[/red]")
+            else:
+                self.console.print("[red]Invalid selection[/red]")
+        except ValueError:
+            self.console.print("[red]Please enter a valid number[/red]")
+    
+    async def _delete_quiz(self, saved_quizzes: List[Dict]):
+        """Delete a saved quiz"""
+        try:
+            choice = int(Prompt.ask("[bright_yellow]Select quiz ID to delete[/bright_yellow]"))
+            if 1 <= choice <= len(saved_quizzes):
+                selected_quiz = saved_quizzes[choice - 1]
+                
+                # Confirm deletion
+                confirm = Prompt.ask(
+                    f"[bright_red]Delete quiz '{selected_quiz.get('title', 'Unknown')}'? This cannot be undone.[/bright_red]",
+                    choices=["yes", "no"],
+                    default="no"
+                )
+                
+                if confirm == "yes":
+                    success = self.persistent_quiz_manager.delete_quiz(selected_quiz['id'])
+                    if success:
+                        self.console.print("[bright_green]Quiz deleted successfully[/bright_green]")
+                    else:
+                        self.console.print("[red]Error deleting quiz[/red]")
+                else:
+                    self.console.print("[yellow]Deletion cancelled[/yellow]")
+            else:
+                self.console.print("[red]Invalid selection[/red]")
+        except ValueError:
+            self.console.print("[red]Please enter a valid number[/red]")
+    
+    async def _interactive_ai_learning(self):
+        """Interactive AI-powered learning paths"""
+        self.console.print(Rule("[bold bright_blue]AI Learning Paths[/bold bright_blue]"))
+        
+        action = Prompt.ask(
+            "[bright_yellow]What would you like to do?[/bright_yellow]",
+            choices=["create_profile", "generate_path", "next_activity", "view_analytics"],
+            default="create_profile"
+        )
+        
+        user_id = Prompt.ask("[bright_cyan]Enter your user ID[/bright_cyan]", default="default_user")
+        
+        try:
+            if action == "create_profile":
+                await self._create_learning_profile(user_id)
+            elif action == "generate_path":
+                await self._generate_learning_path(user_id)
+            elif action == "next_activity":
+                await self._get_next_learning_activity(user_id)
+            elif action == "view_analytics":
+                await self._view_learning_analytics(user_id)
+                
+        except Exception as e:
+            self.console.print(f"[red]Error: {e}[/red]")
+    
+    async def _interactive_adaptive_quiz(self):
+        """Interactive adaptive quiz system"""
+        self.console.print(Rule("[bold bright_blue]Adaptive Quiz System[/bold bright_blue]"))
+        
+        action = Prompt.ask(
+            "[bright_yellow]What would you like to do?[/bright_yellow]",
+            choices=["start_quiz", "view_mastery", "continue_session"],
+            default="start_quiz"
+        )
+        
+        user_id = Prompt.ask("[bright_cyan]Enter your user ID[/bright_cyan]", default="default_user")
+        
+        try:
+            if action == "start_quiz":
+                await self._start_adaptive_quiz(user_id)
+            elif action == "view_mastery":
+                await self._view_concept_mastery(user_id)
+            elif action == "continue_session":
+                await self._continue_quiz_session(user_id)
+                
+        except Exception as e:
+            self.console.print(f"[red]Error: {e}[/red]")
+    
+    async def _interactive_learning_analytics(self):
+        """Interactive learning analytics dashboard"""
+        self.console.print(Rule("[bold bright_blue]Learning Analytics Dashboard[/bold bright_blue]"))
+        
+        action = Prompt.ask(
+            "[bright_yellow]What would you like to view?[/bright_yellow]",
+            choices=["dashboard", "insights", "patterns"],
+            default="dashboard"
+        )
+        
+        user_id = Prompt.ask("[bright_cyan]Enter your user ID[/bright_cyan]", default="default_user")
+        
+        try:
+            if action == "dashboard":
+                self.learning_analytics.show_comprehensive_dashboard(user_id)
+                input("\nPress Enter to continue...")
+            elif action == "insights":
+                await self._show_learning_insights(user_id)
+            elif action == "patterns":
+                await self._show_study_patterns(user_id)
+                
+        except Exception as e:
+            self.console.print(f"[red]Error: {e}[/red]")
+    
+    async def _interactive_predictions(self):
+        """Interactive learning predictions"""
+        self.console.print(Rule("[bold bright_blue]Learning Predictions[/bold bright_blue]"))
+        
+        action = Prompt.ask(
+            "[bright_yellow]What would you like to predict?[/bright_yellow]",
+            choices=["performance", "time", "success", "insights"],
+            default="performance"
+        )
+        
+        user_id = Prompt.ask("[bright_cyan]Enter your user ID[/bright_cyan]", default="default_user")
+        
+        try:
+            if action == "performance":
+                await self._predict_performance(user_id)
+            elif action == "time":
+                await self._predict_learning_time(user_id)
+            elif action == "success":
+                await self._predict_success(user_id)
+            elif action == "insights":
+                await self._show_prediction_insights(user_id)
+                
+        except Exception as e:
+            self.console.print(f"[red]Error: {e}[/red]")
+    
+    # Helper methods for AI learning features
+    async def _create_learning_profile(self, user_id: str):
+        """Create a learning profile for the user"""
+        try:
+            profile_data = {
+                'learning_style': Prompt.ask("[bright_cyan]Learning style[/bright_cyan]", 
+                                           choices=["visual", "auditory", "kinesthetic", "reading"], 
+                                           default="visual"),
+                'experience_level': Prompt.ask("[bright_cyan]Experience level[/bright_cyan]", 
+                                             choices=["beginner", "intermediate", "advanced"], 
+                                             default="beginner"),
+                'goals': [Prompt.ask("[bright_cyan]Primary learning goal[/bright_cyan]", default="general learning")],
+                'time_availability': int(Prompt.ask("[bright_cyan]Daily study time (minutes)[/bright_cyan]", default="30"))
+            }
+            
+            profile = await self.ai_learning_engine.create_learning_profile(user_id, profile_data)
+            self.console.print(f"[bright_green]✅ Learning profile created for {user_id}[/bright_green]")
+            
+        except Exception as e:
+            self.console.print(f"[red]Error creating profile: {e}[/red]")
+    
+    async def _generate_learning_path(self, user_id: str):
+        """Generate an adaptive learning path"""
+        try:
+            subject = Prompt.ask("[bright_cyan]Subject[/bright_cyan]", default="Python Programming")
+            topics_input = Prompt.ask("[bright_cyan]Topics (comma-separated)[/bright_cyan]", 
+                                    default="variables,functions,loops,data structures")
+            topics = [t.strip() for t in topics_input.split(',')]
+            
+            path = await self.ai_learning_engine.generate_adaptive_learning_path(user_id, subject, topics)
+            self.console.print(f"[bright_green]✅ Learning path generated with {len(path.activities) if hasattr(path, 'activities') else 0} activities[/bright_green]")
+            
+        except Exception as e:
+            self.console.print(f"[red]Error generating path: {e}[/red]")
+    
+    async def _get_next_learning_activity(self, user_id: str):
+        """Get the next recommended learning activity"""
+        try:
+            activity = await self.ai_learning_engine.get_next_learning_activity(user_id)
+            if activity:
+                self.console.print(f"[bright_green]Next activity: {activity.title}[/bright_green]")
+                self.console.print(f"[dim]{activity.description}[/dim]")
+            else:
+                self.console.print("[yellow]No activities available. Create a learning path first.[/yellow]")
+                
+        except Exception as e:
+            self.console.print(f"[red]Error getting activity: {e}[/red]")
+    
+    async def _view_learning_analytics(self, user_id: str):
+        """View learning analytics for the user"""
+        try:
+            self.learning_analytics.show_comprehensive_dashboard(user_id)
+        except Exception as e:
+            self.console.print(f"[red]Error showing analytics: {e}[/red]")
+    
+    async def _start_adaptive_quiz(self, user_id: str):
+        """Start an adaptive quiz session"""
+        try:
+            concept_name = Prompt.ask("[bright_cyan]Concept to quiz on[/bright_cyan]", default="Python Basics")
+            concept_id = concept_name.lower().replace(' ', '_')
+            
+            session_id = await self.adaptive_quiz_engine.start_adaptive_quiz_session(
+                user_id, concept_id, concept_name, f"Quiz on {concept_name}"
+            )
+            self.console.print(f"[bright_green]✅ Quiz session started: {session_id}[/bright_green]")
+            
+            # Run the quiz loop
+            await self._run_quiz_session(session_id)
+            
+        except Exception as e:
+            self.console.print(f"[red]Error starting quiz: {e}[/red]")
+    
+    async def _run_quiz_session(self, session_id: str):
+        """Run an interactive quiz session"""
+        try:
+            question_count = 0
+            max_questions = 10
+            
+            self.console.print("\n[bold bright_blue]Starting Quiz...[/bold bright_blue]")
+            
+            while question_count < max_questions:
+                # Get next question
+                question_data = self.adaptive_quiz_engine.get_next_question(session_id)
+                
+                if not question_data:
+                    self.console.print("[yellow]Quiz completed![/yellow]")
+                    break
+                
+                question_count += 1
+                
+                # Display question
+                self.console.print(f"\n[bold bright_cyan]Question {question_data['progress']['current']}/{question_data['progress']['total']}[/bold bright_cyan]")
+                self.console.print(f"[bright_white]{question_data['question_text']}[/bright_white]")
+                
+                # Handle different question types
+                if question_data['question_type'] == 'multiple_choice':
+                    for i, option in enumerate(question_data['options']):
+                        self.console.print(f"  {i + 1}. {option}")
+                    
+                    while True:
+                        try:
+                            answer_input = Prompt.ask("[bright_cyan]Your answer (1-4)[/bright_cyan]")
+                            answer = int(answer_input) - 1
+                            if 0 <= answer < len(question_data['options']):
+                                break
+                            else:
+                                self.console.print("[red]Please enter a number between 1 and 4[/red]")
+                        except ValueError:
+                            self.console.print("[red]Please enter a valid number[/red]")
+                
+                elif question_data['question_type'] == 'true_false':
+                    self.console.print("  1. True")
+                    self.console.print("  2. False")
+                    
+                    while True:
+                        try:
+                            answer_input = Prompt.ask("[bright_cyan]Your answer (1-2)[/bright_cyan]")
+                            answer = int(answer_input) - 1
+                            if answer in [0, 1]:
+                                break
+                            else:
+                                self.console.print("[red]Please enter 1 for True or 2 for False[/red]")
+                        except ValueError:
+                            self.console.print("[red]Please enter a valid number[/red]")
+                
+                elif question_data['question_type'] == 'short_answer':
+                    answer = Prompt.ask("[bright_cyan]Your answer[/bright_cyan]")
+                
+                # Submit answer and get feedback
+                import time
+                start_time = time.time()
+                result = await self.adaptive_quiz_engine.submit_answer(session_id, answer, int(time.time() - start_time))
+                
+                # Show feedback
+                if result.get('is_correct'):
+                    self.console.print("[bright_green]✅ Correct![/bright_green]")
+                else:
+                    self.console.print("[bright_red]❌ Incorrect[/bright_red]")
+                    if question_data['question_type'] == 'multiple_choice':
+                        correct_idx = result.get('correct_answer', 0)
+                        if isinstance(correct_idx, int) and 0 <= correct_idx < len(question_data['options']):
+                            self.console.print(f"[yellow]Correct answer: {question_data['options'][correct_idx]}[/yellow]")
+                    else:
+                        self.console.print(f"[yellow]Correct answer: {result.get('correct_answer', 'N/A')}[/yellow]")
+                
+                # Show explanation
+                if result.get('explanation'):
+                    self.console.print(f"[dim]{result['explanation']}[/dim]")
+                
+                # Check if quiz is completed
+                if result.get('quiz_completed'):
+                    final_results = result.get('final_results', {})
+                    performance = final_results.get('performance', {})
+                    
+                    self.console.print("\n[bold bright_green]🎉 Quiz Completed![/bold bright_green]")
+                    self.console.print(f"[bright_cyan]Final Score: {performance.get('final_score', 0):.1f}%[/bright_cyan]")
+                    self.console.print(f"[bright_cyan]Accuracy: {performance.get('accuracy', 0):.1%}[/bright_cyan]")
+                    self.console.print(f"[bright_cyan]Questions Answered: {performance.get('questions_answered', 0)}[/bright_cyan]")
+                    break
+                
+                # Ask if user wants to continue
+                if question_count < max_questions:
+                    continue_quiz = Prompt.ask("\n[bright_cyan]Continue to next question? (y/n)[/bright_cyan]", default="y")
+                    if continue_quiz.lower() != 'y':
+                        break
+            
+        except Exception as e:
+            self.console.print(f"[red]Error running quiz: {e}[/red]")
+
+    async def _view_concept_mastery(self, user_id: str):
+        """View concept mastery progress"""
+        try:
+            mastery_report = self.adaptive_quiz_engine.get_concept_mastery_report(user_id)
+            if mastery_report and mastery_report.get('concepts'):
+                self.console.print("[bright_green]Concept Mastery Progress:[/bright_green]")
+                for concept_data in mastery_report['concepts']:
+                    concept_name = concept_data.get('concept_name', 'Unknown')
+                    mastery_level = concept_data.get('mastery_level', 0)
+                    self.console.print(f"  {concept_name}: {mastery_level:.1%}")
+            else:
+                self.console.print("[yellow]No mastery data available yet.[/yellow]")
+                
+        except Exception as e:
+            self.console.print(f"[red]Error viewing mastery: {e}[/red]")
+    
+    async def _continue_quiz_session(self, user_id: str):
+        """Continue an existing quiz session"""
+        try:
+            # This would typically load an existing session
+            self.console.print("[yellow]Continue quiz functionality not yet implemented.[/yellow]")
+        except Exception as e:
+            self.console.print(f"[red]Error continuing quiz: {e}[/red]")
+    
+    async def _show_learning_insights(self, user_id: str):
+        """Show learning insights"""
+        try:
+            insights = await self.learning_analytics.generate_learning_insights(user_id)
+            self.console.print("[bright_green]Learning Insights:[/bright_green]")
+            for insight in insights:
+                self.console.print(f"• {insight}")
+        except Exception as e:
+            self.console.print(f"[red]Error showing insights: {e}[/red]")
+    
+    async def _show_study_patterns(self, user_id: str):
+        """Show study patterns analysis"""
+        try:
+            patterns = await self.learning_analytics.analyze_study_patterns(user_id)
+            self.console.print("[bright_green]Study Patterns:[/bright_green]")
+            self.console.print(f"• Best study time: {patterns.get('best_time', 'Unknown')}")
+            self.console.print(f"• Average session length: {patterns.get('avg_session', 'Unknown')} minutes")
+        except Exception as e:
+            self.console.print(f"[red]Error showing patterns: {e}[/red]")
+    
+    async def _predict_performance(self, user_id: str):
+        """Predict quiz performance"""
+        try:
+            concept_id = Prompt.ask("[bright_cyan]Concept ID[/bright_cyan]", default="python_basics")
+            difficulty = float(Prompt.ask("[bright_cyan]Quiz difficulty (0.0-1.0)[/bright_cyan]", default="0.5"))
+            
+            prediction = await self.predictive_intelligence.predict_quiz_performance(user_id, concept_id, difficulty)
+            self.console.print(f"[bright_green]Predicted performance: {prediction.predicted_value:.1%}[/bright_green]")
+            self.console.print(f"[dim]Confidence: {prediction.confidence_score:.1%}[/dim]")
+            
+        except Exception as e:
+            self.console.print(f"[red]Error predicting performance: {e}[/red]")
+    
+    async def _predict_learning_time(self, user_id: str):
+        """Predict learning time"""
+        try:
+            concept_id = Prompt.ask("[bright_cyan]Concept ID[/bright_cyan]", default="python_basics")
+            target_mastery = float(Prompt.ask("[bright_cyan]Target mastery (0.0-1.0)[/bright_cyan]", default="0.8"))
+            
+            prediction = await self.predictive_intelligence.predict_learning_time(user_id, concept_id, target_mastery)
+            self.console.print(f"[bright_green]Estimated time: {prediction.predicted_value:.1f} hours[/bright_green]")
+            
+        except Exception as e:
+            self.console.print(f"[red]Error predicting time: {e}[/red]")
+    
+    async def _predict_success(self, user_id: str):
+        """Predict success probability"""
+        try:
+            concept_id = Prompt.ask("[bright_cyan]Concept ID[/bright_cyan]", default="python_basics")
+            goal = Prompt.ask("[bright_cyan]Learning goal[/bright_cyan]", default="master the basics")
+            
+            prediction = await self.predictive_intelligence.predict_success_probability(user_id, concept_id, goal)
+            self.console.print(f"[bright_green]Success probability: {prediction.predicted_value:.1%}[/bright_green]")
+            
+        except Exception as e:
+            self.console.print(f"[red]Error predicting success: {e}[/red]")
+    
+    async def _show_prediction_insights(self, user_id: str):
+        """Show prediction insights"""
+        try:
+            insights = await self.predictive_intelligence.generate_prediction_insights(user_id)
+            self.console.print("[bright_green]Prediction Insights:[/bright_green]")
+            for insight in insights:
+                self.console.print(f"• {insight}")
+        except Exception as e:
+            self.console.print(f"[red]Error showing prediction insights: {e}[/red]")
 
 async def main():
     """Main application entry point"""
