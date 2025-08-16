@@ -2,11 +2,24 @@
 Version information for Syllabo
 """
 
-VERSION = "1.2.0"
+VERSION = "1.3.0"
 __version__ = VERSION
 
 # Version history
 VERSION_HISTORY = {
+    "1.3.0": {
+        "date": "2025-01-20",
+        "features": [
+            "Complete README overhaul with human-friendly documentation",
+            "All 16+ features now properly documented and explained",
+            "Directory-based executables to avoid antivirus false positives", 
+            "Enhanced Windows and Linux build scripts with ZIP packaging",
+            "Improved installer scripts for better user experience",
+            "Better documentation of AI learning features and capabilities",
+            "Clear setup instructions and configuration guidance",
+            "Real-world success stories and scientific backing included"
+        ]
+    },
     "1.2.0": {
         "date": "2025-08-11",
         "features": [
