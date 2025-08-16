@@ -145,21 +145,19 @@ class SyllaboMain:
             ("3", "saved_quizzes", "Saved Quizzes", "View and retake your saved quizzes"),
             ("4", "progress", "Progress Dashboard", "View learning progress and analytics"),
             ("5", "goals", "Study Goals", "Manage learning goals and milestones"),
-            ("6", "platforms", "Multi-Platform Search", "Search across learning platforms"),
-            ("7", "bookmarks", "Smart Bookmarks", "Manage video bookmarks and notes"),
-            ("8", "session", "Study Sessions", "Pomodoro timer and focus sessions"),
-            ("9", "review", "Spaced Repetition", "Review topics using spaced repetition"),
-            ("10", "videos", "Smart Video Analysis", "Find and analyze educational videos"),
-            ("11", "enhanced_videos", "Enhanced Video Search", "Comprehensive video search with topic coverage"),
-            ("12", "resources", "Enhanced Resource Finder", "Find resources with direct links and save them"),
-            ("13", "saved_resources", "Saved Resources", "View and manage your saved learning resources"),
-            ("14", "notes", "Generate Study Notes", "Create notes and questions from content"),
-            ("15", "ai_learning", "AI Learning Paths", "Generate adaptive learning paths with AI"),
-            ("16", "adaptive_quiz", "Adaptive Quizzes", "Take intelligent adaptive quizzes"),
-            ("17", "learning_analytics", "Learning Analytics", "View comprehensive learning analytics"),
-            ("18", "predictions", "Learning Predictions", "Get AI predictions for learning outcomes"),
-            ("19", "config", "Configuration", "Manage API keys and application settings"),
-            ("20", "help", "Help & Documentation", "Get help and usage information"),
+            ("6", "bookmarks", "Smart Bookmarks", "Manage video bookmarks and notes"),
+            ("7", "session", "Study Sessions", "Pomodoro timer and focus sessions"),
+            ("8", "review", "Spaced Repetition", "Review topics using spaced repetition"),
+
+            ("9", "saved_resources", "Saved Resources", "View and manage your saved learning resources"),
+            ("10", "notes", "Generate Study Notes", "Create notes and questions from content"),
+            ("11", "ai_learning", "AI Learning Paths", "Generate adaptive learning paths with AI"),
+            ("12", "adaptive_quiz", "Adaptive Quizzes", "Take intelligent adaptive quizzes"),
+            ("13", "learning_analytics", "Learning Analytics", "View comprehensive learning analytics"),
+            ("14", "predictions", "Learning Predictions", "Get AI predictions for learning outcomes"),
+            ("15", "demo", "🎯 Features Demo", "Comprehensive demo of all app features for testing"),
+            ("16", "config", "Configuration", "Manage API keys and application settings"),
+            ("17", "help", "Help & Documentation", "Get help and usage information"),
             ("0", "exit", "Exit", "Exit the application")
         ]
         
@@ -221,16 +219,12 @@ class SyllaboMain:
                 await self._interactive_progress()
             elif command == 'goals':
                 await self._interactive_goals()
-            elif command == 'platforms':
-                await self._interactive_platforms()
             elif command == 'bookmarks':
                 await self._interactive_bookmarks()
             elif command == 'session':
                 await self._interactive_session()
             elif command == 'review':
                 await self._interactive_review()
-            elif command == 'videos':
-                await self._interactive_videos()
             elif command == 'enhanced_videos':
                 await self._interactive_enhanced_videos()
             elif command == 'resources':
@@ -247,6 +241,9 @@ class SyllaboMain:
                 await self._interactive_learning_analytics()
             elif command == 'predictions':
                 await self._interactive_predictions()
+            elif command == 'demo':
+                await self._interactive_demo()
+
             elif command == 'config':
                 self._interactive_config()
             else:
@@ -255,6 +252,7 @@ class SyllaboMain:
         except Exception as e:
             self.console.print(f"[red]Error executing command: {e}[/red]")
             self.logger.error(f"Interactive command error: {e}")
+
     
     async def _interactive_analyze(self):
         """Interactive syllabus analysis"""
@@ -685,57 +683,7 @@ class SyllaboMain:
             goal_id = self.goals_manager.create_goal(title, description, goal_type, target_value, unit, days_to_complete)
             self.console.print(f"[bright_green]Goal created with ID: {goal_id}[/bright_green]")
     
-    async def _interactive_platforms(self):
-        """Interactive multi-platform search"""
-        self.console.print(Rule("[bold bright_blue]Multi-Platform Search[/bold bright_blue]"))
-        
-        query = Prompt.ask("[bright_cyan]Enter search query[/bright_cyan]")
-        if not query:
-            self.console.print("[red]No query provided[/red]")
-            return
-        
-        platform = Prompt.ask(
-            "[bright_yellow]Select platform[/bright_yellow]",
-            choices=["youtube", "coursera", "udemy", "all"],
-            default="all"
-        )
-        
-        with self.console.status(f"[bright_cyan]Searching {platform}..."):
-            try:
-                if platform == "all":
-                    platform_results = await self.platform_integrator.search_all_platforms(query)
-                    # Flatten results from all platforms
-                    results = []
-                    for platform_name, platform_courses in platform_results.items():
-                        for course in platform_courses:
-                            course['platform'] = platform_name
-                            results.append(course)
-                else:
-                    results = await self.platform_integrator.search_platform(platform, query)
-                    # Add platform name to each result
-                    for result in results:
-                        result['platform'] = platform
-                
-                if results:
-                    results_table = Table(title=f"Search Results for '{query}'", border_style="bright_green")
-                    results_table.add_column("Platform", style="bright_cyan")
-                    results_table.add_column("Title", style="bright_white")
-                    results_table.add_column("URL", style="bright_blue")
-                    
-                    for result in results[:10]:
-                        results_table.add_row(
-                            result.get('platform', 'Unknown'),
-                            result.get('title', 'No title')[:50],
-                            result.get('url', 'No URL')[:50]
-                        )
-                    
-                    self.console.print(results_table)
-                else:
-                    self.console.print("[yellow]No results found[/yellow]")
-                    
-            except Exception as e:
-                self.console.print(f"[red]Search error: {e}[/red]")
-    
+
     async def _interactive_bookmarks(self):
         """Interactive bookmark management"""
         self.console.print(Rule("[bold bright_blue]Smart Bookmarks[/bold bright_blue]"))
@@ -1177,8 +1125,8 @@ class SyllaboMain:
         await self._interactive_bookmarks()
     
     async def _handle_platforms_command(self, args):
-        """Handle platforms command from CLI"""
-        await self._interactive_platforms()
+        """Handle platforms command from CLI - redirects to enhanced resources"""
+        await self._interactive_enhanced_resources()
     
     async def _handle_config_command(self, args):
         """Handle config command from CLI"""
@@ -1251,7 +1199,7 @@ class SyllaboMain:
 • progress   - Learning progress dashboard
 • session    - Study sessions with Pomodoro timer
 • bookmarks  - Smart bookmarks management
-• platforms  - Multi-platform search
+• platforms  - Multi-platform search (redirects to enhanced resources)
 
 [bright_white]Examples:[/bright_white]
   python main.py analyze --file syllabus.pdf
@@ -1751,127 +1699,7 @@ For detailed help on any command, use:
         self.console.print(f"\n[bright_green]🎉 Your comprehensive learning plan is ready![/bright_green]")
         self.console.print("[dim]All data has been saved and is accessible from the main menu.[/dim]")
     
-    async def _interactive_videos(self):
-        """Interactive video search and analysis"""
-        self.console.print(Rule("[bold bright_blue]Smart Video Analysis[/bold bright_blue]"))
-        
-        topic = Prompt.ask("[bright_cyan]Enter topic to search for videos[/bright_cyan]")
-        if not topic:
-            self.console.print("[red]No topic provided[/red]")
-            return
-        
-        # Ask user preference
-        preference = self.video_analyzer.ask_user_video_preference(topic)
-        
-        with self.console.status(f"[bright_cyan]Searching for {topic} videos..."):
-            try:
-                # Search for videos and playlists
-                videos = await self.youtube_client.search_videos(topic, 10)
-                playlists = await self.youtube_client.search_playlists(topic, 5)
-                
-                if not videos and not playlists:
-                    self.console.print("[yellow]No videos or playlists found[/yellow]")
-                    return
-                
-                # Analyze content
-                analysis = await self.video_analyzer.analyze_videos_and_playlists(videos, playlists, topic)
-                
-                # Display results
-                self._display_video_analysis(analysis, topic)
-                
-                # Ask if user wants notes and questions
-                if analysis.get('primary_resource'):
-                    generate_notes = Prompt.ask(
-                        "[bright_yellow]Generate study notes and questions for the recommended content? (y/n)[/bright_yellow]",
-                        default="y"
-                    ).lower() == 'y'
-                    
-                    if generate_notes:
-                        await self._generate_content_notes(analysis['primary_resource'], topic)
-                
-            except Exception as e:
-                self.console.print(f"[red]Video search error: {e}[/red]")
-    
-    def _display_video_analysis(self, analysis: Dict, topic: str):
-        """Display video analysis results"""
-        self.console.print(f"\n[bold bright_green]Video Analysis Results for '{topic}'[/bold bright_green]")
-        
-        primary = analysis.get('primary_resource')
-        if primary:
-            self.console.print(f"\n[bold bright_cyan]Recommended Primary Content:[/bold bright_cyan]")
-            content_type = "📺 Video" if primary.get('type') != 'playlist' else "📚 Playlist"
-            self.console.print(f"{content_type} {primary['title']}")
-            self.console.print(f"Channel: {primary['channel']}")
-            self.console.print(f"Score: {primary.get('composite_score', 0):.1f}/10")
-            
-            if primary.get('type') == 'playlist':
-                self.console.print(f"Videos: {primary.get('video_count', 0)}")
-            else:
-                self.console.print(f"Duration: {primary.get('duration', 'Unknown')}")
-        
-        # Display topic coverage
-        coverage = analysis.get('topic_coverage_details', {})
-        if coverage:
-            self.console.print(f"\n[bold bright_yellow]Topic Coverage Analysis:[/bold bright_yellow]")
-            self.console.print(f"Coverage: {coverage.get('learning_completeness', 0):.0f}%")
-            
-            covered = coverage.get('covered_subtopics', [])
-            if covered:
-                self.console.print(f"Covered topics: {', '.join(covered[:5])}")
-            
-            missing = coverage.get('missing_subtopics', [])
-            if missing:
-                self.console.print(f"[yellow]Missing topics: {', '.join(missing[:3])}[/yellow]")
-            
-            recommendations = coverage.get('content_recommendations', [])
-            if recommendations:
-                self.console.print(f"\n[bold bright_magenta]Recommendations:[/bold bright_magenta]")
-                for rec in recommendations:
-                    self.console.print(f"• {rec}")
-        
-        # Display supplementary content
-        supplementary_videos = analysis.get('supplementary_videos', [])
-        supplementary_playlists = analysis.get('supplementary_playlists', [])
-        
-        if supplementary_videos or supplementary_playlists:
-            self.console.print(f"\n[bold bright_cyan]Additional Resources:[/bold bright_cyan]")
-            
-            for video in supplementary_videos[:3]:
-                self.console.print(f"📺 {video['title']} ({video.get('duration', 'Unknown')})")
-            
-            for playlist in supplementary_playlists[:2]:
-                self.console.print(f"📚 {playlist['title']} ({playlist.get('video_count', 0)} videos)")
-    
-    async def _generate_content_notes(self, content: Dict, topic: str):
-        """Generate notes and questions for content"""
-        with self.console.status("[bright_cyan]Generating study notes and questions..."):
-            try:
-                # Ask user preferences first
-                preferences = self.notes_generator.ask_user_preferences()
-                
-                # Generate notes (transcript would be fetched in real implementation)
-                notes_data = await self.notes_generator.generate_study_notes(topic, content, None)
-                
-                # Display generated materials
-                self.console.print(f"\n[bold bright_green]Generated Study Materials[/bold bright_green]")
-                
-                if notes_data.get('notes') and preferences.get('generate_notes'):
-                    self.console.print(f"\n[bold bright_cyan]Study Notes:[/bold bright_cyan]")
-                    for i, note in enumerate(notes_data['notes'], 1):
-                        self.console.print(f"{i}. {note}")
-                
-                if notes_data.get('questions') and preferences.get('generate_questions'):
-                    self.console.print(f"\n[bold bright_yellow]Study Questions:[/bold bright_yellow]")
-                    for i, question in enumerate(notes_data['questions'], 1):
-                        self.console.print(f"{i}. {question}")
-                
-                if notes_data.get('key_concepts'):
-                    self.console.print(f"\n[bold bright_magenta]Key Concepts:[/bold bright_magenta]")
-                    for concept in notes_data['key_concepts']:
-                        self.console.print(f"• {concept}")
-                
-            except Exception as e:
-                self.console.print(f"[red]Error generating notes: {e}[/red]")
+
     
     async def _interactive_resources(self):
         """Interactive resource finder"""
@@ -1994,6 +1822,26 @@ For detailed help on any command, use:
             self.console.print(f"\n[bold bright_blue]Study Tips:[/bold bright_blue]")
             for tip in notes_data['study_tips']:
                 self.console.print(f"• {tip}")
+    
+    async def _interactive_demo(self):
+        """Launch comprehensive features demo"""
+        self.console.print(Rule("[bold bright_green]🎯 Syllabo Features Demo[/bold bright_green]"))
+        
+        self.console.print("[bright_cyan]Welcome to the Syllabo Features Demo![/bright_cyan]")
+        self.console.print("[bright_white]This comprehensive demo will showcase all features of the application.[/bright_white]\n")
+        
+        try:
+            # Import and run the demo
+            from demo_all_features import ComprehensiveFeaturesDemo
+            
+            demo = ComprehensiveFeaturesDemo()
+            await demo.run_demo()
+            
+        except ImportError:
+            self.console.print("[red]Demo module not found. Please ensure demo_all_features.py is available.[/red]")
+        except Exception as e:
+            self.console.print(f"[red]Demo error: {e}[/red]")
+            self.logger.error(f"Demo execution error: {e}")
     
     def _interactive_config(self):
         """Interactive configuration management"""

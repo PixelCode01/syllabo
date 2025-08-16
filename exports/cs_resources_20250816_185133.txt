@@ -1,0 +1,223 @@
+LEARNING RESOURCES FOR: CS
+============================================================
+Generated: 2025-08-16 18:51:33
+
+🎥 YOUTUBE VIDEOS
+------------------------------
+1. Python Full Course for Beginners
+   Channel: Programming with Mosh
+   Duration: 6:14:07
+   Views: 45,433,728
+   🔗 DIRECT LINK: https://www.youtube.com/watch?v=_uQrJ0TkZlc
+   Description: Learn Python for AI, machine learning, and web development with this beginner-friendly course! Get 6 months of PyCharm ...
+
+2. Python Tutorial For Beginners in Hindi | Complete Python Course 🔥
+   Channel: CodeWithHarry
+   Duration: 10:53:54
+   Views: 12,162,819
+   🔗 DIRECT LINK: https://www.youtube.com/watch?v=UrsmFxEIp5k
+   Description: Note: Scroll to the bottom of the page on the website to download the handbook XStore – Premium WordPress theme for ...
+
+3. Python Tutorial for Beginners | Learn Python in 1.5 Hours
+   Channel: Apna College
+   Duration: 1:17:12
+   Views: 11,262,112
+   🔗 DIRECT LINK: https://www.youtube.com/watch?v=vLqTf2b6GZw
+   Description: This video is made with a lot of love from Apna College ❤️ Are you worried about placements/internships? Want to prepare for ...
+
+4. Python Tutorial for Beginners - Full Course (with Notes & Practice Questions)
+   Channel: Apna College
+   Duration: 10:24:51
+   Views: 8,780,928
+   🔗 DIRECT LINK: https://www.youtube.com/watch?v=ERCMXc8x7mc
+   Description: You can start your Tech Placement/Internship journey with New Sigma 4.0 : https://www.apnacollege.in/course/sigma-4 Early bird ...
+
+5. Data Structures Easy to Advanced Course - Full Tutorial from a Google Engineer
+   Channel: freeCodeCamp.org
+   Duration: 8:03:17
+   Views: 6,988,920
+   🔗 DIRECT LINK: https://www.youtube.com/watch?v=RBSGKlAvoiM
+   Description: Learn and master the most common data structures in this full course from Google engineer William Fiset. This course teaches ...
+
+6. Algorithms and Data Structures Tutorial - Full Course for Beginners
+   Channel: freeCodeCamp.org
+   Duration: 5:22:08
+   Views: 5,393,738
+   🔗 DIRECT LINK: https://www.youtube.com/watch?v=8hly31xKli0
+   Description: In this course you will learn about algorithms and data structures, two of the fundamental topics in computer science. There are ...
+
+7. Object-Oriented Programming, Simplified
+   Channel: Programming with Mosh
+   Duration: 7:34
+   Views: 4,453,917
+   🔗 DIRECT LINK: https://www.youtube.com/watch?v=pTB0EiLXUC8
+   Description: 4 pillars of object-oriented programming: encapsulation, abstraction, inheritance and polymorphism. ❤️ Join this channel to get ...
+
+8. Modules and Pip | Python Tutorial - Day #3
+   Channel: CodeWithHarry
+   Duration: 12:41
+   Views: 2,891,810
+   🔗 DIRECT LINK: https://www.youtube.com/watch?v=xwKO_y2gHxQ
+   Description: Python Udemy Course: https://goharry.in/python Get this course at 90% Discount if you use this link Python is one of the most ...
+
+9. Python Tutorial: File Objects - Reading and Writing to Files
+   Channel: Corey Schafer
+   Duration: 24:33
+   Views: 1,961,912
+   🔗 DIRECT LINK: https://www.youtube.com/watch?v=Uh2ebFW8OYM
+   Description: In this Python Tutorial, we will be learning how to read and write to files. You will likely come into contact with file objects at some ...
+
+10. 15 Minute Python Tutorial For Beginners In Hindi (Full & Complete Python Crash Course)
+   Channel: CodeWithHarry
+   Duration: 17:37
+   Views: 1,636,405
+   🔗 DIRECT LINK: https://www.youtube.com/watch?v=fr1f84rg4Nw
+   Description: Python Udemy Course: https://goharry.in/python Get this course at 90% Discount if you use this link Source Code ...
+
+11. #65 Python Tutorial for Beginners | File handling
+   Channel: Telusko
+   Duration: 12:13
+   Views: 788,089
+   🔗 DIRECT LINK: https://www.youtube.com/watch?v=aequTxAvQq4
+   Description: Check out our courses: Java Spring Boot AI Live Course: https://go.telusko.com/JavaSpringBootAI Coupon: TELUSKO20 (20% ...
+
+12. Data Structures and Algorithms in 15 Minutes
+   Channel: Tren Black
+   Duration: 16:19
+   Views: 1,256,573
+   🔗 DIRECT LINK: https://www.youtube.com/watch?v=oz9cEqFynHU
+   Description: EDIT: Jomaclass promo is over. I reccomend the MIT lectures (free) down below. They are honestly the better resource out there ...
+
+13. #45 Python Tutorial for Beginners | Modules
+   Channel: Telusko
+   Duration: 7:20
+   Views: 677,694
+   🔗 DIRECT LINK: https://www.youtube.com/watch?v=1RuMJ53CKds
+   Description: Check out our courses: Java Spring Boot AI Live Course: https://go.telusko.com/JavaSpringBootAI Coupon: TELUSKO20 (20% ...
+
+14. Lec-1: What is Python? Introduction to Python 🐍 | Why Python | Where Python is used..
+   Channel: Gate Smashers
+   Duration: 7:37
+   Views: 1,000,613
+   🔗 DIRECT LINK: https://www.youtube.com/watch?v=XIR20HH8mNY
+   Description: 00:00 - Introduction 00:23 - Introduction to python? 02:35 - Why Python? 06:18 – Where Python is Used? Subscribe to our new ...
+
+15. Data Structures Explained for Beginners - How I Wish I was Taught
+   Channel: Internet Made Coder
+   Duration: 17:06
+   Views: 689,000
+   🔗 DIRECT LINK: https://www.youtube.com/watch?v=SFEROgwxicA
+   Description: If I was a beginner, here's how I wish someone explained Data Structures to me so that I would ACTUALLy understand them. Data ...
+
+📖 RECOMMENDED BOOKS
+------------------------------
+1. Python Crash Course
+   Author: Eric Matthes
+   Price: $39.99
+   Type: Paid
+   🛒 Amazon: https://www.amazon.com/s?k=Python+Crash+Course+Eric+Matthes
+   📚 Google Books: https://books.google.com/books?q=Python+Crash+Course+Eric+Matthes
+
+2. Automate the Boring Stuff
+   Author: Al Sweigart
+   Price: Free online
+   Type: Free
+   🛒 Amazon: https://www.amazon.com/s?k=Automate+the+Boring+Stuff+Al+Sweigart
+   📚 Google Books: https://books.google.com/books?q=Automate+the+Boring+Stuff+Al+Sweigart
+
+3. Effective Python
+   Author: Brett Slatkin
+   Price: $44.99
+   Type: Paid
+   🛒 Amazon: https://www.amazon.com/s?k=Effective+Python+Brett+Slatkin
+   📚 Google Books: https://books.google.com/books?q=Effective+Python+Brett+Slatkin
+
+4. Python Tricks
+   Author: Dan Bader
+   Price: $29.99
+   Type: Paid
+   🛒 Amazon: https://www.amazon.com/s?k=Python+Tricks+Dan+Bader
+   📚 Google Books: https://books.google.com/books?q=Python+Tricks+Dan+Bader
+
+5. Python for Data Analysis
+   Author: Wes McKinney
+   Price: $49.99
+   Type: Paid
+   🛒 Amazon: https://www.amazon.com/s?k=Python+for+Data+Analysis+Wes+McKinney
+   📚 Google Books: https://books.google.com/books?q=Python+for+Data+Analysis+Wes+McKinney
+
+6. Hands-On Machine Learning
+   Author: Aurélien Géron
+   Price: $54.99
+   Type: Paid
+   🛒 Amazon: https://www.amazon.com/s?k=Hands-On+Machine+Learning+Aur%C3%A9lien+G%C3%A9ron
+   📚 Google Books: https://books.google.com/books?q=Hands-On+Machine+Learning+Aur%C3%A9lien+G%C3%A9ron
+
+7. The Elements of Statistical Learning
+   Author: Hastie, Tibshirani, Friedman
+   Price: Free PDF
+   Type: Free
+   🛒 Amazon: https://www.amazon.com/s?k=The+Elements+of+Statistical+Learning+Hastie%2C+Tibshirani%2C+Friedman
+   📚 Google Books: https://books.google.com/books?q=The+Elements+of+Statistical+Learning+Hastie%2C+Tibshirani%2C+Friedman
+
+8. Python Data Science Handbook
+   Author: Jake VanderPlas
+   Price: Free online
+   Type: Free
+   🛒 Amazon: https://www.amazon.com/s?k=Python+Data+Science+Handbook+Jake+VanderPlas
+   📚 Google Books: https://books.google.com/books?q=Python+Data+Science+Handbook+Jake+VanderPlas
+
+🎓 ONLINE COURSES
+------------------------------
+1. Complete Python Bootcamp
+   Platform: Udemy
+   Price: $84.99
+   Type: Paid
+   🔗 Platform Link: https://www.udemy.com/courses/search/?q=Complete+Python+Bootcamp
+
+2. Python for Everybody
+   Platform: Coursera
+   Price: Free audit
+   Type: Free
+   🔗 Platform Link: https://www.coursera.org/search?query=Python+for+Everybody
+
+3. CS50 Python
+   Platform: edX
+   Price: Free
+   Type: Free
+   🔗 Platform Link: https://www.edx.org/search?q=CS50+Python
+
+4. Real Python Membership
+   Platform: Real Python
+   Price: $60/year
+   Type: Paid
+   🔍 Search: https://www.google.com/search?q=Real+Python+Membership+real+python+course
+
+5. Data Science Specialization
+   Platform: Coursera
+   Price: $49/month
+   Type: Paid
+   🔗 Platform Link: https://www.coursera.org/search?query=Data+Science+Specialization
+
+6. CS109 Data Science
+   Platform: Harvard
+   Price: Free materials
+   Type: Free
+   🔍 Search: https://www.google.com/search?q=CS109+Data+Science+harvard+course
+
+7. Applied Data Science with Python
+   Platform: Coursera
+   Price: $49/month
+   Type: Paid
+   🔗 Platform Link: https://www.coursera.org/search?query=Applied+Data+Science+with+Python
+
+8. Fast.ai Practical Deep Learning
+   Platform: fast.ai
+   Price: Free
+   Type: Free
+   🔍 Search: https://www.google.com/search?q=Fast.ai+Practical+Deep+Learning+fast.ai+course
+
+============================================================
+💡 TIP: Copy and paste the links above into your browser
+📱 Save this file for future reference
+🔄 Use Syllabo to generate quizzes from these resources
