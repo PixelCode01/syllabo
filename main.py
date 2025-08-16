@@ -10,7 +10,7 @@ import sys
 import asyncio
 import time
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Any
 from dotenv import load_dotenv
 from rich.console import Console
 from rich.panel import Panel
@@ -703,13 +703,13 @@ class SyllaboMain:
                 bookmarks_table.add_column("Notes", style="bright_yellow")
                 
                 for bookmark in bookmarks[:10]:
-                    notes = bookmark.get('notes', 'No notes')
+                    notes = bookmark.note if hasattr(bookmark, 'note') else 'No notes'
                     if len(notes) > 30:
                         notes = notes[:30] + "..."
                     
                     bookmarks_table.add_row(
-                        bookmark.get('title', 'Unknown'),
-                        bookmark.get('url', 'No URL')[:40],
+                        bookmark.video_title if hasattr(bookmark, 'video_title') else 'Unknown',
+                        f"video_id:{bookmark.video_id}"[:40] if hasattr(bookmark, 'video_id') else 'No URL',
                         notes
                     )
                 
@@ -2803,7 +2803,9 @@ For detailed help on any command, use:
             topics = [t.strip() for t in topics_input.split(',')]
             
             path = await self.ai_learning_engine.generate_adaptive_learning_path(user_id, subject, topics)
-            self.console.print(f"[bright_green]✅ Learning path generated with {len(path.activities) if hasattr(path, 'activities') else 0} activities[/bright_green]")
+            self.console.print(f"[bright_green]✅ Learning path generated with {len(path.concepts)} concepts[/bright_green]")
+            self.console.print(f"[dim]Path ID: {path.path_id}[/dim]")
+            self.console.print(f"[dim]Estimated completion: {path.estimated_completion}[/dim]")
             
         except Exception as e:
             self.console.print(f"[red]Error generating path: {e}[/red]")
@@ -2811,15 +2813,92 @@ For detailed help on any command, use:
     async def _get_next_learning_activity(self, user_id: str):
         """Get the next recommended learning activity"""
         try:
-            activity = await self.ai_learning_engine.get_next_learning_activity(user_id)
-            if activity:
-                self.console.print(f"[bright_green]Next activity: {activity.title}[/bright_green]")
-                self.console.print(f"[dim]{activity.description}[/dim]")
+            # Check if user has any learning paths
+            learning_paths = getattr(self.ai_learning_engine, 'learning_paths', {})
+            user_paths = [path_id for path_id, path in learning_paths.items() if path.user_id == user_id]
+            
+            if not user_paths:
+                self.console.print("[yellow]No learning paths found. Creating a basic path...[/yellow]")
+                
+                # Try to create a basic learning path from available topics
+                topics = self.db.get_all_topics()
+                if topics:
+                    topic_names = [topic.get('name', '') for topic in topics[:3]]  # Use first 3 topics
+                    try:
+                        # Create a learning path
+                        path = await self.ai_learning_engine.generate_adaptive_learning_path(
+                            user_id, "General Study", topic_names
+                        )
+                        path_id = path.path_id
+                    except Exception as e:
+                        self.logger.error(f"Error creating learning path: {e}")
+                        # Fallback to a mock activity
+                        activity = {
+                            "status": "ready",
+                            "concept": {"name": "Start Learning", "description": "Begin your learning journey"},
+                            "activity": {
+                                "type": "assessment",
+                                "concept_name": "Initial Assessment",
+                                "description": "Take a quiz to assess your current knowledge"
+                            },
+                            "progress": {"current": 1, "total": 1, "percentage": 100}
+                        }
+                        self._display_learning_activity(activity)
+                        return
+                else:
+                    # No topics available, suggest creating one
+                    self.console.print("[yellow]No topics available. Please analyze a syllabus first.[/yellow]")
+                    return
             else:
-                self.console.print("[yellow]No activities available. Create a learning path first.[/yellow]")
+                # Use the first available path
+                path_id = user_paths[0]
+            
+            # Get the next activity
+            activity = self.ai_learning_engine.get_next_learning_activity(user_id, path_id)
+            self._display_learning_activity(activity)
                 
         except Exception as e:
             self.console.print(f"[red]Error getting activity: {e}[/red]")
+            self.logger.error(f"Error getting learning activity: {e}")
+    
+    def _display_learning_activity(self, activity: Dict[str, Any]):
+        """Display a learning activity to the user"""
+        try:
+            status = activity.get("status", "unknown")
+            
+            if status == "completed":
+                self.console.print(f"[bright_green]🎉 {activity.get('message', 'Learning path completed!')}[/bright_green]")
+                return
+            
+            if status == "blocked":
+                self.console.print(f"[yellow]⚠️ {activity.get('message', 'Prerequisites not met')}[/yellow]")
+                missing = activity.get('missing_prerequisites', [])
+                if missing:
+                    self.console.print(f"[dim]Missing prerequisites: {', '.join(missing)}[/dim]")
+                return
+            
+            if status == "error":
+                self.console.print(f"[red]❌ {activity.get('message', 'Error loading activity')}[/red]")
+                return
+            
+            # Display the activity
+            concept = activity.get("concept", {})
+            activity_info = activity.get("activity", {})
+            progress = activity.get("progress", {})
+            
+            self.console.print(f"[bold bright_cyan]📚 Next Learning Activity[/bold bright_cyan]")
+            self.console.print(f"[bright_green]Concept:[/bright_green] {concept.get('name', 'Unknown')}")
+            self.console.print(f"[bright_white]Description:[/bright_white] {concept.get('description', 'No description')}")
+            self.console.print(f"[bright_yellow]Activity Type:[/bright_yellow] {activity_info.get('type', 'Unknown').title()}")
+            
+            if progress:
+                current = progress.get('current', 1)
+                total = progress.get('total', 1)
+                percentage = progress.get('percentage', 0)
+                self.console.print(f"[bright_blue]Progress:[/bright_blue] {current}/{total} ({percentage:.1f}%)")
+            
+        except Exception as e:
+            self.console.print(f"[red]Error displaying activity: {e}[/red]")
     
     async def _view_learning_analytics(self, user_id: str):
         """View learning analytics for the user"""
@@ -2969,20 +3048,96 @@ For detailed help on any command, use:
     async def _show_learning_insights(self, user_id: str):
         """Show learning insights"""
         try:
-            insights = await self.learning_analytics.generate_learning_insights(user_id)
+            insights = self.learning_analytics.generate_learning_insights(user_id)
+            
+            if isinstance(insights, dict) and 'error' in insights:
+                self.console.print(f"[red]Error: {insights['error']}[/red]")
+                return
+            
+            if isinstance(insights, dict) and 'message' in insights:
+                self.console.print(f"[yellow]{insights['message']}[/yellow]")
+                return
+            
             self.console.print("[bright_green]Learning Insights:[/bright_green]")
-            for insight in insights:
-                self.console.print(f"• {insight}")
+            
+            # Display insights from the dictionary
+            if isinstance(insights, dict):
+                # Display velocity metrics
+                velocity = insights.get('velocity_metrics', {})
+                if velocity:
+                    self.console.print(f"[bright_cyan]Learning Velocity:[/bright_cyan] {velocity.get('current_velocity', 0):.2f} concepts/hour")
+                    trend = velocity.get('trend', 'stable')
+                    self.console.print(f"[bright_white]Trend:[/bright_white] {trend}")
+                
+                # Display study patterns
+                patterns = insights.get('study_patterns', {})
+                if patterns:
+                    optimal_times = patterns.get('optimal_study_times', [])
+                    if optimal_times:
+                        self.console.print(f"[bright_cyan]Optimal Study Times:[/bright_cyan] {', '.join(optimal_times)}")
+                    
+                    session_length = patterns.get('optimal_session_length', 0)
+                    if session_length:
+                        self.console.print(f"[bright_white]Optimal Session Length:[/bright_white] {session_length} minutes")
+                
+                # Display recommendations
+                recommendations = insights.get('recommendations', [])
+                if recommendations:
+                    self.console.print(f"[bright_yellow]Recommendations:[/bright_yellow]")
+                    for rec in recommendations:
+                        self.console.print(f"  • {rec}")
+            else:
+                self.console.print("[yellow]No insights data available[/yellow]")
+                
         except Exception as e:
             self.console.print(f"[red]Error showing insights: {e}[/red]")
     
     async def _show_study_patterns(self, user_id: str):
         """Show study patterns analysis"""
         try:
-            patterns = await self.learning_analytics.analyze_study_patterns(user_id)
-            self.console.print("[bright_green]Study Patterns:[/bright_green]")
-            self.console.print(f"• Best study time: {patterns.get('best_time', 'Unknown')}")
-            self.console.print(f"• Average session length: {patterns.get('avg_session', 'Unknown')} minutes")
+            patterns = self.learning_analytics.analyze_study_patterns(user_id)
+            
+            if isinstance(patterns, dict) and 'error' in patterns:
+                self.console.print(f"[red]Error: {patterns['error']}[/red]")
+                return
+            
+            if isinstance(patterns, dict) and 'message' in patterns:
+                self.console.print(f"[yellow]{patterns['message']}[/yellow]")
+                return
+            
+            self.console.print("[bright_green]Study Patterns Analysis:[/bright_green]")
+            
+            # Display pattern summary
+            pattern_summary = patterns.get('pattern_summary', {})
+            if pattern_summary:
+                optimal_times = pattern_summary.get('optimal_study_times', [])
+                if optimal_times:
+                    self.console.print(f"[bright_cyan]Optimal Study Times:[/bright_cyan] {', '.join(optimal_times)}")
+                
+                session_length = pattern_summary.get('optimal_session_length', 0)
+                if session_length:
+                    self.console.print(f"[bright_white]Optimal Session Length:[/bright_white] {session_length} minutes")
+                
+                consistency = pattern_summary.get('study_consistency_score', 0)
+                self.console.print(f"[bright_yellow]Consistency Score:[/bright_yellow] {consistency:.2f}")
+            
+            # Display weekly analysis
+            weekly = patterns.get('weekly_analysis', {})
+            if weekly:
+                best_day = weekly.get('best_day')
+                worst_day = weekly.get('worst_day')
+                if best_day:
+                    self.console.print(f"[bright_green]Best Day:[/bright_green] {best_day[0]} ({best_day[1]:.1f}%)")
+                if worst_day:
+                    self.console.print(f"[bright_red]Worst Day:[/bright_red] {worst_day[0]} ({worst_day[1]:.1f}%)")
+            
+            # Display recommendations
+            recommendations = patterns.get('recommendations', [])
+            if recommendations:
+                self.console.print(f"[bright_magenta]Recommendations:[/bright_magenta]")
+                for rec in recommendations:
+                    self.console.print(f"  • {rec}")
+            
         except Exception as e:
             self.console.print(f"[red]Error showing patterns: {e}[/red]")
     
@@ -3026,10 +3181,59 @@ For detailed help on any command, use:
     async def _show_prediction_insights(self, user_id: str):
         """Show prediction insights"""
         try:
-            insights = await self.predictive_intelligence.generate_prediction_insights(user_id)
+            insights = self.predictive_intelligence.generate_prediction_insights(user_id)
+            
+            if isinstance(insights, dict) and 'error' in insights:
+                self.console.print(f"[red]Error: {insights['error']}[/red]")
+                return
+            
+            if isinstance(insights, dict) and 'message' in insights:
+                self.console.print(f"[yellow]{insights['message']}[/yellow]")
+                return
+            
             self.console.print("[bright_green]Prediction Insights:[/bright_green]")
-            for insight in insights:
-                self.console.print(f"• {insight}")
+            
+            # Display prediction statistics
+            if isinstance(insights, dict):
+                total_predictions = insights.get('total_predictions', 0)
+                self.console.print(f"[bright_cyan]Total Predictions Made:[/bright_cyan] {total_predictions}")
+                
+                # Display accuracy statistics
+                accuracy_stats = insights.get('accuracy_statistics', {})
+                if accuracy_stats:
+                    avg_accuracy = accuracy_stats.get('average_accuracy', 0)
+                    self.console.print(f"[bright_white]Average Accuracy:[/bright_white] {avg_accuracy:.2f}")
+                    
+                    predictions_validated = accuracy_stats.get('predictions_validated', 0)
+                    self.console.print(f"[bright_yellow]Predictions Validated:[/bright_yellow] {predictions_validated}")
+                
+                # Display model insights
+                model_insights = insights.get('model_insights', {})
+                if model_insights:
+                    confidence = model_insights.get('model_confidence', 0)
+                    self.console.print(f"[bright_blue]Model Confidence:[/bright_blue] {confidence:.2f}")
+                    
+                    learning_rate = model_insights.get('learning_rate', 0)
+                    self.console.print(f"[bright_green]Learning Rate:[/bright_green] {learning_rate:.2f}")
+                
+                # Display recent predictions
+                recent_predictions = insights.get('recent_predictions', [])
+                if recent_predictions:
+                    self.console.print(f"[bright_magenta]Recent Predictions:[/bright_magenta]")
+                    for i, pred in enumerate(recent_predictions[:3], 1):
+                        pred_type = pred.get('type', 'unknown')
+                        confidence = pred.get('confidence', 0)
+                        self.console.print(f"  {i}. {pred_type.title()} prediction (confidence: {confidence:.2f})")
+                
+                # Display recommendations
+                recommendations = insights.get('recommendations', [])
+                if recommendations:
+                    self.console.print(f"[bright_cyan]Recommendations:[/bright_cyan]")
+                    for rec in recommendations:
+                        self.console.print(f"  • {rec}")
+            else:
+                self.console.print("[yellow]No prediction insights available[/yellow]")
+                
         except Exception as e:
             self.console.print(f"[red]Error showing prediction insights: {e}[/red]")
 

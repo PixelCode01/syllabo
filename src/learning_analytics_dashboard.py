@@ -844,3 +844,137 @@ class LearningAnalyticsDashboard:
             self.logger.error(f"Error generating recommendations: {e}")
         
         return recommendations[:7]  # Limit to top 7 recommendations
+    
+    def generate_learning_insights(self, user_id: str) -> Dict[str, Any]:
+        """Generate comprehensive learning insights for a user"""
+        try:
+            return self.get_learning_insights(user_id)
+        except Exception as e:
+            self.logger.error(f"Error generating learning insights: {e}")
+            return {"error": str(e)}
+    
+    def analyze_study_patterns(self, user_id: str) -> Dict[str, Any]:
+        """Analyze and return detailed study patterns for a user"""
+        try:
+            pattern = self.study_patterns.get(user_id)
+            user_sessions = [s for s in self.learning_sessions if s.user_id == user_id]
+            
+            if not pattern and len(user_sessions) < 3:
+                return {
+                    "message": "Insufficient data for pattern analysis",
+                    "sessions_analyzed": len(user_sessions),
+                    "minimum_required": 3
+                }
+            
+            # If no pattern exists but we have sessions, create one
+            if not pattern and user_sessions:
+                self._update_study_patterns(user_id)
+                pattern = self.study_patterns.get(user_id)
+            
+            if not pattern:
+                return {"error": "Could not analyze study patterns"}
+            
+            # Enhanced pattern analysis
+            analysis = {
+                "user_id": user_id,
+                "pattern_summary": {
+                    "optimal_study_times": pattern.optimal_study_times,
+                    "optimal_session_length": pattern.optimal_session_length,
+                    "peak_performance_hours": pattern.peak_performance_hours,
+                    "study_consistency_score": pattern.study_consistency_score
+                },
+                "weekly_analysis": {
+                    "pattern": pattern.weekly_pattern,
+                    "best_day": max(pattern.weekly_pattern.items(), key=lambda x: x[1]) if pattern.weekly_pattern else None,
+                    "worst_day": min(pattern.weekly_pattern.items(), key=lambda x: x[1]) if pattern.weekly_pattern else None
+                },
+                "trends": {
+                    "monthly_trend": pattern.monthly_trend,
+                    "trend_direction": self._analyze_trend_direction(pattern.monthly_trend)
+                },
+                "recommendations": self._generate_pattern_recommendations(pattern),
+                "sessions_analyzed": len(user_sessions),
+                "analysis_date": datetime.now().isoformat()
+            }
+            
+            # Add session distribution analysis
+            if user_sessions:
+                hour_distribution = {}
+                duration_stats = []
+                
+                for session in user_sessions:
+                    hour = datetime.fromisoformat(session.start_time).hour
+                    hour_distribution[hour] = hour_distribution.get(hour, 0) + 1
+                    duration_stats.append(session.duration_minutes)
+                
+                analysis["session_distribution"] = {
+                    "by_hour": hour_distribution,
+                    "duration_stats": {
+                        "average": statistics.mean(duration_stats),
+                        "median": statistics.median(duration_stats),
+                        "min": min(duration_stats),
+                        "max": max(duration_stats)
+                    }
+                }
+            
+            return analysis
+            
+        except Exception as e:
+            self.logger.error(f"Error analyzing study patterns: {e}")
+            return {"error": str(e)}
+    
+    def _analyze_trend_direction(self, monthly_trend: List[float]) -> str:
+        """Analyze the direction of monthly performance trend"""
+        if not monthly_trend or len(monthly_trend) < 2:
+            return "insufficient_data"
+        
+        if len(monthly_trend) == 2:
+            return "improving" if monthly_trend[1] > monthly_trend[0] else "declining" if monthly_trend[1] < monthly_trend[0] else "stable"
+        
+        # Calculate trend over last 3 months
+        recent_trend = monthly_trend[-3:] if len(monthly_trend) >= 3 else monthly_trend
+        
+        improvements = 0
+        declines = 0
+        
+        for i in range(1, len(recent_trend)):
+            if recent_trend[i] > recent_trend[i-1]:
+                improvements += 1
+            elif recent_trend[i] < recent_trend[i-1]:
+                declines += 1
+        
+        if improvements > declines:
+            return "improving"
+        elif declines > improvements:
+            return "declining"
+        else:
+            return "stable"
+    
+    def _generate_pattern_recommendations(self, pattern: StudyPattern) -> List[str]:
+        """Generate recommendations based on study patterns"""
+        recommendations = []
+        
+        # Session length recommendations
+        if pattern.optimal_session_length > 90:
+            recommendations.append("Consider shorter study sessions (60-90 minutes) with breaks to maintain focus")
+        elif pattern.optimal_session_length < 30:
+            recommendations.append("Try extending study sessions to 45-60 minutes for better learning retention")
+        
+        # Consistency recommendations
+        if pattern.study_consistency_score < 0.5:
+            recommendations.append("Work on maintaining consistent study schedules and performance")
+        elif pattern.study_consistency_score > 0.8:
+            recommendations.append("Excellent consistency! Consider gradually increasing study complexity")
+        
+        # Time-based recommendations
+        if pattern.peak_performance_hours:
+            peak_hours_str = ", ".join([f"{h}:00" for h in pattern.peak_performance_hours[:3]])
+            recommendations.append(f"Schedule important study sessions during your peak hours: {peak_hours_str}")
+        
+        # Weekly pattern recommendations
+        if pattern.weekly_pattern:
+            worst_day = min(pattern.weekly_pattern.items(), key=lambda x: x[1])
+            if worst_day[1] < 60:  # Less than 60% performance
+                recommendations.append(f"Focus on improving {worst_day[0]} study sessions")
+        
+        return recommendations[:5]

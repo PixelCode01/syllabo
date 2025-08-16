@@ -821,3 +821,11 @@ class PredictiveLearningIntelligence:
             recommendations.append("Improving engagement could lead to better learning outcomes")
         
         return recommendations[:5]
+    
+    def generate_prediction_insights(self, user_id: str) -> Dict[str, Any]:
+        """Generate comprehensive prediction insights for a user"""
+        try:
+            return self.get_prediction_insights(user_id)
+        except Exception as e:
+            self.logger.error(f"Error generating prediction insights: {e}")
+            return {"error": str(e)}

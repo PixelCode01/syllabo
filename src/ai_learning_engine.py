@@ -326,17 +326,28 @@ class AILearningEngine:
             - Current level: {profile.current_level}
             - Preferred difficulty: {profile.preferred_difficulty}
             
-            Respond with JSON in this format:
+            IMPORTANT: Respond ONLY with valid JSON in this exact format (no extra text):
             {{
                 "concepts": [
                     {{
-                        "concept_id": "unique_id",
-                        "name": "Topic Name",
-                        "description": "Brief description",
-                        "difficulty_level": 0.5,
-                        "prerequisites": ["prerequisite_id1", "prerequisite_id2"],
-                        "related_concepts": ["related_id1"],
+                        "concept_id": "variables",
+                        "name": "Variables",
+                        "description": "Learn about variables and data storage",
+                        "difficulty_level": 0.3,
+                        "prerequisites": [],
+                        "related_concepts": ["data_types"],
                         "estimated_time": 45,
+                        "mastery_threshold": 0.8,
+                        "content_types": ["video", "quiz", "practice"]
+                    }},
+                    {{
+                        "concept_id": "functions",
+                        "name": "Functions",
+                        "description": "Learn about functions and code reusability",
+                        "difficulty_level": 0.5,
+                        "prerequisites": ["variables"],
+                        "related_concepts": ["parameters", "return_values"],
+                        "estimated_time": 60,
                         "mastery_threshold": 0.8,
                         "content_types": ["video", "quiz", "practice"]
                     }}
@@ -346,20 +357,53 @@ class AILearningEngine:
             
             response = await self.ai_client.get_completion(prompt)
             
+            # Clean the response - remove any markdown formatting or extra text
+            response = response.strip()
+            
+            # Try to extract JSON from the response
+            if '```json' in response:
+                # Extract JSON from markdown code block
+                start = response.find('```json') + 7
+                end = response.find('```', start)
+                if end != -1:
+                    response = response[start:end].strip()
+            elif '```' in response:
+                # Extract from generic code block
+                start = response.find('```') + 3
+                end = response.find('```', start)
+                if end != -1:
+                    response = response[start:end].strip()
+            
+            # Find JSON object boundaries
+            if not response.startswith('{'):
+                json_start = response.find('{')
+                if json_start != -1:
+                    response = response[json_start:]
+            
+            if not response.endswith('}'):
+                json_end = response.rfind('}')
+                if json_end != -1:
+                    response = response[:json_end + 1]
+            
             try:
                 data = json.loads(response)
                 concepts = []
                 
                 for concept_data in data.get('concepts', []):
+                    # Ensure concept_id is valid
+                    concept_id = concept_data.get('concept_id', '').strip()
+                    if not concept_id:
+                        concept_id = concept_data.get('name', '').lower().replace(' ', '_')
+                    
                     concept = ConceptNode(
-                        concept_id=concept_data.get('concept_id', ''),
+                        concept_id=concept_id,
                         name=concept_data.get('name', ''),
                         description=concept_data.get('description', ''),
-                        difficulty_level=concept_data.get('difficulty_level', 0.5),
+                        difficulty_level=float(concept_data.get('difficulty_level', 0.5)),
                         prerequisites=concept_data.get('prerequisites', []),
                         related_concepts=concept_data.get('related_concepts', []),
-                        estimated_time=concept_data.get('estimated_time', 30),
-                        mastery_threshold=concept_data.get('mastery_threshold', 0.8),
+                        estimated_time=int(concept_data.get('estimated_time', 30)),
+                        mastery_threshold=float(concept_data.get('mastery_threshold', 0.8)),
                         content_types=concept_data.get('content_types', ['video', 'quiz'])
                     )
                     concepts.append(concept)
@@ -367,10 +411,12 @@ class AILearningEngine:
                     # Add to concept graph
                     self.concept_graph[concept.concept_id] = concept
                 
+                self.logger.info(f"Successfully created {len(concepts)} concepts from AI response")
                 return concepts
                 
-            except json.JSONDecodeError:
-                self.logger.error("Failed to parse AI response for concept graph")
+            except json.JSONDecodeError as e:
+                self.logger.error(f"Failed to parse AI response as JSON: {e}")
+                self.logger.error(f"AI Response was: {response[:200]}...")
                 return self._create_fallback_concepts(topics)
                 
         except Exception as e:
@@ -379,22 +425,28 @@ class AILearningEngine:
     
     def _create_fallback_concepts(self, topics: List[str]) -> List[ConceptNode]:
         """Create fallback concepts when AI fails"""
+        self.logger.info(f"Creating fallback concepts for {len(topics)} topics")
         concepts = []
+        
         for i, topic in enumerate(topics):
+            # Clean up topic name for concept_id
+            concept_id = topic.lower().replace(' ', '_').replace('-', '_')
+            
             concept = ConceptNode(
-                concept_id=f"concept_{i}",
-                name=topic,
+                concept_id=concept_id,
+                name=topic.title(),
                 description=f"Learn about {topic}",
-                difficulty_level=0.5,
-                prerequisites=[f"concept_{i-1}"] if i > 0 else [],
+                difficulty_level=0.3 + (i * 0.1),  # Gradually increase difficulty
+                prerequisites=[concepts[i-1].concept_id] if i > 0 else [],
                 related_concepts=[],
-                estimated_time=30,
+                estimated_time=30 + (i * 15),  # 30, 45, 60, 75 minutes
                 mastery_threshold=0.8,
-                content_types=['video', 'quiz']
+                content_types=['video', 'quiz', 'practice']
             )
             concepts.append(concept)
             self.concept_graph[concept.concept_id] = concept
         
+        self.logger.info(f"Created {len(concepts)} fallback concepts")
         return concepts
     
     def _order_concepts_by_prerequisites(self, concepts: List[ConceptNode]) -> List[ConceptNode]:
@@ -761,3 +813,104 @@ class AILearningEngine:
         except Exception as e:
             self.logger.error(f"Error predicting performance: {e}")
             return {"error": str(e)}
+    
+    def get_next_learning_activity(self, user_id: str, path_id: str) -> Dict[str, Any]:
+        """Get the next recommended learning activity (sync version)"""
+        try:
+            path = self.learning_paths.get(path_id)
+            profile = self.learning_profiles.get(user_id)
+            
+            if not path or not profile:
+                return {
+                    "status": "error",
+                    "message": "Path or profile not found",
+                    "concept": {"name": "Error", "description": "Could not find learning path or user profile"},
+                    "activity": {"type": "setup", "concept_name": "Profile Setup"},
+                    "progress": {"current": 0, "total": 1, "percentage": 0}
+                }
+            
+            if path.current_position >= len(path.concepts):
+                return {"status": "completed", "message": "Learning path completed!"}
+            
+            current_concept = path.concepts[path.current_position]
+            
+            # Check if prerequisites are met
+            if not self._prerequisites_met(current_concept, user_id):
+                return {
+                    "status": "blocked",
+                    "message": "Prerequisites not met",
+                    "missing_prerequisites": self._get_missing_prerequisites(current_concept, user_id)
+                }
+            
+            # Get performance metrics for adaptive questioning
+            metrics_key = f"{user_id}_{current_concept.concept_id}"
+            metrics = self.performance_metrics.get(metrics_key)
+            
+            # Create a basic activity without AI (to avoid async in sync method)
+            activity = self._create_basic_activity(current_concept, profile, metrics)
+            
+            return {
+                "status": "ready",
+                "concept": {
+                    "name": current_concept.name,
+                    "description": current_concept.description,
+                    "difficulty_level": current_concept.difficulty_level,
+                    "estimated_time": current_concept.estimated_time
+                },
+                "activity": activity,
+                "progress": {
+                    "current": path.current_position + 1,
+                    "total": len(path.concepts),
+                    "percentage": ((path.current_position + 1) / len(path.concepts)) * 100
+                }
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Error getting next activity: {e}")
+            return {
+                "status": "error",
+                "message": f"Error: {e}",
+                "concept": {"name": "Error", "description": "Could not load activity"},
+                "activity": {"type": "review", "concept_name": "System Error"},
+                "progress": {"current": 0, "total": 1, "percentage": 0}
+            }
+    
+    def _create_basic_activity(self, concept: ConceptNode, profile: LearningProfile, 
+                              metrics: Optional[PerformanceMetrics]) -> Dict[str, Any]:
+        """Create a basic learning activity without AI assistance"""
+        # Determine activity type based on learning style
+        style_preferences = {
+            'visual': ['video', 'diagram', 'infographic'],
+            'auditory': ['podcast', 'lecture', 'discussion'],
+            'kinesthetic': ['practice', 'simulation', 'hands_on'],
+            'reading': ['article', 'textbook', 'documentation']
+        }
+        
+        preferred_types = style_preferences.get(profile.learning_style, ['video'])
+        
+        # Select activity type that matches both concept and preference
+        available_types = concept.content_types
+        activity_type = next((t for t in preferred_types if t in available_types), available_types[0])
+        
+        # Adjust difficulty based on performance
+        difficulty = concept.difficulty_level
+        if metrics:
+            if metrics.avg_score < 0.6:
+                difficulty = max(0.1, difficulty - 0.2)  # Make easier
+            elif metrics.avg_score > 0.9:
+                difficulty = min(1.0, difficulty + 0.2)  # Make harder
+        
+        return {
+            "type": activity_type,
+            "concept_id": concept.concept_id,
+            "concept_name": concept.name,
+            "description": concept.description,
+            "difficulty": difficulty,
+            "estimated_time": concept.estimated_time,
+            "mastery_threshold": concept.mastery_threshold
+        }
+    
+    async def _get_next_learning_activity_async(self, user_id: str, path_id: str) -> Dict[str, Any]:
+        """Internal async method for getting next learning activity"""
+        # This is the original async implementation
+        return await self.get_next_learning_activity(user_id, path_id)
